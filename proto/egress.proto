@@ -1,0 +1,127 @@
+syntax = "proto3";
+
+package nspass.egress.v1;
+
+// 出口模式枚举
+enum EgressMode {
+  EGRESS_MODE_UNSPECIFIED = 0;
+  EGRESS_MODE_DIRECT = 1;
+  EGRESS_MODE_IPTABLES = 2;
+  EGRESS_MODE_SS2022 = 3;
+}
+
+// 转发类型枚举
+enum ForwardType {
+  FORWARD_TYPE_UNSPECIFIED = 0;
+  FORWARD_TYPE_TCP = 1;
+  FORWARD_TYPE_UDP = 2;
+  FORWARD_TYPE_ALL = 3;
+}
+
+// 出口项目消息
+message EgressItem {
+  string id = 1;
+  string egress_id = 2;
+  string server_id = 3;
+  EgressMode egress_mode = 4;
+  string egress_config = 5;
+  
+  // 直出模式字段
+  optional string target_address = 6;
+  
+  // iptables模式字段
+  optional ForwardType forward_type = 7;
+  optional string dest_address = 8;
+  optional string dest_port = 9;
+  
+  // shadowsocks-2022模式字段
+  optional string password = 10;
+  optional bool support_udp = 11;
+}
+
+// 创建出口请求
+message CreateEgressRequest {
+  optional string egress_id = 1;
+  string server_id = 2;
+  EgressMode egress_mode = 3;
+  
+  // 直出模式字段
+  optional string target_address = 4;
+  
+  // iptables模式字段
+  optional ForwardType forward_type = 5;
+  optional string dest_address = 6;
+  optional string dest_port = 7;
+  
+  // shadowsocks-2022模式字段
+  optional string password = 8;
+  optional bool support_udp = 9;
+}
+
+// 更新出口请求
+message UpdateEgressRequest {
+  optional string egress_id = 1;
+  optional string server_id = 2;
+  optional EgressMode egress_mode = 3;
+  optional string target_address = 4;
+  optional ForwardType forward_type = 5;
+  optional string dest_address = 6;
+  optional string dest_port = 7;
+  optional string password = 8;
+  optional bool support_udp = 9;
+}
+
+// 出口列表查询参数
+message EgressListParams {
+  optional int32 page = 1;
+  optional int32 page_size = 2;
+  optional string egress_id = 3;
+  optional string server_id = 4;
+  optional EgressMode egress_mode = 5;
+}
+
+// 出口列表响应
+message EgressListResponse {
+  repeated EgressItem items = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+// 测试连接响应
+message TestConnectionResponse {
+  bool success = 1;
+  int32 latency = 2;
+  optional string error = 3;
+}
+
+// 出口统计响应
+message EgressStatsResponse {
+  int32 connections_count = 1;
+  int64 bytes_transferred = 2;
+  string last_activity = 3;
+}
+
+// 可用服务器项目
+message AvailableServerItem {
+  string label = 1;
+  string value = 2;
+}
+
+// 可用服务器列表响应
+message AvailableServersResponse {
+  repeated AvailableServerItem servers = 1;
+}
+
+// 配置验证响应
+message ValidateConfigResponse {
+  bool valid = 1;
+  repeated string errors = 2;
+}
+
+// 通用API响应
+message ApiResponse {
+  bool success = 1;
+  optional string message = 2;
+  optional string error_code = 3;
+} 

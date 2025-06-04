@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package nspass.model.v1;
+
+// 用户信息
+message User {
+  string id = 1;
+  string username = 2;
+  string email = 3;
+  UserRole role = 4;
+  int64 created_at = 5;
+}
+
+// 用户角色枚举
+enum UserRole {
+  USER_ROLE_UNSPECIFIED = 0;
+  USER_ROLE_ADMIN = 1;
+  USER_ROLE_USER = 2;
+  USER_ROLE_GUEST = 3;
+} 

@@ -224,3 +224,92 @@ MIT License
 ---
 
 **🎉 享受现代化的前端开发体验！**
+
+# nspass-web
+
+Next.js Web应用，使用TypeScript和protobuf进行类型管理。
+
+## 🚀 技术栈
+
+- **Next.js 15** - React框架
+- **TypeScript** - 类型安全
+- **ts-proto** - 现代化的protobuf TypeScript生成器
+- **Tailwind CSS** - 样式框架
+
+## 📦 Protobuf类型管理
+
+本项目使用 `ts-proto` 来生成类型安全的TypeScript代码：
+
+### 安装和配置
+
+```bash
+# 安装依赖
+npm install ts-proto --save-dev
+
+# 生成类型
+npm run proto:generate
+
+# 监控proto文件变化并自动生成
+npm run proto:watch
+```
+
+### 特性
+
+- ✅ **字符串枚举** - 更直观的枚举值
+- ✅ **camelCase字段** - 符合JavaScript约定
+- ✅ **纯TypeScript接口** - 无复杂的protobuf类
+- ✅ **类型安全** - 完整的TypeScript支持
+- ✅ **开发者友好** - 优秀的IDE体验
+
+### 使用示例
+
+```typescript
+import { EgressItem, EgressMode } from './app/types/generated/egress';
+
+// 直接使用生成的类型，无需适配器
+const egress: EgressItem = {
+  egressId: 'egress-001',          // camelCase ✅
+  serverId: 'server-001',          // camelCase ✅  
+  egressMode: EgressMode.EGRESS_MODE_DIRECT, // 字符串枚举 ✅
+  targetAddress: '192.168.1.100'
+};
+```
+
+## 🛠️ 开发
+
+```bash
+# 安装依赖
+npm install
+
+# 生成protobuf类型
+npm run proto:generate
+
+# 启动开发服务器
+npm run dev
+
+# 构建
+npm run build
+```
+
+## 📁 项目结构
+
+```
+├── app/
+│   ├── types/generated/        # ts-proto生成的类型文件
+│   │   ├── egress.ts
+│   │   └── common.ts
+│   └── services/               # 业务服务层
+├── proto/                      # protobuf定义文件
+│   ├── egress.proto
+│   └── common.proto
+└── examples/                   # 使用示例
+```
+
+## 🎯 核心优势
+
+相比传统的protobuf-js方案，ts-proto提供了：
+
+1. **无适配器需求** - 直接生成开发者友好的代码
+2. **更好的类型体验** - 纯TypeScript接口
+3. **现代化约定** - camelCase + 字符串枚举
+4. **优秀的IDE支持** - 完美的自动补全和类型检查

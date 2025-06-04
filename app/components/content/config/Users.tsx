@@ -13,7 +13,7 @@ import {
     UserConfigItem, 
     CreateUserConfigData, 
     UserConfigListParams 
-} from '@/services/users-config-service';
+} from '@/services/usersConfig';
 
 // 流量重置方式枚举
 const trafficResetTypes = {

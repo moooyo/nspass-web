@@ -13,7 +13,7 @@ import {
     websiteConfigService, 
     WebsiteConfig, 
     UpdateWebsiteConfigData 
-} from '@/services/website-config-service';
+} from '@/services/websiteConfig';
 
 const Website: React.FC = () => {
   const [messageApi, contextHolder] = message.useMessage();

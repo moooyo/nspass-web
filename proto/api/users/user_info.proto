@@ -1,0 +1,175 @@
+syntax = "proto3";
+
+package nspass.api.users.v1;
+
+import "common.proto";
+
+// 用户信息
+message UserInfo {
+  int32 id = 1;
+  string name = 2;
+  string role = 3;
+  string user_group = 4;
+  string traffic = 5;
+  string traffic_reset_date = 6;
+  string forward_rule_config_limit = 7;
+  optional string email = 8;
+  optional string phone = 9;
+  optional string avatar = 10;
+  string create_time = 11;
+  string last_login_time = 12;
+}
+
+// 更新用户信息请求
+message UpdateUserInfoRequest {
+  optional string name = 1;
+  optional string email = 2;
+  optional string phone = 3;
+  optional string avatar = 4;
+}
+
+// 修改密码请求
+message ChangePasswordRequest {
+  string old_password = 1;
+  string new_password = 2;
+  string confirm_password = 3;
+}
+
+// 上传头像响应数据
+message UploadAvatarData {
+  string avatar_url = 1;
+}
+
+// 流量使用项
+message TrafficUsageItem {
+  string date = 1;
+  double upload = 2;
+  double download = 3;
+}
+
+// 月流量使用项
+message MonthlyTrafficUsageItem {
+  string month = 1;
+  double upload = 2;
+  double download = 3;
+}
+
+// 流量统计数据
+message TrafficStats {
+  double total_used = 1;
+  double total_limit = 2;
+  repeated TrafficUsageItem daily_usage = 3;
+  repeated MonthlyTrafficUsageItem monthly_usage = 4;
+}
+
+// 登录历史项
+message LoginHistoryItem {
+  string login_time = 1;
+  string ip = 2;
+  string user_agent = 3;
+  string location = 4;
+  bool success = 5;
+}
+
+// 活动日志项
+message ActivityLogItem {
+  string timestamp = 1;
+  string action = 2;
+  string description = 3;
+  string ip = 4;
+  string user_agent = 5;
+}
+
+// 二步验证数据
+message TwoFactorAuthData {
+  optional string qr_code = 1;
+  repeated string backup_codes = 2;
+}
+
+// 验证二步验证码响应
+message VerifyTwoFactorAuthData {
+  bool verified = 1;
+}
+
+// === 请求消息 ===
+
+// 获取登录历史请求
+message GetLoginHistoryRequest {
+  optional int32 page = 1;
+  optional int32 page_size = 2;
+}
+
+// 获取活动日志请求
+message GetActivityLogsRequest {
+  optional int32 page = 1;
+  optional int32 page_size = 2;
+}
+
+// 启用/禁用二步验证请求
+message ToggleTwoFactorAuthRequest {
+  bool enabled = 1;
+}
+
+// 验证二步验证码请求
+message VerifyTwoFactorAuthRequest {
+  string code = 1;
+}
+
+// 注销账户请求
+message DeleteAccountRequest {
+  string password = 1;
+}
+
+// === 响应消息 ===
+
+message GetCurrentUserInfoResponse {
+  nspass.common.v1.ApiResponse base = 1;
+  optional UserInfo data = 2;
+}
+
+message UpdateCurrentUserInfoResponse {
+  nspass.common.v1.ApiResponse base = 1;
+  optional UserInfo data = 2;
+}
+
+message ChangePasswordResponse {
+  nspass.common.v1.ApiResponse base = 1;
+}
+
+message UploadAvatarResponse {
+  nspass.common.v1.ApiResponse base = 1;
+  optional UploadAvatarData data = 2;
+}
+
+message GetTrafficStatsResponse {
+  nspass.common.v1.ApiResponse base = 1;
+  optional TrafficStats data = 2;
+}
+
+message GetLoginHistoryResponse {
+  nspass.common.v1.ApiResponse base = 1;
+  repeated LoginHistoryItem data = 2;
+}
+
+message GetActivityLogsResponse {
+  nspass.common.v1.ApiResponse base = 1;
+  repeated ActivityLogItem data = 2;
+}
+
+message ResetTrafficResponse {
+  nspass.common.v1.ApiResponse base = 1;
+}
+
+message ToggleTwoFactorAuthResponse {
+  nspass.common.v1.ApiResponse base = 1;
+  optional TwoFactorAuthData data = 2;
+}
+
+message VerifyTwoFactorAuthResponse {
+  nspass.common.v1.ApiResponse base = 1;
+  optional VerifyTwoFactorAuthData data = 2;
+}
+
+message DeleteAccountResponse {
+  nspass.common.v1.ApiResponse base = 1;
+} 

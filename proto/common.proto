@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package nspass.common.v1;
+
+// 通用分页请求
+message PaginationRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+// 通用分页响应
+message PaginationResponse {
+  int32 total = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  int32 total_pages = 4;
+}
+
+// 通用API响应封装
+message ApiResponse {
+  bool success = 1;
+  optional string message = 2;
+  optional string error_code = 3;
+}
+
+// 批量操作请求
+message BatchRequest {
+  repeated string ids = 1;
+}
+
+// 操作结果
+message OperationResult {
+  bool success = 1;
+  optional string error = 2;
+}
+
+// 批量操作响应
+message BatchOperationResponse {
+  repeated OperationResult results = 1;
+  int32 success_count = 2;
+  int32 failure_count = 3;
+}
+
+// 状态枚举
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_ACTIVE = 1;
+  STATUS_INACTIVE = 2;
+  STATUS_PENDING = 3;
+  STATUS_ERROR = 4;
+}
+
+// 排序方向
+enum SortDirection {
+  SORT_DIRECTION_UNSPECIFIED = 0;
+  SORT_DIRECTION_ASC = 1;
+  SORT_DIRECTION_DESC = 2;
+}
+
+// 排序参数
+message SortParam {
+  string field = 1;
+  SortDirection direction = 2;
+}
+
+// 过滤操作符
+enum FilterOperator {
+  FILTER_OPERATOR_UNSPECIFIED = 0;
+  FILTER_OPERATOR_EQUALS = 1;
+  FILTER_OPERATOR_NOT_EQUALS = 2;
+  FILTER_OPERATOR_CONTAINS = 3;
+  FILTER_OPERATOR_STARTS_WITH = 4;
+  FILTER_OPERATOR_ENDS_WITH = 5;
+  FILTER_OPERATOR_GREATER_THAN = 6;
+  FILTER_OPERATOR_LESS_THAN = 7;
+  FILTER_OPERATOR_IN = 8;
+  FILTER_OPERATOR_NOT_IN = 9;
+}
+
+// 过滤参数
+message FilterParam {
+  string field = 1;
+  FilterOperator operator = 2;
+  string value = 3;
+  repeated string values = 4; // 用于IN/NOT_IN操作
+}
+
+ 

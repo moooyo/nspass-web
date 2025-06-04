@@ -3,10 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "proto:generate": "protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./app/types/generated --ts_proto_opt=stringEnums=true,snakeToCamel=true,useOptionals=all,onlyTypes=true --proto_path=./proto $(find proto -name '*.proto')",
+    "proto:watch": "chokidar \"proto/**/*.proto\" -c \"npm run proto:generate\""
   },
   "dependencies": {
     "@ant-design/charts": "^2.3.0",
@@ -31,10 +33,12 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/react-leaflet": "^3.0.0",
+    "chokidar-cli": "^3.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.3.2",
     "msw": "^2.9.0",
     "tailwindcss": "^4",
+    "ts-proto": "^2.7.2",
     "typescript": "^5"
   },
   "msw": {
