@@ -1,5 +1,5 @@
 {
-  "name": "antd-demo",
+  "name": "nspass-web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -33,7 +33,13 @@
     "@types/react-leaflet": "^3.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.3.2",
+    "msw": "^2.9.0",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }
