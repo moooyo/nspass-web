@@ -11,9 +11,9 @@ import { serversService, ServerStatus } from '@/services/servers';
 import { userInfoService } from '@/services/userInfo';
 
 // ✅ 直接使用proto生成的类型
-import { GetTrafficTrendRequest } from '@/app/types/generated/api/dashboard/dashboard';
-import { CreateServerRequest } from '@/app/types/generated/api/servers/servers';
-import { UpdateUserInfoRequest } from '@/app/types/generated/api/users/user_info';
+import { GetTrafficTrendRequest } from '@/types/generated/api/dashboard/dashboard';
+import { CreateServerRequest } from '@/types/generated/api/servers/servers';
+import { UpdateUserInfoRequest } from '@/types/generated/api/users/user_info';
 
 async function demonstrateProtoApiUsage() {
   console.log('🎉 Proto API 类型统一管理示例\n');

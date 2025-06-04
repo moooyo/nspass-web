@@ -160,7 +160,7 @@ export default function MSWDemoPage() {
       title: '操作',
       key: 'action',
       render: (_: unknown, record: User) => (
-        <Space size="middle">
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
           <Button type="link" size="small">编辑</Button>
           <Button 
             type="link" 
@@ -170,7 +170,7 @@ export default function MSWDemoPage() {
           >
             删除
           </Button>
-        </Space>
+        </div>
       ),
     },
   ];

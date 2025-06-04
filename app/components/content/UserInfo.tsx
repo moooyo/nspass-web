@@ -41,75 +41,71 @@ import {
 
 const UserInfo: React.FC = () => {
   return (
-    <>
-      <div
-        style={{
-          margin: 24,
+    <div
+      style={{
+        margin: 24,
+      }}
+    >
+      <ProForm
+        onFinish={async (values: any) => {
+          await waitTime(2000);
+          console.log(values);
+          message.success('提交成功');
+        }}
+        initialValues={{
+          name: 'user name',
+          useMode: 'chapter',
+          company: "my company",
+          user_group: "user group",
+          role: "admin",
+          traffic: "1000",
+          traffic_reset_date: "2025-01-01",
+          forward_rule_config_limit: "1000",
+        }}
+        submitter={{
+          searchConfig: {
+            submitText: '保存',
+            resetText: '重置',
+          },
         }}
       >
-        <ProForm
-          // @ts-ignore
-          labelWidth="auto"
-          trigger={
-            <Button type="primary">
-              <PlusOutlined />
-              新建表单
-            </Button>
-          }
-          onFinish={async (values: any) => {
-            await waitTime(2000);
-            console.log(values);
-            message.success('提交成功');
-          }}
-          initialValues={{
-            name: 'user name',
-            useMode: 'chapter',
-            company: "my company",
-            user_group: "user group",
-            role: "admin",
-            traffic: "1000",
-            traffic_reset_date: "2025-01-01",
-            forward_rule_config_limit: "1000",
-          }}
-        >
         <ProFormText
-            width="md"
-            name="name"
-            label="用户名"
+          width="md"
+          name="name"
+          label="用户名"
         />
         <ProFormText 
-            width="md"
-            name="role"
-            label="角色"
-            disabled
+          width="md"
+          name="role"
+          label="角色"
+          disabled
         />
         <ProFormText
-            width="md"
-            name="user_group"
-            label="用户组"
-            disabled
+          width="md"
+          name="user_group"
+          label="用户组"
+          disabled
         />
         <ProFormText
-            width="md"
-            name="traffic"
-            label="流量"
-            disabled
+          width="md"
+          name="traffic"
+          label="流量"
+          disabled
         />
         <ProFormText
-            width="md"
-            name="traffic_reset_date"
-            label="流量重置日期"
-            disabled
+          width="md"
+          name="traffic_reset_date"
+          label="流量重置日期"
+          disabled
         />
         <ProFormText 
-            width="md"
-            name="forward_rule_config_limit"
-            label="转发规则配置限制"
-            disabled
+          width="md"
+          name="forward_rule_config_limit"
+          label="转发规则配置限制"
+          disabled
         />
-        </ProForm>
-      </div>
-    </>
+      </ProForm>
+    </div>
   );
 };
 

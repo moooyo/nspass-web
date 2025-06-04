@@ -187,10 +187,12 @@ const Users: React.FC = () => {
             dataIndex: 'banned',
             width: '8%',
             render: (_, record) => (
-                <Badge 
-                    status={record.banned ? 'error' : 'success'} 
-                    text={record.banned ? '已封禁' : '正常'} 
-                />
+                <div style={{ display: 'inline-flex', alignItems: 'center' }}>
+                    <Badge 
+                        status={record.banned ? 'error' : 'success'} 
+                        text={record.banned ? '已封禁' : '正常'} 
+                    />
+                </div>
             ),
             valueType: 'select',
             valueEnum: {
@@ -202,57 +204,59 @@ const Users: React.FC = () => {
             title: '操作',
             valueType: 'option',
             width: '20%',
-            render: (_, record) => [
-                <Popconfirm
-                    key="ban"
-                    title={record.banned ? '确定要解除封禁该用户吗？' : '确定要封禁该用户吗？'}
-                    onConfirm={() => toggleBanUser(record)}
-                    okText="确定"
-                    cancelText="取消"
-                >
-                    <a>
-                        <Tag color={record.banned ? 'green' : 'red'}>
-                            {record.banned ? '解除封禁' : '封禁'}
-                        </Tag>
+            render: (_, record) => (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                    <Popconfirm
+                        key="ban"
+                        title={record.banned ? '确定要解除封禁该用户吗？' : '确定要封禁该用户吗？'}
+                        onConfirm={() => toggleBanUser(record)}
+                        okText="确定"
+                        cancelText="取消"
+                    >
+                        <a>
+                            <Tag color={record.banned ? 'green' : 'red'}>
+                                {record.banned ? '解除封禁' : '封禁'}
+                            </Tag>
+                        </a>
+                    </Popconfirm>
+                    <Popconfirm
+                        key="resetTraffic"
+                        title="确定要重置该用户的流量吗？"
+                        onConfirm={() => resetUserTraffic(record)}
+                        okText="确定"
+                        cancelText="取消"
+                    >
+                        <a>
+                            <Tag color="blue">重置流量</Tag>
+                        </a>
+                    </Popconfirm>
+                    <Popconfirm
+                        key="invite"
+                        title="确定要发送邀请注册链接吗？"
+                        onConfirm={() => inviteUser(record)}
+                        okText="确定"
+                        cancelText="取消"
+                    >
+                        <a>
+                            <Tag color="purple">邀请注册</Tag>
+                        </a>
+                    </Popconfirm>
+                    <a
+                        key="editable"
+                        onClick={() => {
+                            const editableKey = record.id;
+                            setEditableKeys([editableKey]);
+                        }}
+                    >
+                        <Tag color="green">编辑</Tag>
                     </a>
-                </Popconfirm>,
-                <Popconfirm
-                    key="resetTraffic"
-                    title="确定要重置该用户的流量吗？"
-                    onConfirm={() => resetUserTraffic(record)}
-                    okText="确定"
-                    cancelText="取消"
-                >
-                    <a>
-                        <Tag color="blue">重置流量</Tag>
-                    </a>
-                </Popconfirm>,
-                <Popconfirm
-                    key="invite"
-                    title="确定要发送邀请注册链接吗？"
-                    onConfirm={() => inviteUser(record)}
-                    okText="确定"
-                    cancelText="取消"
-                >
-                    <a>
-                        <Tag color="purple">邀请注册</Tag>
-                    </a>
-                </Popconfirm>,
-                <a
-                    key="editable"
-                    onClick={() => {
-                        const editableKey = record.id;
-                        setEditableKeys([editableKey]);
-                    }}
-                >
-                    <Tag color="green">编辑</Tag>
-                </a>,
-            ],
+                </div>
+            ),
         },
     ];
 
     return (
-        <>
+        <div>
             <QueryFilter
                 defaultCollapsed
                 split
@@ -308,27 +312,32 @@ const Users: React.FC = () => {
                         : false
                 }
                 loading={loading}
-                toolBarRender={() => [
-                    <Button
-                        key="button"
-                        icon={<PlusOutlined />}
-                        onClick={() => {
-                            setPosition('bottom');
-                        }}
-                        type="primary"
-                    >
-                        新建用户
-                    </Button>,
-                    <Button
-                        key="refresh"
-                        icon={<ReloadOutlined />}
-                        onClick={() => {
-                            loadUserConfigs();
-                        }}
-                    >
-                        刷新
-                    </Button>,
-                ]}
+                toolBarRender={() => {
+                    const NewButton = () => (
+                        <Button
+                            key="button"
+                            icon={<PlusOutlined />}
+                            onClick={() => {
+                                setPosition('bottom');
+                            }}
+                            type="primary"
+                        >
+                            新建用户
+                        </Button>
+                    );
+                    const RefreshButton = () => (
+                        <Button
+                            key="refresh"
+                            icon={<ReloadOutlined />}
+                            onClick={() => {
+                                loadUserConfigs();
+                            }}
+                        >
+                            刷新
+                        </Button>
+                    );
+                    return [<NewButton key="new" />, <RefreshButton key="refresh" />];
+                }}
                 columns={columns}
                 request={async () => {
                     // 这个函数在初始化时会被调用，但我们使用自己的loadUserConfigs
@@ -421,7 +430,7 @@ const Users: React.FC = () => {
                     },
                 }}
             />
-        </>
+        </div>
     );
 };
 

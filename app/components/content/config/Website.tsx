@@ -104,7 +104,7 @@ const Website: React.FC = () => {
       {contextHolder}
       <Card 
         title="网站配置" 
-        bordered={false}
+        variant="outlined"
         extra={
           <Space>
             <Button 

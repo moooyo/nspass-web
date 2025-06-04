@@ -249,7 +249,7 @@ const Egress: React.FC = () => {
     ];
 
     return (
-        <>
+        <div>
             <QueryFilter
                 defaultCollapsed
                 split
@@ -327,7 +327,7 @@ const Egress: React.FC = () => {
                 onOpenChange={setCreateModalVisible}
                 onFinish={handleCreateEgress}
                 modalProps={{
-                    destroyOnClose: true,
+                    destroyOnHidden: true,
                     onCancel: () => setCreateModalVisible(false),
                 }}
             >
@@ -412,7 +412,7 @@ const Egress: React.FC = () => {
                     }}
                 </ProFormDependency>
             </ModalForm>
-        </>
+        </div>
     );
 };
 

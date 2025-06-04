@@ -22,9 +22,9 @@ import type {
   RestartServerResponse,
   GetServerStatsResponse,
   GetRegionsResponse
-} from '@/app/types/generated/api/servers/servers';
-import { ServerStatus } from '@/app/types/generated/api/servers/servers';
-import type { ApiResponse as CommonApiResponse } from '@/app/types/generated/common';
+} from '@/types/generated/api/servers/servers';
+import { ServerStatus } from '@/types/generated/api/servers/servers';
+import type { ApiResponse as CommonApiResponse } from '@/types/generated/common';
 
 // 将httpClient的ApiResponse转换为proto响应格式的辅助函数
 function toProtoResponse<T>(response: ApiResponse<T>): { base?: CommonApiResponse; data?: T } {
@@ -136,7 +136,7 @@ export type {
   GetServersRequest,
   ServerStats,
   RegionOption
-} from '@/app/types/generated/api/servers/servers';
+} from '@/types/generated/api/servers/servers';
 
 // 单独导出枚举作为值
-export { ServerStatus } from '@/app/types/generated/api/servers/servers'; 
+export { ServerStatus } from '@/types/generated/api/servers/servers'; 

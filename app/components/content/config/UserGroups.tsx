@@ -92,7 +92,7 @@ const UserGroups: React.FC = () => {
     ];
 
     return (
-        <>
+        <div>
             <QueryFilter
                 defaultCollapsed
                 split
@@ -157,7 +157,7 @@ const UserGroups: React.FC = () => {
                     onChange: setEditableKeys,
                 }}
             />
-        </>
+        </div>
     );
 };
 

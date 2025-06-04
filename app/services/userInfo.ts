@@ -26,8 +26,8 @@ import type {
   ToggleTwoFactorAuthResponse,
   VerifyTwoFactorAuthResponse,
   DeleteAccountResponse
-} from '@/app/types/generated/api/users/user_info';
-import type { ApiResponse as CommonApiResponse } from '@/app/types/generated/common';
+} from '@/types/generated/api/users/user_info';
+import type { ApiResponse as CommonApiResponse } from '@/types/generated/common';
 
 // 将httpClient的ApiResponse转换为proto响应格式的辅助函数
 function toProtoResponse<T>(response: ApiResponse<T>): { base?: CommonApiResponse; data?: T } {
@@ -169,4 +169,4 @@ export type {
   ActivityLogItem,
   TwoFactorAuthData,
   VerifyTwoFactorAuthData
-} from '@/app/types/generated/api/users/user_info'; 
+} from '@/types/generated/api/users/user_info'; 

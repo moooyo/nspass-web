@@ -123,30 +123,32 @@ const Servers: React.FC = () => {
             title: '操作',
             valueType: 'option',
             width: '10%',
-            render: (_, record, __, action) => [
-                <a
-                    key="editable"
-                    onClick={() => {
-                        action?.startEditable?.(record.id);
-                    }}
-                >
-                    编辑
-                </a>,
-                <a
-                    key="delete"
-                    onClick={() => {
-                        setDataSource(dataSource.filter((item) => item.id !== record.id));
-                        message.success('删除成功');
-                    }}
-                >
-                    删除
-                </a>,
-            ],
+            render: (_, record, __, action) => (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                    <a
+                        key="editable"
+                        onClick={() => {
+                            action?.startEditable?.(record.id);
+                        }}
+                    >
+                        编辑
+                    </a>
+                    <a
+                        key="delete"
+                        onClick={() => {
+                            setDataSource(dataSource.filter((item) => item.id !== record.id));
+                            message.success('删除成功');
+                        }}
+                    >
+                        删除
+                    </a>
+                </div>
+            ),
         },
     ];
 
     return (
-        <>
+        <div>
             <QueryFilter
                 defaultCollapsed
                 split
@@ -195,18 +197,21 @@ const Servers: React.FC = () => {
                         : false
                 }
                 loading={false}
-                toolBarRender={() => [
-                    <Button
-                        key="button"
-                        icon={<PlusOutlined />}
-                        onClick={() => {
-                            setPosition('bottom');
-                        }}
-                        type="primary"
-                    >
-                        新建
-                    </Button>,
-                ]}
+                toolBarRender={() => {
+                    const NewButton = () => (
+                        <Button
+                            key="button"
+                            icon={<PlusOutlined />}
+                            onClick={() => {
+                                setPosition('bottom');
+                            }}
+                            type="primary"
+                        >
+                            新建
+                        </Button>
+                    );
+                    return [<NewButton key="new" />];
+                }}
                 columns={columns}
                 request={async () => ({
                     data: defaultData,
@@ -227,7 +232,7 @@ const Servers: React.FC = () => {
                     onChange: setEditableKeys,
                 }}
             />
-        </>
+        </div>
     );
 };
 

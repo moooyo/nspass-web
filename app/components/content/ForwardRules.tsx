@@ -1,4 +1,4 @@
-import React, { useState, useMemo, FC, useRef } from 'react';
+import React, { useState, useMemo, FC, useRef, useEffect } from 'react';
 import { Button, message, Tag, Popconfirm, Badge, Space, Tooltip, Modal, Form, Card, Row, Col, Typography, Divider, Input, Select } from 'antd';
 import {
     EditableProTable,
@@ -6,6 +6,7 @@ import {
     ProFormSelect,
     ProFormText,
     QueryFilter,
+    EditableFormInstance,
 } from '@ant-design/pro-components';
 import { 
     PlusOutlined, 
@@ -301,6 +302,8 @@ const ForwardRules: React.FC = () => {
     
     // 出口类型选择
     const [selectedExitType, setSelectedExitType] = useState<keyof typeof exitTypeEnum>('PROXY');
+
+    const editableFormRef = useRef<EditableFormInstance>(null);
 
     // 暂停/启动规则
     const toggleRuleStatus = (record: ForwardRuleItem) => {
@@ -606,36 +609,45 @@ const ForwardRules: React.FC = () => {
         {
             title: '规则ID',
             dataIndex: 'ruleId',
-            formItemProps: {
-                rules: [{ required: true, message: '规则ID为必填项' }],
-            },
-            width: '12%',
+            width: '10%',
+            fieldProps: {
+                autoFocus: false,
+            }
         },
         {
             title: '入口',
             key: 'entry',
             width: '15%',
             render: (_, record) => (
-                <>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                     <Tag color="blue">{entryTypeEnum[record.entryType].text}</Tag>
                     <span>{record.entryConfig}</span>
-                </>
+                </div>
             ),
             renderFormItem: () => (
-                <Space>
+                <div>
                     <ProFormSelect
                         name="entryType"
                         placeholder="入口类型"
                         valueEnum={entryTypeEnum}
                         rules={[{ required: true, message: '入口类型为必填项' }]}
+                        fieldProps={{
+                            autoFocus: false,
+                        }}
                     />
                     <ProFormText
                         name="entryConfig"
                         placeholder="入口配置"
                         rules={[{ required: true, message: '入口配置为必填项' }]}
+                        fieldProps={{
+                            autoFocus: false,
+                        }}
                     />
-                </Space>
+                </div>
             ),
+            fieldProps: {
+                autoFocus: false,
+            }
         },
         {
             title: '已用流量 (MB)',
@@ -643,6 +655,9 @@ const ForwardRules: React.FC = () => {
             valueType: 'digit',
             width: '10%',
             sorter: (a, b) => a.trafficUsed - b.trafficUsed,
+            fieldProps: {
+                autoFocus: false,
+            }
         },
         {
             title: '途径节点',
@@ -660,18 +675,26 @@ const ForwardRules: React.FC = () => {
                 </Space>
             ),
             renderFormItem: () => (
-                <ProFormText
-                    name="viaNodes"
-                    placeholder="输入节点，以逗号分隔"
-                />
+                <div>
+                    <ProFormText
+                        name="viaNodes"
+                        placeholder="输入节点，以逗号分隔"
+                        fieldProps={{
+                            autoFocus: false,
+                        }}
+                    />
+                </div>
             ),
+            fieldProps: {
+                autoFocus: false,
+            }
         },
         {
             title: '出口',
             key: 'exit',
             width: '15%',
             render: (_, record) => (
-                <>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                     <Tag color={
                         record.exitType === 'DIRECT' ? 'green' : 
                         record.exitType === 'PROXY' ? 'orange' : 
@@ -680,22 +703,31 @@ const ForwardRules: React.FC = () => {
                         {exitTypeEnum[record.exitType].text}
                     </Tag>
                     <span>{record.exitConfig}</span>
-                </>
+                </div>
             ),
             renderFormItem: () => (
-                <Space>
+                <div>
                     <ProFormSelect
                         name="exitType"
                         placeholder="出口类型"
                         valueEnum={exitTypeEnum}
                         rules={[{ required: true, message: '出口类型为必填项' }]}
+                        fieldProps={{
+                            autoFocus: false,
+                        }}
                     />
                     <ProFormText
                         name="exitConfig"
                         placeholder="出口配置"
+                        fieldProps={{
+                            autoFocus: false,
+                        }}
                     />
-                </Space>
+                </div>
             ),
+            fieldProps: {
+                autoFocus: false,
+            }
         },
         {
             title: '状态',
@@ -720,49 +752,51 @@ const ForwardRules: React.FC = () => {
             title: '操作',
             valueType: 'option',
             width: '30%',
-            render: (_, record) => [
-                <Tooltip key="toggle" title={record.status === 'ACTIVE' ? '暂停' : '启动'}>
-                    <a onClick={() => toggleRuleStatus(record)}>
-                        {record.status === 'ACTIVE' ? 
-                            <Tag icon={<PauseCircleOutlined />} color="default">暂停</Tag> : 
-                            <Tag icon={<PlayCircleOutlined />} color="success">启动</Tag>
-                        }
-                    </a>
-                </Tooltip>,
-                <Tooltip key="diagnose" title="诊断">
-                    <a onClick={() => diagnoseRule(record)}>
-                        <Tag icon={<BugOutlined />} color="processing">诊断</Tag>
-                    </a>
-                </Tooltip>,
-                <Tooltip key="copy" title="复制">
-                    <a onClick={() => copyRule(record)}>
-                        <Tag icon={<CopyOutlined />} color="cyan">复制</Tag>
-                    </a>
-                </Tooltip>,
-                <Tooltip key="edit" title="编辑">
-                    <a onClick={() => setEditableKeys([record.id])}>
-                        <Tag icon={<EditOutlined />} color="blue">编辑</Tag>
-                    </a>
-                </Tooltip>,
-                <Popconfirm
-                    key="delete"
-                    title="确定要删除此规则吗？"
-                    onConfirm={() => deleteRule(record)}
-                    okText="确定"
-                    cancelText="取消"
-                >
-                    <Tooltip title="删除">
-                        <a>
-                            <Tag icon={<DeleteOutlined />} color="error">删除</Tag>
+            render: (_, record) => (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                    <Tooltip key="toggle" title={record.status === 'ACTIVE' ? '暂停' : '启动'}>
+                        <a onClick={() => toggleRuleStatus(record)}>
+                            {record.status === 'ACTIVE' ? 
+                                <Tag icon={<PauseCircleOutlined />} color="default">暂停</Tag> : 
+                                <Tag icon={<PlayCircleOutlined />} color="success">启动</Tag>
+                            }
                         </a>
                     </Tooltip>
-                </Popconfirm>,
-            ],
+                    <Tooltip key="diagnose" title="诊断">
+                        <a onClick={() => diagnoseRule(record)}>
+                            <Tag icon={<BugOutlined />} color="processing">诊断</Tag>
+                        </a>
+                    </Tooltip>
+                    <Tooltip key="copy" title="复制">
+                        <a onClick={() => copyRule(record)}>
+                            <Tag icon={<CopyOutlined />} color="cyan">复制</Tag>
+                        </a>
+                    </Tooltip>
+                    <Tooltip key="edit" title="编辑">
+                        <a onClick={() => setEditableKeys([record.id])}>
+                            <Tag icon={<EditOutlined />} color="blue">编辑</Tag>
+                        </a>
+                    </Tooltip>
+                    <Popconfirm
+                        key="delete"
+                        title="确定要删除此规则吗？"
+                        onConfirm={() => deleteRule(record)}
+                        okText="确定"
+                        cancelText="取消"
+                    >
+                        <Tooltip title="删除">
+                            <a>
+                                <Tag icon={<DeleteOutlined />} color="error">删除</Tag>
+                            </a>
+                        </Tooltip>
+                    </Popconfirm>
+                </div>
+            ),
         },
     ];
 
     return (
-        <>
+        <div>
             <QueryFilter
                 defaultCollapsed
                 split
@@ -823,19 +857,22 @@ const ForwardRules: React.FC = () => {
                         : false
                 }
                 loading={false}
-                toolBarRender={() => [
-                    <Button
-                        key="button"
-                        icon={<PlusOutlined />}
-                        onClick={() => {
-                            setPosition('bottom');
-                            setModelFormVisible(true);
-                        }}
-                        type="primary"
-                    >
-                        新建规则
-                    </Button>,
-                ]}
+                toolBarRender={() => {
+                    const NewButton = () => (
+                        <Button
+                            key="button"
+                            icon={<PlusOutlined />}
+                            onClick={() => {
+                                setPosition('bottom');
+                                setModelFormVisible(true);
+                            }}
+                            type="primary"
+                        >
+                            新建规则
+                        </Button>
+                    );
+                    return [<NewButton key="new" />];
+                }}
                 columns={columns}
                 request={async () => ({
                     data: defaultData,
@@ -855,9 +892,17 @@ const ForwardRules: React.FC = () => {
                     },
                     onChange: setEditableKeys,
                     actionRender: (row, config, defaultDoms) => {
-                        return [defaultDoms.save, defaultDoms.cancel];
+                        const SaveButton = () => (
+                            <span style={{ marginRight: 8 }}>{defaultDoms.save}</span>
+                        );
+                        const CancelButton = () => defaultDoms.cancel;
+                        return [<SaveButton key="save" />, <CancelButton key="cancel" />];
                     },
                 }}
+                defaultSize="small"
+                search={false}
+                options={false}
+                tableAlertRender={false}
             />
 
             {/* 服务器配置ModelForm对话框 */}
@@ -865,6 +910,7 @@ const ForwardRules: React.FC = () => {
                 title="配置转发规则路径"
                 open={modelFormVisible}
                 width={900}
+                destroyOnHidden={true}
                 onCancel={() => {
                     setModelFormVisible(false);
                     resetPathConfig();
@@ -898,7 +944,7 @@ const ForwardRules: React.FC = () => {
                     <ServerSelection />
                 </Form>
             </Modal>
-        </>
+        </div>
     );
 };
 

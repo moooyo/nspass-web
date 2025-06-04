@@ -32,8 +32,8 @@ import type {
   RefreshDashboardResponse,
   TimePeriod,
   LogLevel
-} from '@/app/types/generated/api/dashboard/dashboard';
-import type { ApiResponse as CommonApiResponse } from '@/app/types/generated/common';
+} from '@/types/generated/api/dashboard/dashboard';
+import type { ApiResponse as CommonApiResponse } from '@/types/generated/common';
 
 // 将httpClient的ApiResponse转换为proto响应格式的辅助函数
 function toProtoResponse<T>(response: ApiResponse<T>): { base?: CommonApiResponse; data?: T } {
@@ -195,10 +195,10 @@ export type {
   GetUserTrafficStatsRequest,
   GetTopRulesRequest,
   GetLogSummaryRequest
-} from '@/app/types/generated/api/dashboard/dashboard';
+} from '@/types/generated/api/dashboard/dashboard';
 
 // 单独导出枚举作为值
 export {
   TimePeriod,
   LogLevel
-} from '@/app/types/generated/api/dashboard/dashboard'; 
+} from '@/types/generated/api/dashboard/dashboard'; 
