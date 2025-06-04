@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button, message, Space, Badge, Tag, Popconfirm, Select } from 'antd';
 import {
     EditableProTable,
@@ -8,6 +8,12 @@ import {
     QueryFilter,
 } from '@ant-design/pro-components';
 import { PlusOutlined, ReloadOutlined, UserAddOutlined, StopOutlined } from '@ant-design/icons';
+import { 
+    usersConfigService, 
+    UserConfigItem, 
+    CreateUserConfigData, 
+    UserConfigListParams 
+} from '@/services/users-config-service';
 
 // 流量重置方式枚举
 const trafficResetTypes = {
@@ -24,82 +30,99 @@ const userGroupOptions = [
     { label: '访客组', value: 'guest' },
 ];
 
-type UserItem = {
-    id: React.Key;
-    userId: string;
-    username: string;
-    userGroup: string;
-    expireTime: string;
-    trafficLimit: number; // MB
-    trafficResetType: keyof typeof trafficResetTypes;
-    ruleLimit: number;
-    banned: boolean;
-};
-
-const defaultData: UserItem[] = [
-    {
-        id: 1,
-        userId: 'user001',
-        username: '张三',
-        userGroup: 'admin',
-        expireTime: '2024-12-31',
-        trafficLimit: 10240, // 10GB
-        trafficResetType: 'MONTHLY',
-        ruleLimit: 50,
-        banned: false,
-    },
-    {
-        id: 2,
-        userId: 'user002',
-        username: '李四',
-        userGroup: 'user',
-        expireTime: '2024-10-15',
-        trafficLimit: 5120, // 5GB
-        trafficResetType: 'WEEKLY',
-        ruleLimit: 20,
-        banned: false,
-    },
-    {
-        id: 3,
-        userId: 'user003',
-        username: '王五',
-        userGroup: 'guest',
-        expireTime: '2024-06-30',
-        trafficLimit: 1024, // 1GB
-        trafficResetType: 'NONE',
-        ruleLimit: 10,
-        banned: true,
-    },
-];
-
 const Users: React.FC = () => {
     const [editableKeys, setEditableKeys] = useState<React.Key[]>([]);
-    const [dataSource, setDataSource] = useState<UserItem[]>(defaultData);
+    const [dataSource, setDataSource] = useState<UserConfigItem[]>([]);
     const [position, setPosition] = useState<'top' | 'bottom' | 'hidden'>('bottom');
+    const [loading, setLoading] = useState<boolean>(false);
+    const [pagination, setPagination] = useState({
+        current: 1,
+        pageSize: 10,
+        total: 0,
+    });
+
+    // 加载用户配置列表
+    const loadUserConfigs = async (params?: UserConfigListParams) => {
+        try {
+            setLoading(true);
+            const response = await usersConfigService.getUserConfigs({
+                page: pagination.current,
+                pageSize: pagination.pageSize,
+                ...params,
+            });
+            
+            if (response.success && response.data) {
+                setDataSource(response.data);
+                if (response.pagination) {
+                    setPagination({
+                        current: response.pagination.current,
+                        pageSize: response.pagination.pageSize,
+                        total: response.pagination.total,
+                    });
+                }
+            } else {
+                message.error('加载用户配置失败');
+            }
+        } catch (error) {
+            console.error('加载用户配置失败:', error);
+            message.error('加载用户配置失败');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // 初始化加载数据
+    useEffect(() => {
+        loadUserConfigs();
+    }, []);
 
     // 封禁/解除封禁用户
-    const toggleBanUser = (record: UserItem) => {
-        const newDataSource = dataSource.map(item => {
-            if (item.id === record.id) {
-                return { ...item, banned: !item.banned };
+    const toggleBanUser = async (record: UserConfigItem) => {
+        try {
+            const response = await usersConfigService.toggleBanUser(record.id, !record.banned);
+            if (response.success) {
+                message.success(record.banned ? `已解除封禁用户: ${record.username}` : `已封禁用户: ${record.username}`);
+                loadUserConfigs(); // 重新加载数据
+            } else {
+                message.error(response.message || '操作失败');
             }
-            return item;
-        });
-        setDataSource(newDataSource);
-        message.success(record.banned ? `已解除封禁用户: ${record.username}` : `已封禁用户: ${record.username}`);
+        } catch (error) {
+            console.error('封禁操作失败:', error);
+            message.error('封禁操作失败');
+        }
     };
 
     // 重置用户流量
-    const resetUserTraffic = (record: UserItem) => {
-        message.success(`已重置用户 ${record.username} 的流量`);
+    const resetUserTraffic = async (record: UserConfigItem) => {
+        try {
+            const response = await usersConfigService.resetUserTraffic(record.id);
+            if (response.success) {
+                message.success(`已重置用户 ${record.username} 的流量`);
+            } else {
+                message.error(response.message || '重置流量失败');
+            }
+        } catch (error) {
+            console.error('重置流量失败:', error);
+            message.error('重置流量失败');
+        }
     };
 
     // 邀请注册
-    const inviteUser = (record: UserItem) => {
-        message.success(`已向用户 ${record.username} 发送邀请注册链接`);
+    const inviteUser = async (record: UserConfigItem) => {
+        try {
+            const response = await usersConfigService.inviteUser(record.id);
+            if (response.success) {
+                message.success(`已向用户 ${record.username} 发送邀请注册链接`);
+            } else {
+                message.error(response.message || '发送邀请失败');
+            }
+        } catch (error) {
+            console.error('发送邀请失败:', error);
+            message.error('发送邀请失败');
+        }
     };
 
-    const columns: ProColumns<UserItem>[] = [
+    const columns: ProColumns<UserConfigItem>[] = [
         {
             title: '用户ID',
             dataIndex: 'userId',
@@ -236,6 +259,7 @@ const Users: React.FC = () => {
                 defaultColsNumber={3}
                 onFinish={async (values) => {
                     console.log(values);
+                    await loadUserConfigs(values);
                     message.success('查询成功');
                 }}
             >
@@ -260,7 +284,7 @@ const Users: React.FC = () => {
                 />
             </QueryFilter>
 
-            <EditableProTable<UserItem>
+            <EditableProTable<UserConfigItem>
                 rowKey="id"
                 headerTitle="用户列表"
                 maxLength={20}
@@ -269,7 +293,7 @@ const Users: React.FC = () => {
                     position !== 'hidden'
                         ? {
                               position: position,
-                              record: () => ({ 
+                              record: (): UserConfigItem => ({ 
                                 id: (Math.random() * 1000000).toFixed(0), 
                                 userId: '', 
                                 username: '', 
@@ -283,7 +307,7 @@ const Users: React.FC = () => {
                           }
                         : false
                 }
-                loading={false}
+                loading={loading}
                 toolBarRender={() => [
                     <Button
                         key="button"
@@ -295,13 +319,25 @@ const Users: React.FC = () => {
                     >
                         新建用户
                     </Button>,
+                    <Button
+                        key="refresh"
+                        icon={<ReloadOutlined />}
+                        onClick={() => {
+                            loadUserConfigs();
+                        }}
+                    >
+                        刷新
+                    </Button>,
                 ]}
                 columns={columns}
-                request={async () => ({
-                    data: defaultData,
-                    total: 3,
-                    success: true,
-                })}
+                request={async () => {
+                    // 这个函数在初始化时会被调用，但我们使用自己的loadUserConfigs
+                    return {
+                        data: dataSource,
+                        total: pagination.total,
+                        success: true,
+                    };
+                }}
                 value={dataSource}
                 onChange={(value) => {
                     setDataSource([...value]);
@@ -310,10 +346,79 @@ const Users: React.FC = () => {
                     type: 'multiple',
                     editableKeys,
                     onSave: async (rowKey, data, row) => {
-                        console.log(rowKey, data, row);
-                        message.success('保存成功');
+                        try {
+                            if (typeof rowKey === 'string' && rowKey.startsWith('temp')) {
+                                // 新建用户
+                                const createData: CreateUserConfigData = {
+                                    userId: data.userId,
+                                    username: data.username,
+                                    userGroup: data.userGroup,
+                                    expireTime: data.expireTime,
+                                    trafficLimit: data.trafficLimit,
+                                    trafficResetType: data.trafficResetType,
+                                    ruleLimit: data.ruleLimit,
+                                    banned: data.banned || false,
+                                };
+                                const response = await usersConfigService.createUserConfig(createData);
+                                if (response.success) {
+                                    message.success('用户创建成功');
+                                    loadUserConfigs();
+                                } else {
+                                    message.error(response.message || '用户创建失败');
+                                }
+                                                        } else {
+                                // 更新用户
+                                const response = await usersConfigService.updateUserConfig(rowKey as React.Key, data);
+                                if (response.success) {
+                                    message.success('用户更新成功');
+                                    loadUserConfigs();
+                                } else {
+                                    message.error(response.message || '用户更新失败');
+                                }
+                            }
+                        } catch (error) {
+                            console.error('保存失败:', error);
+                            message.error('保存失败');
+                        }
                     },
                     onChange: setEditableKeys,
+                    onDelete: async (key) => {
+                        try {
+                            // 处理单个key或key数组
+                            const keys = Array.isArray(key) ? key : [key];
+                            if (keys.length === 1) {
+                                const response = await usersConfigService.deleteUserConfig(keys[0]);
+                                if (response.success) {
+                                    message.success('用户删除成功');
+                                    loadUserConfigs();
+                                } else {
+                                    message.error(response.message || '用户删除失败');
+                                }
+                            } else {
+                                // 批量删除
+                                const response = await usersConfigService.batchDeleteUserConfigs(keys);
+                                if (response.success) {
+                                    message.success(`成功删除 ${keys.length} 个用户`);
+                                    loadUserConfigs();
+                                } else {
+                                    message.error(response.message || '批量删除失败');
+                                }
+                            }
+                        } catch (error) {
+                            console.error('删除失败:', error);
+                            message.error('删除失败');
+                        }
+                    },
+                }}
+                pagination={{
+                    ...pagination,
+                    showSizeChanger: true,
+                    showQuickJumper: true,
+                    showTotal: (total, range) => `第 ${range[0]}-${range[1]} 项，共 ${total} 项`,
+                    onChange: (page, pageSize) => {
+                        setPagination(prev => ({ ...prev, current: page, pageSize }));
+                        loadUserConfigs({ page, pageSize });
+                    },
                 }}
             />
         </>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button, Table, Space, Form, Input, Select, message, Card, Divider, Tag, Typography, Row, Col } from 'antd';
-import { userService, User, CreateUserData } from '../services/user-service';
+import { userService, User, CreateUserData } from '@/services/user-service';
 
 const { Option } = Select;
 const { Title, Text } = Typography;

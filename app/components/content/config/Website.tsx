@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ProForm,
   ProFormText,
@@ -7,41 +7,137 @@ import {
   ProFormDependency,
   ProFormTextArea,
 } from '@ant-design/pro-components';
-import { Card, message } from 'antd';
+import { Card, message, Button, Space } from 'antd';
+import { ReloadOutlined, UndoOutlined } from '@ant-design/icons';
+import { 
+    websiteConfigService, 
+    WebsiteConfig, 
+    UpdateWebsiteConfigData 
+} from '@/services/website-config-service';
 
 const Website: React.FC = () => {
   const [messageApi, contextHolder] = message.useMessage();
+  const [loading, setLoading] = useState<boolean>(false);
+  const [config, setConfig] = useState<WebsiteConfig | null>(null);
+  const [form] = ProForm.useForm();
 
-  const handleSubmit = async (values: any) => {
-    console.log(values);
-    messageApi.success('配置已保存');
+  // 加载网站配置
+  const loadConfig = async () => {
+    try {
+      setLoading(true);
+      const response = await websiteConfigService.getWebsiteConfig();
+      if (response.success && response.data) {
+        setConfig(response.data);
+        form.setFieldsValue(response.data);
+      } else {
+        messageApi.error('加载网站配置失败');
+      }
+    } catch (error) {
+      console.error('加载网站配置失败:', error);
+      messageApi.error('加载网站配置失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 初始化加载配置
+  useEffect(() => {
+    loadConfig();
+  }, []);
+
+  const handleSubmit = async (values: UpdateWebsiteConfigData) => {
+    try {
+      setLoading(true);
+      const response = await websiteConfigService.updateWebsiteConfig(values);
+      if (response.success) {
+        messageApi.success('配置已保存');
+        setConfig(response.data!);
+      } else {
+        messageApi.error(response.message || '保存配置失败');
+      }
+    } catch (error) {
+      console.error('保存配置失败:', error);
+      messageApi.error('保存配置失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 重置配置
+  const handleReset = async () => {
+    try {
+      setLoading(true);
+      const response = await websiteConfigService.resetWebsiteConfig();
+      if (response.success) {
+        messageApi.success('配置已重置为默认值');
+        setConfig(response.data!);
+        form.setFieldsValue(response.data!);
+      } else {
+        messageApi.error(response.message || '重置配置失败');
+      }
+    } catch (error) {
+      console.error('重置配置失败:', error);
+      messageApi.error('重置配置失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 生成新邀请码
+  const generateInviteCode = async () => {
+    try {
+      const response = await websiteConfigService.generateInviteCode();
+      if (response.success) {
+        messageApi.success('新邀请码生成成功');
+        form.setFieldValue('inviteCode', response.data?.inviteCode);
+      } else {
+        messageApi.error(response.message || '生成邀请码失败');
+      }
+    } catch (error) {
+      console.error('生成邀请码失败:', error);
+      messageApi.error('生成邀请码失败');
+    }
   };
 
   return (
     <div>
       {contextHolder}
-      <Card title="网站配置" bordered={false}>
+      <Card 
+        title="网站配置" 
+        bordered={false}
+        extra={
+          <Space>
+            <Button 
+              icon={<ReloadOutlined />} 
+              onClick={loadConfig}
+              loading={loading}
+            >
+              刷新
+            </Button>
+            <Button 
+              icon={<UndoOutlined />} 
+              onClick={handleReset}
+              loading={loading}
+            >
+              重置为默认
+            </Button>
+          </Space>
+        }
+      >
         <ProForm
+          form={form}
           onFinish={handleSubmit}
+          loading={loading}
           submitter={{
             searchConfig: {
-              submitText: '保存',
-              resetText: '重置',
+              submitText: '保存配置',
+              resetText: '取消',
             },
             resetButtonProps: {
               style: {
                 marginLeft: 8,
               },
             },
-          }}
-          initialValues={{
-            siteName: 'NSPass',
-            allowRegister: true,
-            inviteStrategy: 'code',
-            inviteCode: 'nspass2024',
-            allowLookingGlass: true,
-            showAnnouncement: true,
-            announcementContent: '欢迎使用NSPass系统，这是一个示例公告。',
           }}
         >
           <ProFormText
@@ -82,6 +178,15 @@ const Website: React.FC = () => {
                     label="注册邀请码"
                     placeholder="请输入注册邀请码"
                     rules={[{ required: true, message: '请输入注册邀请码' }]}
+                    addonAfter={
+                      <Button 
+                        type="link" 
+                        onClick={generateInviteCode}
+                        size="small"
+                      >
+                        生成新码
+                      </Button>
+                    }
                   />
                 );
               }

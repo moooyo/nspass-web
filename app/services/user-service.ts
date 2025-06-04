@@ -1,4 +1,4 @@
-import { httpClient, ApiResponse } from '../utils/http-client';
+import { httpClient, ApiResponse } from '@/utils/http-client';
 
 // 用户数据类型定义
 export interface User {

@@ -23,7 +23,7 @@ export function MSWProvider({ children }: MSWProviderProps) {
       }
 
       try {
-        const { startMSW } = await import('../../src/mocks/browser');
+        const { startMSW } = await import('@/src/mocks/browser');
         if (isMSWEnabled) {
           await startMSW();
         }
@@ -48,7 +48,7 @@ export function MSWProvider({ children }: MSWProviderProps) {
     if (enabled) {
       setIsLoading(true);
       try {
-        const { startMSW } = await import('../../src/mocks/browser');
+        const { startMSW } = await import('@/src/mocks/browser');
         await startMSW();
         setIsLoading(false);
       } catch (error) {
@@ -58,7 +58,7 @@ export function MSWProvider({ children }: MSWProviderProps) {
       }
     } else {
       try {
-        const { stopMSW } = await import('../../src/mocks/browser');
+        const { stopMSW } = await import('@/src/mocks/browser');
         stopMSW();
       } catch (error) {
         console.error('Failed to stop MSW:', error);
