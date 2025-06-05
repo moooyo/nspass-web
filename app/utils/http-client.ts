@@ -1,5 +1,5 @@
 // HTTP客户端配置
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.example.com';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
@@ -22,21 +22,62 @@ interface ApiResponse<T = unknown> {
 
 class HttpClient {
   private baseURL: string;
+  private defaultErrorResponse<T>(): ApiResponse<T> {
+    return {
+      success: false,
+      message: '请求失败，请稍后重试',
+    };
+  }
 
   constructor(baseURL: string = API_BASE_URL) {
     this.baseURL = baseURL;
   }
 
   private buildURL(endpoint: string, params?: Record<string, string>): string {
-    const url = new URL(`${this.baseURL}${endpoint}`);
+    // 确保endpoint以/开头
+    const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        url.searchParams.append(key, value);
-      });
+    // 处理相对路径和绝对路径
+    let fullUrl: string;
+    
+    if (this.baseURL.startsWith('http://') || this.baseURL.startsWith('https://')) {
+      // 绝对URL
+      try {
+        const url = new URL(`${this.baseURL}${normalizedEndpoint}`);
+        
+        if (params) {
+          Object.entries(params).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+              url.searchParams.append(key, value);
+            }
+          });
+        }
+        
+        return url.toString();
+      } catch (error) {
+        console.warn('URL construction failed for absolute URL, using string concatenation', error);
+        fullUrl = `${this.baseURL}${normalizedEndpoint}`;
+      }
+    } else {
+      // 相对路径，直接字符串拼接
+      const baseWithoutTrailingSlash = this.baseURL.endsWith('/') 
+        ? this.baseURL.slice(0, -1) 
+        : this.baseURL;
+      
+      fullUrl = `${baseWithoutTrailingSlash}${normalizedEndpoint}`;
     }
     
-    return url.toString();
+    // 添加查询参数
+    if (params && Object.keys(params).length > 0) {
+      const queryParams = Object.entries(params)
+        .filter(([_, value]) => value !== undefined && value !== null)
+        .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+        .join('&');
+      
+      fullUrl += `?${queryParams}`;
+    }
+    
+    return fullUrl;
   }
 
   private async request<T>(
@@ -63,13 +104,37 @@ class HttpClient {
       const response = await fetch(url, config);
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // 尝试解析错误响应
+        try {
+          const errorData = await response.json();
+          return {
+            success: false,
+            message: errorData.message || `请求失败，状态码: ${response.status}`,
+            data: errorData.data as T, // 使用类型断言
+          };
+        } catch (parseError) {
+          // 如果无法解析JSON，返回基本错误
+          return {
+            success: false,
+            message: `请求失败，状态码: ${response.status}`,
+          };
+        }
       }
       
-      return await response.json();
+      const data = await response.json();
+      return data;
     } catch (error) {
       console.error('API request failed:', error);
-      throw error;
+      
+      // 处理网络错误或其他错误
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        return {
+          success: false,
+          message: '网络请求失败，请检查网络连接或服务器状态',
+        };
+      }
+      
+      return this.defaultErrorResponse<T>();
     }
   }
 

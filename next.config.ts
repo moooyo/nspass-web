@@ -2,8 +2,13 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  experimental: {
+    // Enable React 19 experimental features
+    reactCompiler: false,
+  },
+  
   compiler: {
-    // Suppress Fragment prop warnings for React 19 compatibility
+    // Remove development only props in production
     reactRemoveProperties: process.env.NODE_ENV === "production" 
       ? { properties: ['data-testid'] } 
       : false,
@@ -18,6 +23,19 @@ const nextConfig: NextConfig = {
         'react-dom': 'react-dom',
       };
     }
+
+    // Suppress specific warnings for React 19 compatibility
+    config.ignoreWarnings = [
+      {
+        module: /node_modules/,
+        message: /Invalid prop.*supplied to.*React\.Fragment/,
+      },
+      {
+        module: /node_modules/,
+        message: /React\.Fragment can only have `key` and `children` props/,
+      },
+    ];
+
     return config;
   },
 };

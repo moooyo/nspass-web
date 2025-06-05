@@ -41,15 +41,18 @@ const Users: React.FC = () => {
         total: 0,
     });
 
-    // 加载用户配置列表
+    // 加载用户配置列表 - 修复依赖循环问题
     const loadUserConfigs = useCallback(async (params?: UserConfigListParams) => {
         try {
             setLoading(true);
-            const response = await usersConfigService.getUserConfigs({
-                page: pagination.current,
-                pageSize: pagination.pageSize,
+            // 使用传入的参数或当前状态，避免依赖 pagination 状态
+            const requestParams = {
+                page: params?.page || pagination.current,
+                pageSize: params?.pageSize || pagination.pageSize,
                 ...params,
-            });
+            };
+            
+            const response = await usersConfigService.getUserConfigs(requestParams);
             
             if (response.success && response.data) {
                 setDataSource(response.data);
@@ -69,7 +72,7 @@ const Users: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [pagination]);
+    }, []); // 移除 pagination 依赖
 
     // 初始化加载数据
     useEffect(() => {
@@ -238,18 +241,9 @@ const Users: React.FC = () => {
                         cancelText="取消"
                     >
                         <a>
-                            <Tag color="purple">邀请注册</Tag>
+                            <Tag color="orange">邀请注册</Tag>
                         </a>
                     </Popconfirm>
-                    <a
-                        key="editable"
-                        onClick={() => {
-                            const editableKey = record.id;
-                            setEditableKeys([editableKey]);
-                        }}
-                    >
-                        <Tag color="green">编辑</Tag>
-                    </a>
                 </div>
             ),
         },
@@ -354,33 +348,23 @@ const Users: React.FC = () => {
                 editable={{
                     type: 'multiple',
                     editableKeys,
-                    onSave: async (rowKey, data) => {
+                    onSave: async (key, record) => {
                         try {
-                            if (typeof rowKey === 'string' && rowKey.startsWith('temp')) {
-                                // 新建用户
-                                const createData: CreateUserConfigData = {
-                                    userId: data.userId,
-                                    username: data.username,
-                                    userGroup: data.userGroup,
-                                    expireTime: data.expireTime,
-                                    trafficLimit: data.trafficLimit,
-                                    trafficResetType: data.trafficResetType,
-                                    ruleLimit: data.ruleLimit,
-                                    banned: data.banned || false,
-                                };
-                                const response = await usersConfigService.createUserConfig(createData);
+                            if (typeof record.id === 'string' && record.id.includes('.')) {
+                                // 新建记录
+                                const response = await usersConfigService.createUserConfig(record as CreateUserConfigData);
                                 if (response.success) {
                                     message.success('用户创建成功');
-                                    loadUserConfigs();
+                                    loadUserConfigs(); // 重新加载数据
                                 } else {
                                     message.error(response.message || '用户创建失败');
                                 }
-                                                        } else {
-                                // 更新用户
-                                const response = await usersConfigService.updateUserConfig(rowKey as React.Key, data);
+                            } else {
+                                // 更新记录
+                                const response = await usersConfigService.updateUserConfig(record.id, record);
                                 if (response.success) {
                                     message.success('用户更新成功');
-                                    loadUserConfigs();
+                                    loadUserConfigs(); // 重新加载数据
                                 } else {
                                     message.error(response.message || '用户更新失败');
                                 }
@@ -390,34 +374,28 @@ const Users: React.FC = () => {
                             message.error('保存失败');
                         }
                     },
-                    onChange: setEditableKeys,
-                    onDelete: async (key) => {
+                    onDelete: async (key, record) => {
                         try {
-                            // 处理单个key或key数组
-                            const keys = Array.isArray(key) ? key : [key];
-                            if (keys.length === 1) {
-                                const response = await usersConfigService.deleteUserConfig(keys[0]);
-                                if (response.success) {
-                                    message.success('用户删除成功');
-                                    loadUserConfigs();
-                                } else {
-                                    message.error(response.message || '用户删除失败');
-                                }
+                            const response = await usersConfigService.deleteUserConfig(record.id);
+                            if (response.success) {
+                                message.success('用户删除成功');
+                                loadUserConfigs(); // 重新加载数据
                             } else {
-                                // 批量删除
-                                const response = await usersConfigService.batchDeleteUserConfigs(keys);
-                                if (response.success) {
-                                    message.success(`成功删除 ${keys.length} 个用户`);
-                                    loadUserConfigs();
-                                } else {
-                                    message.error(response.message || '批量删除失败');
-                                }
+                                message.error(response.message || '用户删除失败');
                             }
                         } catch (error) {
                             console.error('删除失败:', error);
-                            message.error('删除失败');
                         }
                     },
+                    onValuesChange: (record, recordList) => {
+                        setDataSource(recordList);
+                    },
+                    deleteText: '删除',
+                    deletePopconfirmMessage: '确定删除这条记录吗？',
+                    onlyOneLineEditorAlertMessage: '只能同时编辑一行记录',
+                    onlyAddOneLineAlertMessage: '只能同时新增一行记录',
+                    actionRender: (row, config, dom) => [dom.save, dom.cancel, dom.delete],
+                    onChange: setEditableKeys,
                 }}
                 pagination={{
                     ...pagination,
@@ -425,7 +403,7 @@ const Users: React.FC = () => {
                     showQuickJumper: true,
                     showTotal: (total, range) => `第 ${range[0]}-${range[1]} 项，共 ${total} 项`,
                     onChange: (page, pageSize) => {
-                        setPagination(prev => ({ ...prev, current: page, pageSize }));
+                        // 直接调用 loadUserConfigs 并传入新的分页参数
                         loadUserConfigs({ page, pageSize });
                     },
                 }}

@@ -7,15 +7,15 @@ import {
   ProFormDependency,
   ProFormTextArea,
 } from '@ant-design/pro-components';
-import { Card, message, Button, Space } from 'antd';
+import { Card, Button, Space } from 'antd';
 import { ReloadOutlined, UndoOutlined } from '@ant-design/icons';
 import { 
     websiteConfigService, 
     UpdateWebsiteConfigData 
 } from '@/services/websiteConfig';
+import { message } from '@/utils/message';
 
 const Website: React.FC = () => {
-  const [messageApi, contextHolder] = message.useMessage();
   const [loading, setLoading] = useState<boolean>(false);
   const [form] = ProForm.useForm();
 
@@ -27,15 +27,15 @@ const Website: React.FC = () => {
       if (response.success && response.data) {
         form.setFieldsValue(response.data);
       } else {
-        messageApi.error('加载网站配置失败');
+        message.error('加载网站配置失败');
       }
     } catch (error) {
       console.error('加载网站配置失败:', error);
-      messageApi.error('加载网站配置失败');
+      message.error('加载网站配置失败');
     } finally {
       setLoading(false);
     }
-  }, [form, messageApi]);
+  }, [form]);
 
   // 初始化加载配置
   useEffect(() => {
@@ -47,56 +47,58 @@ const Website: React.FC = () => {
       setLoading(true);
       const response = await websiteConfigService.updateWebsiteConfig(values);
       if (response.success) {
-        messageApi.success('配置已保存');
+        message.success('配置已保存');
       } else {
-        messageApi.error(response.message || '保存配置失败');
+        message.error(response.message || '保存配置失败');
       }
     } catch (error) {
       console.error('保存配置失败:', error);
-      messageApi.error('保存配置失败');
+      message.error('保存配置失败');
     } finally {
       setLoading(false);
     }
   };
 
-  // 重置配置
+  // 重置为默认设置
   const handleReset = async () => {
     try {
       setLoading(true);
       const response = await websiteConfigService.resetWebsiteConfig();
-      if (response.success) {
-        messageApi.success('配置已重置为默认值');
-        form.setFieldsValue(response.data!);
+      if (response.success && response.data) {
+        form.setFieldsValue(response.data);
+        message.success('已重置为默认设置');
       } else {
-        messageApi.error(response.message || '重置配置失败');
+        message.error(response.message || '重置配置失败');
       }
     } catch (error) {
       console.error('重置配置失败:', error);
-      messageApi.error('重置配置失败');
+      message.error('重置配置失败');
     } finally {
       setLoading(false);
     }
   };
 
-  // 生成新邀请码
+  // 生成邀请码
   const generateInviteCode = async () => {
     try {
+      setLoading(true);
       const response = await websiteConfigService.generateInviteCode();
-      if (response.success) {
-        messageApi.success('新邀请码生成成功');
-        form.setFieldValue('inviteCode', response.data?.inviteCode);
+      if (response.success && response.data?.inviteCode) {
+        form.setFieldValue('inviteCode', response.data.inviteCode);
+        message.success('已生成新的邀请码');
       } else {
-        messageApi.error(response.message || '生成邀请码失败');
+        message.error(response.message || '生成邀请码失败');
       }
     } catch (error) {
       console.error('生成邀请码失败:', error);
-      messageApi.error('生成邀请码失败');
+      message.error('生成邀请码失败');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div>
-      {contextHolder}
       <Card 
         title="网站配置" 
         variant="outlined"
