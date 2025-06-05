@@ -19,13 +19,10 @@ nspass-web/
 ├── app/                     # Next.js App Router
 │   ├── components/          # 可复用组件
 │   │   └── MSWProvider.tsx  # MSW 提供者组件
-│   ├── config/              # 配置文件
-│   │   └── api-config.ts    # API 配置管理
 │   ├── services/            # API 服务层
 │   │   └── user-service.ts  # 用户相关 API
 │   ├── utils/               # 工具函数
 │   │   └── http-client.ts   # HTTP 客户端
-│   ├── msw-demo/           # MSW 演示页面
 │   └── layout.tsx          # 根布局
 ├── src/
 │   └── mocks/              # MSW 配置
@@ -56,7 +53,6 @@ npm run dev
 打开浏览器访问：
 
 - 🏠 **主页**: [http://localhost:3000](http://localhost:3000)
-- 🧪 **MSW演示**: [http://localhost:3000/msw-demo](http://localhost:3000/msw-demo)
 
 ### 4. 观察MSW工作
 
@@ -128,9 +124,8 @@ npm run lint         # ESLint 检查
 
 ### 🚀 MSW快速使用
 
-1. **查看演示**: 访问 `/msw-demo` 页面
-2. **阅读文档**: 查看 `docs/MSW_GUIDE.md` 详细指南  
-3. **实际开发**: 按照真实API地址编写代码，MSW自动拦截
+1. **阅读文档**: 查看 `docs/MSW_GUIDE.md` 详细指南  
+2. **实际开发**: 按照真实API地址编写代码，MSW自动拦截
 
 ### 🔌 添加新的API
 

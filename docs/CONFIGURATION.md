@@ -20,15 +20,13 @@ PORT=3000
 
 ## ⚙️ 配置文件
 
-### API配置 (`app/config/api-config.ts`)
+### HTTP客户端配置 (`app/utils/http-client.ts`)
+
+项目使用统一的HTTP客户端进行API调用，自动从环境变量读取配置：
 
 ```typescript
-export const apiConfig = {
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://api.example.com',
-  timeout: 10000,
-  isDevelopment: process.env.NODE_ENV === 'development',
-  enableMockData: process.env.NEXT_PUBLIC_ENABLE_MOCK === 'true',
-};
+// HTTP客户端自动配置
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.example.com';
 ```
 
 ### MSW配置 (`src/mocks/`)

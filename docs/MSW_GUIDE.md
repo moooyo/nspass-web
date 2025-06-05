@@ -48,9 +48,9 @@ app/
 npm run dev
 ```
 
-### 2. 访问演示页面
+### 2. 访问应用
 
-打开浏览器访问：`http://localhost:3000/msw-demo`
+打开浏览器访问：`http://localhost:3000`
 
 ### 3. 观察控制台
 
