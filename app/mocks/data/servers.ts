@@ -1,0 +1,40 @@
+// 服务器相关模拟数据
+
+export const mockServers = [
+  {
+    id: 1,
+    name: '服务器01',
+    ipv4: '192.168.1.1',
+    ipv6: '2001:0db8:85a3:0000:0000:8a2e:0370:7334',
+    region: '亚洲',
+    group: '主要服务器',
+    registerTime: '2023-01-01',
+    uploadTraffic: 1024,
+    downloadTraffic: 2048,
+    status: 'online',
+  },
+  {
+    id: 2,
+    name: '服务器02',
+    ipv4: '192.168.1.2',
+    ipv6: '2001:0db8:85a3:0000:0000:8a2e:0370:7335',
+    region: '欧洲',
+    group: '备用服务器',
+    registerTime: '2023-02-01',
+    uploadTraffic: 512,
+    downloadTraffic: 1024,
+    status: 'offline',
+  },
+  {
+    id: 3,
+    name: '服务器03',
+    ipv4: '192.168.1.3',
+    ipv6: '2001:0db8:85a3:0000:0000:8a2e:0370:7336',
+    region: '美洲',
+    group: '主要服务器',
+    registerTime: '2023-03-01',
+    uploadTraffic: 2048,
+    downloadTraffic: 4096,
+    status: 'online',
+  },
+]; 
