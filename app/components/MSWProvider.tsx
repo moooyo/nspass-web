@@ -1,18 +1,43 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { createContext, useEffect, useState } from 'react';
+import { MockToggle } from './MockToggle';
+import { MSWContextType } from './types';
+
+// 创建Mock状态的Context
+export const MSWContext = createContext<MSWContextType>({
+  enabled: true,
+  setEnabled: () => {}
+});
+
+// localStorage键名
+const MOCK_ENABLED_KEY = 'nspass-mock-enabled';
 
 export function MSWProvider({ children }: { children: React.ReactNode }) {
   const [mswStatus, setMswStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [mockEnabled, setMockEnabled] = useState<boolean>(true);
 
   useEffect(() => {
     const initMSW = async () => {
       // 只在开发模式下启动MSW
       if (process.env.NODE_ENV === 'development') {
         try {
-          const { startMSW } = await import('@mock/browser');
-          await startMSW();
-          console.log('🚀 MSW 已启动并准备就绪');
+          // 检查LocalStorage中的Mock状态
+          const storedMockEnabled = localStorage.getItem(MOCK_ENABLED_KEY);
+          const shouldEnableMock = storedMockEnabled !== null ? storedMockEnabled === 'true' : true;
+          
+          // 更新状态
+          setMockEnabled(shouldEnableMock);
+          
+          // 如果应该启用Mock，则启动MSW
+          if (shouldEnableMock) {
+            const { startMSW } = await import('@mock/browser');
+            await startMSW();
+            console.log('🚀 MSW 已启动并准备就绪');
+          } else {
+            console.log('⏹️ MSW 未启动 (已禁用)');
+          }
+          
           setMswStatus('success');
         } catch (error) {
           console.error('MSW 启动失败:', error);
@@ -26,6 +51,14 @@ export function MSWProvider({ children }: { children: React.ReactNode }) {
 
     initMSW();
   }, []);
+
+  // 监听mockEnabled状态变化
+  useEffect(() => {
+    // 避免初始化时触发
+    if (mswStatus !== 'loading') {
+      localStorage.setItem(MOCK_ENABLED_KEY, String(mockEnabled));
+    }
+  }, [mockEnabled, mswStatus]);
 
   // 在开发环境中，等待MSW准备就绪再渲染应用
   if (process.env.NODE_ENV === 'development' && mswStatus === 'loading') {
@@ -75,6 +108,12 @@ export function MSWProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // 使用 div 包装而不是 Fragment，避免 React 19 的兼容性问题
-  return <div style={{ height: '100%', width: '100%' }}>{children}</div>;
+  return (
+    <MSWContext.Provider value={{ enabled: mockEnabled, setEnabled: setMockEnabled }}>
+      {children}
+      
+      {/* 仅在开发模式下显示Mock开关按钮 */}
+      {process.env.NODE_ENV === 'development' && <MockToggle />}
+    </MSWContext.Provider>
+  );
 } 
