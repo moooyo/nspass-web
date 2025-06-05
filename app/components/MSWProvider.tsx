@@ -10,7 +10,7 @@ export function MSWProvider({ children }: { children: React.ReactNode }) {
       // 只在开发模式下启动MSW
       if (process.env.NODE_ENV === 'development') {
         try {
-          const { startMSW } = await import('@/mocks/browser');
+          const { startMSW } = await import('@mock/browser');
           await startMSW();
           console.log('🚀 MSW 已启动并准备就绪');
           setMswStatus('success');

@@ -24,6 +24,12 @@ const nextConfig: NextConfig = {
       };
     }
 
+    // Ensure @mock alias is available
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@mock': './app/mocks',
+    };
+
     // Suppress specific warnings for React 19 compatibility
     config.ignoreWarnings = [
       {

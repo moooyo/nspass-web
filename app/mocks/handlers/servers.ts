@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw';
-import type { ServerData } from '../types';
-import { mockServers } from '../data/servers';
+import type { ServerData } from '@mock/types';
+import { mockServers } from '@mock/data/servers';
 
 // 服务器管理相关的 API handlers
 

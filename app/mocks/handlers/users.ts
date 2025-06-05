@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw';
-import type { UserData } from '../types';
-import { mockUsers } from '../data/users';
+import type { UserData } from '@mock/types';
+import { mockUsers } from '@mock/data/users';
 
 // 用户管理相关的 API handlers
 

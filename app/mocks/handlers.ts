@@ -9,7 +9,7 @@ import {
   authHandlers,
   dashboardHandlers,
   miscHandlers
-} from './handlers/index';
+} from '@mock/handlers/index';
 
 // 合并所有handlers
 export const handlers = [

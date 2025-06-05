@@ -1,11 +1,11 @@
 // 导出所有分类的handlers
 
-export { userConfigHandlers } from './userConfig';
-export { websiteConfigHandlers } from './websiteConfig';
-export { userHandlers } from './users';
-export { serverHandlers } from './servers';
-export { userGroupHandlers } from './userGroups';
-export { userInfoHandlers } from './userInfo';
-export { authHandlers } from './auth';
-export { dashboardHandlers } from './dashboard';
-export { miscHandlers } from './misc'; 
+export { userConfigHandlers } from '@mock/handlers/userConfig';
+export { websiteConfigHandlers } from '@mock/handlers/websiteConfig';
+export { userHandlers } from '@mock/handlers/users';
+export { serverHandlers } from '@mock/handlers/servers';
+export { userGroupHandlers } from '@mock/handlers/userGroups';
+export { userInfoHandlers } from '@mock/handlers/userInfo';
+export { authHandlers } from '@mock/handlers/auth';
+export { dashboardHandlers } from '@mock/handlers/dashboard';
+export { miscHandlers } from '@mock/handlers/misc'; 

@@ -1,7 +1,7 @@
 import { http, HttpResponse } from 'msw';
 import { hashPassword } from '@/utils/passwordUtils';
-import type { UserInfoUpdateData, PasswordChangeData } from '../types';
-import { mockUserInfo } from '../data/userInfo';
+import type { UserInfoUpdateData, PasswordChangeData } from '@mock/types';
+import { mockUserInfo } from '@mock/data/userInfo';
 
 // 用户信息相关的 API handlers
 

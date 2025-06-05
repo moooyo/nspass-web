@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw';
-import type { UserGroupData, BatchUpdateUserGroupData } from '../types';
-import { mockUserGroups } from '../data/userGroups';
+import type { UserGroupData, BatchUpdateUserGroupData } from '@mock/types';
+import { mockUserGroups } from '@mock/data/userGroups';
 
 // 用户组管理相关的 API handlers
 

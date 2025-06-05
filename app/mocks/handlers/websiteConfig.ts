@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw';
-import type { WebsiteConfigUpdateData, InviteCodeData } from '../types';
-import { mockWebsiteConfig } from '../data/websiteConfig';
+import type { WebsiteConfigUpdateData, InviteCodeData } from '@mock/types';
+import { mockWebsiteConfig } from '@mock/data/websiteConfig';
 
 // 网站配置相关的 API handlers
 

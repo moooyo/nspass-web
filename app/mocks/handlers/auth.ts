@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw';
-import type { LoginRequestData } from '../types';
+import type { LoginRequestData } from '@mock/types';
 
 // 认证相关的 API handlers
 

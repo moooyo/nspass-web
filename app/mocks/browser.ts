@@ -1,5 +1,5 @@
 import { setupWorker } from 'msw/browser';
-import { handlers } from './handlers';
+import { handlers } from '@mock/handlers';
 
 // 创建service worker
 export const worker = setupWorker(...handlers);

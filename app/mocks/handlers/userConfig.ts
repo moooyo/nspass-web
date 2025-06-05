@@ -4,8 +4,8 @@ import type {
   BanUserData, 
   BatchOperationData, 
   ServerResponse 
-} from '../types';
-import { mockUserConfigs } from '../data/userConfigs';
+} from '@mock/types';
+import { mockUserConfigs } from '@mock/data/userConfigs';
 
 // 用户配置管理相关的 API handlers
 
