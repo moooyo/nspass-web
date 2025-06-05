@@ -23,6 +23,14 @@
   }
 }
 
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  width: 100%;
+  cursor: default;
+}
+
 body {
   color: rgb(var(--foreground-rgb));
   background: linear-gradient(
@@ -39,10 +47,6 @@ body {
   cursor: inherit !important;
 }
 
-html, body {
-  cursor: default;
-}
-
 /* 防止自动聚焦导致的问题 */
 *:focus {
   outline: none !important;
@@ -52,6 +56,7 @@ html, body {
 .ant-app {
   min-height: 100vh;
   position: relative;
+  overflow-x: hidden;
 }
 
 /* 防止 Fragment 相关的样式问题 */
@@ -62,4 +67,32 @@ html, body {
 /* 抑制开发环境中的警告样式 */
 .react-dev-overlay {
   display: none !important;
+}
+
+/* 修复水平滚动条问题 */
+.ant-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.ant-table-content {
+  overflow-x: hidden !important;
+}
+
+.ant-table-body {
+  overflow-x: auto !important;
+}
+
+/* 确保所有内容都适应其容器 */
+.ant-layout-content {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+/* 适应小屏幕 */
+@media screen and (max-width: 768px) {
+  .ant-table {
+    width: 100%;
+    overflow-x: auto;
+  }
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { App, ConfigProvider } from 'antd';
+import { ConfigProvider, App, theme } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import '@ant-design/v5-patch-for-react-19';
 import { initMessage } from '@/utils/message';
@@ -14,25 +14,40 @@ function AppContent({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     initMessage(message);
   }, [message]);
-
-  // 使用 div 包装而不是 Fragment，避免 React 19 的兼容性问题
-  return <div style={{ height: '100%', width: '100%' }}>{children}</div>;
+  
+  return <>{children}</>;
 }
 
 export function AntdProvider({ children }: { children: React.ReactNode }) {
   return (
-    <ConfigProvider 
+    <ConfigProvider
       locale={zhCN}
       theme={{
-        // 添加一些 React 19 兼容性配置
+        algorithm: theme.defaultAlgorithm,
         token: {
-          // 确保主题配置正确
+          colorPrimary: '#1890FF',
+          borderRadius: 6,
+        },
+        components: {
+          Table: {
+            fontSize: 14,
+            headerBg: '#f5f5f5',
+          },
+          Card: {
+            boxShadow: 'none',
+            borderRadius: 8,
+          },
+          Layout: {
+            bodyBg: '#f0f2f5',
+            headerBg: '#fff',
+            siderBg: '#001529',
+          },
         },
       }}
     >
       <App
+        className="ant-app"
         style={{ height: '100%' }}
-        // 禁用一些可能导致问题的特性
         notification={{
           placement: 'topRight',
         }}

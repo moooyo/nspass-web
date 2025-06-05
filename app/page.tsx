@@ -203,7 +203,7 @@ export default function Home() {
   } = theme.useToken();
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout style={{ minHeight: '100vh', width: '100%', overflow: 'hidden' }}>
       <Sider trigger={null} collapsible collapsed={collapsed}>
         <Logo collapsed={collapsed} />
         <Menu
@@ -216,7 +216,7 @@ export default function Home() {
           items={items}
         />
       </Sider>
-      <Layout>
+      <Layout style={{ width: '100%', overflow: 'hidden' }}>
         <Header style={{ 
           padding: '0 24px', 
           background: colorBgContainer,
@@ -255,6 +255,7 @@ export default function Home() {
             minHeight: 280,
             background: colorBgContainer,
             borderRadius: borderRadiusLG,
+            overflowX: 'hidden'
           }}
         >
           {renderContent()}

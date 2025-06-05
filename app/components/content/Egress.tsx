@@ -279,7 +279,7 @@ const Egress: React.FC = () => {
                 rowKey="id"
                 headerTitle="出口列表"
                 maxLength={20}
-                scroll={{ x: 1000 }}
+                scroll={{ x: 'max-content' }}
                 recordCreatorProps={false}
                 loading={false}
                 toolBarRender={() => [

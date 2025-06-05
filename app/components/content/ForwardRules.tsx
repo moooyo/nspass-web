@@ -822,7 +822,7 @@ const ForwardRules: React.FC = () => {
                 rowKey="id"
                 headerTitle="转发规则列表"
                 maxLength={20}
-                scroll={{ x: 1200 }}
+                scroll={{ x: 'max-content' }}
                 recordCreatorProps={
                     position !== 'hidden'
                         ? {
