@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
-import { Button, message, Tag, Popconfirm, Space, Tooltip } from 'antd';
+import { Button, message, Tag, Popconfirm, Tooltip } from 'antd';
 import {
     EditableProTable,
     ProColumns,
     ProFormSelect,
     ProFormText,
-    ProFormDigit,
-    ProFormTextArea,
     ProFormDependency,
     ProFormGroup,
     ProFormCheckbox,
@@ -17,7 +15,6 @@ import {
     PlusOutlined, 
     EditOutlined,
     DeleteOutlined,
-    ApiOutlined
 } from '@ant-design/icons';
 
 // 服务器选项

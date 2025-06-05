@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Button, message, Space, Badge, Tag, Popconfirm, Select } from 'antd';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Button, message, Badge, Tag, Popconfirm, Select } from 'antd';
 import {
     EditableProTable,
     ProColumns,
@@ -7,7 +7,7 @@ import {
     ProFormText,
     QueryFilter,
 } from '@ant-design/pro-components';
-import { PlusOutlined, ReloadOutlined, UserAddOutlined, StopOutlined } from '@ant-design/icons';
+import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import { 
     usersConfigService, 
     UserConfigItem, 
@@ -42,7 +42,7 @@ const Users: React.FC = () => {
     });
 
     // 加载用户配置列表
-    const loadUserConfigs = async (params?: UserConfigListParams) => {
+    const loadUserConfigs = useCallback(async (params?: UserConfigListParams) => {
         try {
             setLoading(true);
             const response = await usersConfigService.getUserConfigs({
@@ -69,12 +69,12 @@ const Users: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [pagination]);
 
     // 初始化加载数据
     useEffect(() => {
         loadUserConfigs();
-    }, []);
+    }, [loadUserConfigs]);
 
     // 封禁/解除封禁用户
     const toggleBanUser = async (record: UserConfigItem) => {
@@ -354,7 +354,7 @@ const Users: React.FC = () => {
                 editable={{
                     type: 'multiple',
                     editableKeys,
-                    onSave: async (rowKey, data, row) => {
+                    onSave: async (rowKey, data) => {
                         try {
                             if (typeof rowKey === 'string' && rowKey.startsWith('temp')) {
                                 // 新建用户

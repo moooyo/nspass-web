@@ -4,7 +4,6 @@ import { Space, Typography, Progress } from 'antd';
 import { Column } from '@ant-design/charts';
 
 const { Title } = Typography;
-const { Statistic } = StatisticCard;
 
 // 模拟数据
 const mockData = {

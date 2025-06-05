@@ -8,25 +8,12 @@ import {
     ProConfigProvider,
     ProFormCheckbox,
     ProFormText,
-    setAlpha,
   } from '@ant-design/pro-components';
-  import { useRouter } from 'next/navigation';
 
-  import { Space, Tabs, message, theme, Button } from 'antd';
-  import type { CSSProperties } from 'react';
-  import { useState } from 'react';
+  import { theme } from 'antd';
   
-  export default () => {
+  const LoginPage = () => {
     const { token } = theme.useToken();
-    const router = useRouter();
-  
-    const iconStyles: CSSProperties = {
-      marginInlineStart: '16px',
-      color: setAlpha(token.colorTextBase, 0.2),
-      fontSize: '24px',
-      verticalAlign: 'middle',
-      cursor: 'pointer',
-    };
   
     return (
       <ProConfigProvider hashed={false}>
@@ -116,3 +103,7 @@ import {
       </ProConfigProvider>
     );
   };
+
+  LoginPage.displayName = 'LoginPage';
+  
+  export default LoginPage;

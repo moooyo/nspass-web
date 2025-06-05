@@ -4,6 +4,10 @@ import LeafletComponents from './LeafletComponents';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
+interface IconDefault extends L.Icon.Default {
+  _getIconUrl?: string;
+}
+
 // 服务器数据类型定义
 export type ServerItem = {
   id: string;
@@ -42,7 +46,7 @@ const LeafletWrapper: React.FC<WorldMapProps> = ({
     // 只在客户端执行
     if (typeof window !== 'undefined') {
       // 删除已有图标定义以防止重复
-      delete (L.Icon.Default.prototype as any)._getIconUrl;
+      delete ((L.Icon.Default.prototype as IconDefault)._getIconUrl);
 
       // 重新配置默认图标
       L.Icon.Default.mergeOptions({

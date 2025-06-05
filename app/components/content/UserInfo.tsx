@@ -1,36 +1,10 @@
 import React from 'react';
 import {
-    AlipayCircleOutlined,
-    LockOutlined,
-    PlusOutlined,
-    TaobaoCircleOutlined,
-    UserOutlined,
-    WeiboCircleOutlined,
-  } from '@ant-design/icons';
-  import {
-    DrawerForm,
-    LightFilter,
-    LoginForm,
-    ModalForm,
     ProForm,
-    ProFormDateRangePicker,
-    ProFormRadio,
-    ProFormSelect,
     ProFormText,
-    QueryFilter,
-    StepsForm,
   } from '@ant-design/pro-components';
-  import { Button, Space, message } from 'antd';
-  import { useState } from 'react';
+  import { message } from 'antd';
 
-  const iconStyles = {
-    marginInlineStart: '16px',
-    color: 'rgba(0, 0, 0, 0.2)',
-    fontSize: '24px',
-    verticalAlign: 'middle',
-    cursor: 'pointer',
-  };
-  
   const waitTime = (time: number = 100) => {
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -47,7 +21,7 @@ const UserInfo: React.FC = () => {
       }}
     >
       <ProForm
-        onFinish={async (values: any) => {
+        onFinish={async (values: Record<string, unknown>) => {
           await waitTime(2000);
           console.log(values);
           message.success('提交成功');

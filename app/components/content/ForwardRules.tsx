@@ -1,12 +1,11 @@
-import React, { useState, useMemo, FC, useRef, useEffect } from 'react';
-import { Button, message, Tag, Popconfirm, Badge, Space, Tooltip, Modal, Form, Card, Row, Col, Typography, Divider, Input, Select } from 'antd';
+import React, { useState, FC, useRef } from 'react';
+import { Button, message, Tag, Popconfirm, Badge, Space, Tooltip, Modal, Form, Card, Row, Col, Typography, Divider } from 'antd';
 import {
     EditableProTable,
     ProColumns,
     ProFormSelect,
     ProFormText,
     QueryFilter,
-    EditableFormInstance,
 } from '@ant-design/pro-components';
 import { 
     PlusOutlined, 
@@ -296,14 +295,6 @@ const ForwardRules: React.FC = () => {
     const [selectedPath, setSelectedPath] = useState<ServerItem[]>([]);
     const [exitServer, setExitServer] = useState<ServerItem | null>(null);
     const [form] = Form.useForm();
-    
-    // 配置出口信息
-    const [exitConfig, setExitConfig] = useState<string>('');
-    
-    // 出口类型选择
-    const [selectedExitType, setSelectedExitType] = useState<keyof typeof exitTypeEnum>('PROXY');
-
-    const editableFormRef = useRef<EditableFormInstance>(null);
 
     // 暂停/启动规则
     const toggleRuleStatus = (record: ForwardRuleItem) => {

@@ -29,9 +29,7 @@ import type {
   GetLogSummaryResponse,
   GetTrafficByRegionResponse,
   GetSystemHealthResponse,
-  RefreshDashboardResponse,
-  TimePeriod,
-  LogLevel
+  RefreshDashboardResponse
 } from '@/types/generated/api/dashboard/dashboard';
 import type { ApiResponse as CommonApiResponse } from '@/types/generated/common';
 

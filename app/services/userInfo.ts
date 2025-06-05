@@ -4,7 +4,6 @@ import type {
   UserInfo,
   UpdateUserInfoRequest,
   ChangePasswordRequest,
-  UploadAvatarData,
   TrafficStats,
   LoginHistoryItem,
   ActivityLogItem,

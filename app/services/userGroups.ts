@@ -1,5 +1,15 @@
 import { httpClient, ApiResponse } from '@/utils/http-client';
 
+// 用户数据类型定义
+export interface User {
+  id: React.Key;
+  username: string;
+  email: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // 用户组数据类型定义
 export interface UserGroupItem {
   id: React.Key;
@@ -24,9 +34,7 @@ export interface UserGroupListParams {
 }
 
 // 更新用户组数据类型
-export interface UpdateUserGroupData extends Partial<CreateUserGroupData> {
-  // 继承CreateUserGroupData的所有字段，但都是可选的
-}
+export type UpdateUserGroupData = Partial<CreateUserGroupData>;
 
 class UserGroupsService {
   private readonly endpoint = '/config/user-groups';
@@ -83,13 +91,13 @@ class UserGroupsService {
   /**
    * 获取用户组中的用户列表
    */
-  async getUsersByGroupId(groupId: string, params: { page?: number; pageSize?: number } = {}): Promise<ApiResponse<any[]>> {
+  async getUsersByGroupId(groupId: string, params: { page?: number; pageSize?: number } = {}): Promise<ApiResponse<User[]>> {
     const queryParams: Record<string, string> = {};
     
     if (params.page) queryParams.page = params.page.toString();
     if (params.pageSize) queryParams.pageSize = params.pageSize.toString();
 
-    return httpClient.get<any[]>(`${this.endpoint}/${groupId}/users`, queryParams);
+    return httpClient.get<User[]>(`${this.endpoint}/${groupId}/users`, queryParams);
   }
 
   /**

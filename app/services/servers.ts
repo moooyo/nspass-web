@@ -3,7 +3,6 @@ import { httpClient, ApiResponse } from '@/utils/http-client';
 import type {
   ServerItem,
   CreateServerRequest,
-  UpdateServerRequest,
   GetServersRequest,
   GetServerByIdRequest,
   UpdateServerByIdRequest,

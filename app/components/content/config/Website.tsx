@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   ProForm,
   ProFormText,
@@ -11,23 +11,20 @@ import { Card, message, Button, Space } from 'antd';
 import { ReloadOutlined, UndoOutlined } from '@ant-design/icons';
 import { 
     websiteConfigService, 
-    WebsiteConfig, 
     UpdateWebsiteConfigData 
 } from '@/services/websiteConfig';
 
 const Website: React.FC = () => {
   const [messageApi, contextHolder] = message.useMessage();
   const [loading, setLoading] = useState<boolean>(false);
-  const [config, setConfig] = useState<WebsiteConfig | null>(null);
   const [form] = ProForm.useForm();
 
   // 加载网站配置
-  const loadConfig = async () => {
+  const loadConfig = useCallback(async () => {
     try {
       setLoading(true);
       const response = await websiteConfigService.getWebsiteConfig();
       if (response.success && response.data) {
-        setConfig(response.data);
         form.setFieldsValue(response.data);
       } else {
         messageApi.error('加载网站配置失败');
@@ -38,12 +35,12 @@ const Website: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [form, messageApi]);
 
   // 初始化加载配置
   useEffect(() => {
     loadConfig();
-  }, []);
+  }, [loadConfig]);
 
   const handleSubmit = async (values: UpdateWebsiteConfigData) => {
     try {
@@ -51,7 +48,6 @@ const Website: React.FC = () => {
       const response = await websiteConfigService.updateWebsiteConfig(values);
       if (response.success) {
         messageApi.success('配置已保存');
-        setConfig(response.data!);
       } else {
         messageApi.error(response.message || '保存配置失败');
       }
@@ -70,7 +66,6 @@ const Website: React.FC = () => {
       const response = await websiteConfigService.resetWebsiteConfig();
       if (response.success) {
         messageApi.success('配置已重置为默认值');
-        setConfig(response.data!);
         form.setFieldsValue(response.data!);
       } else {
         messageApi.error(response.message || '重置配置失败');

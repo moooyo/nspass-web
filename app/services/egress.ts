@@ -28,23 +28,7 @@ export interface EgressItem {
 }
 
 // 创建出口数据类型
-export interface CreateEgressData {
-  egressId?: string;
-  serverId: string;
-  egressMode: EgressMode;
-  
-  // 直出模式字段
-  targetAddress?: string;
-  
-  // iptables模式字段
-  forwardType?: ForwardType;
-  destAddress?: string;
-  destPort?: string;
-  
-  // shadowsocks-2022模式字段
-  password?: string;
-  supportUdp?: boolean;
-}
+export type CreateEgressData = Omit<EgressItem, 'id'>;
 
 // 查询参数类型
 export interface EgressListParams {
@@ -56,9 +40,7 @@ export interface EgressListParams {
 }
 
 // 更新出口数据类型
-export interface UpdateEgressData extends Partial<CreateEgressData> {
-  // 继承CreateEgressData的所有字段，但都是可选的
-}
+export type UpdateEgressData = Partial<Omit<EgressItem, 'id'>>;
 
 class EgressService {
   private readonly endpoint = '/egress';

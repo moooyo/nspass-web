@@ -42,9 +42,7 @@ export interface UserConfigListParams {
 }
 
 // 更新用户数据类型
-export interface UpdateUserConfigData extends Partial<CreateUserConfigData> {
-  // 继承CreateUserConfigData的所有字段，但都是可选的
-}
+export type UpdateUserConfigData = Partial<CreateUserConfigData>;
 
 class UsersConfigService {
   private readonly endpoint = '/config/users';

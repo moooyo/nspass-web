@@ -62,9 +62,7 @@ export interface ForwardRuleListParams {
 }
 
 // 更新转发规则数据类型
-export interface UpdateForwardRuleData extends Partial<CreateForwardRuleData> {
-  // 继承CreateForwardRuleData的所有字段，但都是可选的
-}
+export type UpdateForwardRuleData = Partial<Omit<ForwardRuleItem, 'id'>>;
 
 class ForwardRulesService {
   private readonly endpoint = '/forward-rules';

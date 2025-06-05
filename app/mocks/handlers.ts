@@ -1,4 +1,110 @@
 import { http, HttpResponse } from 'msw';
+import { hashPassword } from '@/utils/passwordUtils';
+
+// 定义基本的数据类型来替换any
+interface UserConfigData {
+  userId: string;
+  username: string;
+  userGroup: string;
+  expireTime: string;
+  trafficLimit: number;
+  trafficResetType: string;
+  ruleLimit: number;
+  banned: boolean;
+}
+
+interface BanUserData {
+  banned: boolean;
+}
+
+interface BatchOperationData {
+  ids: number[];
+  updateData?: UserConfigData;
+}
+
+interface ServerResponse<T> {
+  success: boolean;
+  message?: string;
+  data: T;
+  pagination?: {
+    current: number;
+    pageSize: number;
+    total: number;
+  };
+}
+
+interface UserData {
+  id?: number;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+  createTime?: string;
+}
+
+interface WebsiteConfigUpdateData {
+  siteName?: string;
+  allowRegister?: boolean;
+  inviteStrategy?: string;
+  inviteCode?: string;
+  allowLookingGlass?: boolean;
+  showAnnouncement?: boolean;
+  announcementContent?: string;
+}
+
+interface InviteCodeData {
+  code: string;
+}
+
+interface LoginRequestData {
+  username: string;
+  password: string;
+}
+
+interface PasswordChangeData {
+  oldPassword: string;
+  newPassword: string;
+}
+
+interface ServerData {
+  id?: number;
+  name: string;
+  ipv4: string;
+  ipv6: string;
+  region: string;
+  group: string;
+  status: string;
+  registerTime?: string;
+  uploadTraffic?: number;
+  downloadTraffic?: number;
+}
+
+interface UserGroupData {
+  id?: number;
+  groupId: string;
+  groupName: string;
+  userCount: number;
+}
+
+interface BatchUpdateUserGroupData {
+  ids: number[];
+  updateData: Partial<UserGroupData>;
+}
+
+interface UserInfoUpdateData {
+  name?: string;
+  email?: string;
+  avatar?: string;
+  phone?: string;
+  bio?: string;
+}
+
+interface UserInfoData extends UserInfoUpdateData {
+  id: number;
+  role: string;
+  status: string;
+  createTime: string;
+}
 
 // 模拟用户数据
 const mockUsers = [
@@ -184,148 +290,24 @@ const mockUserGroups = [
   },
 ];
 
-// 模拟出口数据
-const mockEgressList = [
-  {
-    id: 1,
-    egressId: 'egress001',
-    serverId: 'server01',
-    egressMode: 'direct',
-    egressConfig: '目的地址: 203.0.113.1',
-    targetAddress: '203.0.113.1',
-  },
-  {
-    id: 2,
-    egressId: 'egress002',
-    serverId: 'server01',
-    egressMode: 'iptables',
-    egressConfig: 'TCP转发至 192.168.1.1:8080',
-    forwardType: 'tcp',
-    destAddress: '192.168.1.1',
-    destPort: '8080',
-  },
-  {
-    id: 3,
-    egressId: 'egress003',
-    serverId: 'server02',
-    egressMode: 'iptables',
-    egressConfig: '全部转发至 10.0.0.1:443',
-    forwardType: 'all',
-    destAddress: '10.0.0.1',
-    destPort: '443',
-  },
-  {
-    id: 4,
-    egressId: 'egress004',
-    serverId: 'server03',
-    egressMode: 'ss2022',
-    egressConfig: 'Shadowsocks-2022，支持UDP',
-    password: 'password123',
-    supportUdp: true,
-  },
-];
-
-// 模拟转发规则数据
-const mockForwardRules = [
-  {
-    id: 1,
-    ruleId: 'rule001',
-    entryType: 'HTTP',
-    entryConfig: '127.0.0.1:8080',
-    trafficUsed: 1024,
-    exitType: 'PROXY',
-    exitConfig: 'proxy.example.com:443',
-    status: 'ACTIVE',
-    viaNodes: ['香港节点', '日本节点'],
-  },
-  {
-    id: 2,
-    ruleId: 'rule002',
-    entryType: 'SOCKS5',
-    entryConfig: '0.0.0.0:1080',
-    trafficUsed: 512,
-    exitType: 'DIRECT',
-    exitConfig: '-',
-    status: 'PAUSED',
-    viaNodes: ['新加坡节点'],
-  },
-  {
-    id: 3,
-    ruleId: 'rule003',
-    entryType: 'SHADOWSOCKS',
-    entryConfig: '0.0.0.0:8388',
-    trafficUsed: 2048,
-    exitType: 'REJECT',
-    exitConfig: '-',
-    status: 'ERROR',
-    viaNodes: [],
-  },
-];
-
-// 模拟可用服务器数据
-const mockAvailableServers = [
-  { 
-    id: 'server001', 
-    name: '香港服务器', 
-    type: 'NORMAL',
-    ip: '203.0.113.1',
-    location: {
-      country: '中国香港',
-      latitude: 22.3193,
-      longitude: 114.1694,
-      x: 650,
-      y: 250
-    }
-  },
-  { 
-    id: 'server002', 
-    name: '东京服务器', 
-    type: 'NORMAL',
-    ip: '203.0.113.2',
-    location: {
-      country: '日本',
-      latitude: 35.6762,
-      longitude: 139.6503,
-      x: 700,
-      y: 220
-    }
-  },
-  { 
-    id: 'exit001', 
-    name: '美国出口', 
-    type: 'EXIT',
-    ip: '198.51.100.1',
-    location: {
-      country: '美国',
-      latitude: 38.8951,
-      longitude: -77.0364,
-      x: 250,
-      y: 220
-    }
-  },
-];
-
 // 模拟用户信息数据
-const mockUserInfo = {
+const mockUserInfo: UserInfoData = {
   id: 1,
-  name: 'admin',
-  role: 'admin',
-  userGroup: 'admin',
-  traffic: '1000GB',
-  trafficResetDate: '2025-01-01',
-  forwardRuleConfigLimit: '1000',
-  email: 'admin@example.com',
-  phone: '+86 138-0013-8000',
-  avatar: 'https://via.placeholder.com/100',
-  createTime: '2023-01-01T00:00:00Z',
-  lastLoginTime: '2024-01-15T08:30:00Z'
+  name: "张三",
+  email: "zhangsan@example.com",
+  avatar: "https://example.com/avatar.jpg",
+  phone: "13800138000",
+  bio: "这是一段个人简介",
+  role: "admin",
+  status: "active",
+  createTime: "2023-01-15T08:30:00Z"
 };
 
 export const handlers = [
   // =================== 用户配置管理 API ===================
   
   // 获取用户配置列表
-  http.get('https://api.example.com/config/users', ({ request }) => {
+  http.get('/api/config/users', ({ request }) => {
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1');
     const pageSize = parseInt(url.searchParams.get('pageSize') || '10');
@@ -333,69 +315,55 @@ export const handlers = [
     const username = url.searchParams.get('username');
     const userGroup = url.searchParams.get('userGroup');
     const banned = url.searchParams.get('banned');
-    
-    // 筛选数据
-    let filteredUsers = mockUserConfigs;
-    
+
+    let filteredConfigs = [...mockUserConfigs];
+
+    // 应用过滤条件
     if (userId) {
-      filteredUsers = filteredUsers.filter(user => 
-        user.userId.toLowerCase().includes(userId.toLowerCase())
-      );
+      filteredConfigs = filteredConfigs.filter(config => config.userId.includes(userId));
     }
-    
     if (username) {
-      filteredUsers = filteredUsers.filter(user => 
-        user.username.toLowerCase().includes(username.toLowerCase())
-      );
+      filteredConfigs = filteredConfigs.filter(config => config.username.includes(username));
     }
-    
     if (userGroup) {
-      filteredUsers = filteredUsers.filter(user => user.userGroup === userGroup);
+      filteredConfigs = filteredConfigs.filter(config => config.userGroup === userGroup);
     }
-    
-    if (banned !== null && banned !== undefined && banned !== '') {
-      filteredUsers = filteredUsers.filter(user => user.banned.toString() === banned);
+    if (banned !== null) {
+      filteredConfigs = filteredConfigs.filter(config => config.banned === (banned === 'true'));
     }
-    
-    // 分页
-    const startIndex = (page - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
-    
-    return HttpResponse.json({
+
+    // 计算分页
+    const total = filteredConfigs.length;
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize;
+    const paginatedConfigs = filteredConfigs.slice(start, end);
+
+    const response: ServerResponse<typeof paginatedConfigs> = {
       success: true,
-      data: paginatedUsers,
+      data: paginatedConfigs,
       pagination: {
         current: page,
         pageSize: pageSize,
-        total: filteredUsers.length,
-        totalPages: Math.ceil(filteredUsers.length / pageSize)
+        total: total
       }
-    });
+    };
+
+    return HttpResponse.json(response);
   }),
 
   // 创建用户配置
-  http.post('https://api.example.com/config/users', async ({ request }) => {
-    const userData = await request.json() as any;
-    
-    const newUser = {
+  http.post('/api/config/users', async ({ request }) => {
+    const data = await request.json() as UserConfigData;
+    const newConfig = {
       id: mockUserConfigs.length + 1,
-      ...userData,
-      banned: userData.banned || false,
+      ...data
     };
-    
-    // 模拟添加到数据中
-    mockUserConfigs.push(newUser);
-    
-    return HttpResponse.json({
-      success: true,
-      message: "用户配置创建成功",
-      data: newUser
-    });
+    mockUserConfigs.push(newConfig);
+    return HttpResponse.json({ success: true, data: newConfig });
   }),
 
   // 获取单个用户配置
-  http.get('https://api.example.com/config/users/:id', ({ params }) => {
+  http.get('/api/config/users/:id', ({ params }) => {
     const userId = parseInt(params.id as string);
     const user = mockUserConfigs.find(u => u.id == userId);
     
@@ -413,144 +381,96 @@ export const handlers = [
   }),
 
   // 更新用户配置
-  http.put('https://api.example.com/config/users/:id', async ({ params, request }) => {
-    const userId = parseInt(params.id as string);
-    const userData = await request.json() as any;
-    const userIndex = mockUserConfigs.findIndex(u => u.id == userId);
+  http.put('/api/config/users/:id', async ({ params, request }) => {
+    const { id } = params;
+    const data = await request.json() as UserConfigData;
+    const index = mockUserConfigs.findIndex(config => config.id === Number(id));
     
-    if (userIndex === -1) {
-      return HttpResponse.json(
-        { success: false, message: "用户配置不存在" },
-        { status: 404 }
-      );
+    if (index === -1) {
+      return new HttpResponse(null, { status: 404 });
     }
-    
-    mockUserConfigs[userIndex] = { ...mockUserConfigs[userIndex], ...userData };
-    
-    return HttpResponse.json({
-      success: true,
-      message: "用户配置更新成功",
-      data: mockUserConfigs[userIndex]
-    });
+
+    mockUserConfigs[index] = { ...mockUserConfigs[index], ...data };
+    return HttpResponse.json({ success: true, data: mockUserConfigs[index] });
   }),
 
   // 删除用户配置
-  http.delete('https://api.example.com/config/users/:id', ({ params }) => {
-    const userId = parseInt(params.id as string);
-    const userIndex = mockUserConfigs.findIndex(u => u.id == userId);
+  http.delete('/api/config/users/:id', ({ params }) => {
+    const { id } = params;
+    const index = mockUserConfigs.findIndex(config => config.id === Number(id));
     
-    if (userIndex === -1) {
-      return HttpResponse.json(
-        { success: false, message: "用户配置不存在" },
-        { status: 404 }
-      );
+    if (index === -1) {
+      return new HttpResponse(null, { status: 404 });
     }
-    
-    mockUserConfigs.splice(userIndex, 1);
-    
-    return HttpResponse.json({
-      success: true,
-      message: "用户配置删除成功"
-    });
+
+    mockUserConfigs.splice(index, 1);
+    return HttpResponse.json({ success: true });
   }),
 
   // 封禁/解除封禁用户
-  http.put('https://api.example.com/config/users/:id/ban', async ({ params, request }) => {
-    const userId = parseInt(params.id as string);
-    const { banned } = await request.json() as any;
-    const userIndex = mockUserConfigs.findIndex(u => u.id == userId);
+  http.put('/api/config/users/:id/ban', async ({ params, request }) => {
+    const { id } = params;
+    const data = await request.json() as BanUserData;
+    const index = mockUserConfigs.findIndex(config => config.id === Number(id));
     
-    if (userIndex === -1) {
-      return HttpResponse.json(
-        { success: false, message: "用户配置不存在" },
-        { status: 404 }
-      );
+    if (index === -1) {
+      return new HttpResponse(null, { status: 404 });
     }
-    
-    mockUserConfigs[userIndex].banned = banned;
-    
-    return HttpResponse.json({
-      success: true,
-      message: banned ? "用户已被封禁" : "用户封禁已解除",
-      data: mockUserConfigs[userIndex]
-    });
+
+    mockUserConfigs[index].banned = data.banned;
+    return HttpResponse.json({ success: true, data: mockUserConfigs[index] });
   }),
 
   // 重置用户流量
-  http.post('https://api.example.com/config/users/:id/reset-traffic', ({ params }) => {
-    const userId = parseInt(params.id as string);
-    const user = mockUserConfigs.find(u => u.id == userId);
+  http.post('/api/config/users/:id/reset-traffic', ({ params }) => {
+    const { id } = params;
+    const index = mockUserConfigs.findIndex(config => config.id === Number(id));
     
-    if (!user) {
-      return HttpResponse.json(
-        { success: false, message: "用户配置不存在" },
-        { status: 404 }
-      );
+    if (index === -1) {
+      return new HttpResponse(null, { status: 404 });
     }
-    
-    return HttpResponse.json({
-      success: true,
-      message: `用户 ${user.username} 的流量已重置`
-    });
+
+    // 在实际应用中，这里应该重置用户的流量统计
+    return HttpResponse.json({ success: true });
   }),
 
-  // 邀请用户注册
-  http.post('https://api.example.com/config/users/:id/invite', ({ params }) => {
-    const userId = parseInt(params.id as string);
-    const user = mockUserConfigs.find(u => u.id == userId);
+  // 发送邀请注册链接
+  http.post('/api/config/users/:id/invite', ({ params }) => {
+    const { id } = params;
+    const index = mockUserConfigs.findIndex(config => config.id === Number(id));
     
-    if (!user) {
-      return HttpResponse.json(
-        { success: false, message: "用户配置不存在" },
-        { status: 404 }
-      );
+    if (index === -1) {
+      return new HttpResponse(null, { status: 404 });
     }
-    
-    const inviteLink = `https://app.example.com/register?invite=${userId}&token=${Date.now()}`;
-    
-    return HttpResponse.json({
-      success: true,
-      message: `已向用户 ${user.username} 发送邀请注册链接`,
-      data: { inviteLink }
-    });
+
+    // 在实际应用中，这里应该生成并发送邀请链接
+    const inviteLink = `https://example.com/register?invite=mock-invite-code-${id}`;
+    return HttpResponse.json({ success: true, data: { inviteLink } });
   }),
 
   // 批量删除用户配置
-  http.post('https://api.example.com/config/users/batch-delete', async ({ request }) => {
-    const { ids } = await request.json() as any;
-    
-    // 从数据中移除指定的用户
-    ids.forEach((id: any) => {
-      const userIndex = mockUserConfigs.findIndex(u => u.id == id);
-      if (userIndex !== -1) {
-        mockUserConfigs.splice(userIndex, 1);
+  http.post('/api/config/users/batch-delete', async ({ request }) => {
+    const data = await request.json() as BatchOperationData;
+    data.ids.forEach(id => {
+      const index = mockUserConfigs.findIndex(config => config.id === id);
+      if (index !== -1) {
+        mockUserConfigs.splice(index, 1);
       }
     });
-    
-    return HttpResponse.json({
-      success: true,
-      message: `已删除 ${ids.length} 个用户配置`
-    });
+    return HttpResponse.json({ success: true });
   }),
 
   // 批量更新用户配置
-  http.put('https://api.example.com/config/users/batch-update', async ({ request }) => {
-    const { ids, updateData } = await request.json() as any;
-    const updatedUsers: any[] = [];
-    
-    ids.forEach((id: any) => {
-      const userIndex = mockUserConfigs.findIndex(u => u.id == id);
-      if (userIndex !== -1) {
-        mockUserConfigs[userIndex] = { ...mockUserConfigs[userIndex], ...updateData };
-        updatedUsers.push(mockUserConfigs[userIndex]);
+  http.put('/api/config/users/batch-update', async ({ request }) => {
+    const data = await request.json() as BatchOperationData;
+    const updatedConfigs = mockUserConfigs.map(config => {
+      if (data.ids.includes(config.id as number) && data.updateData) {
+        return { ...config, ...data.updateData };
       }
+      return config;
     });
-    
-    return HttpResponse.json({
-      success: true,
-      message: `已更新 ${updatedUsers.length} 个用户配置`,
-      data: updatedUsers
-    });
+    mockUserConfigs.splice(0, mockUserConfigs.length, ...updatedConfigs);
+    return HttpResponse.json({ success: true, data: updatedConfigs });
   }),
 
   // =================== 原有用户管理 API ===================
@@ -587,7 +507,7 @@ export const handlers = [
 
   // 创建用户
   http.post('https://api.example.com/users', async ({ request }) => {
-    const userData = await request.json() as any;
+    const userData = await request.json() as UserData;
     
     const newUser = {
       id: mockUsers.length + 1,
@@ -596,7 +516,6 @@ export const handlers = [
       createTime: new Date().toISOString()
     };
     
-    // 模拟添加到数据中
     mockUsers.push(newUser);
     
     return HttpResponse.json({
@@ -627,7 +546,7 @@ export const handlers = [
   // 更新用户
   http.put('https://api.example.com/users/:id', async ({ params, request }) => {
     const userId = parseInt(params.id as string);
-    const userData = await request.json() as any;
+    const userData = await request.json() as UserData;
     const userIndex = mockUsers.findIndex(u => u.id === userId);
     
     if (userIndex === -1) {
@@ -680,7 +599,7 @@ export const handlers = [
 
   // 模拟登录接口
   http.post('https://api.example.com/auth/login', async ({ request }) => {
-    const credentials = await request.json() as any;
+    const credentials = await request.json() as LoginRequestData;
     
     // 模拟登录验证
     if (credentials.username === 'admin' && credentials.password === '123456') {
@@ -716,7 +635,7 @@ export const handlers = [
 
   // 更新网站配置
   http.put('https://api.example.com/config/website', async ({ request }) => {
-    const updateData = await request.json() as any;
+    const updateData = await request.json() as WebsiteConfigUpdateData;
     
     Object.assign(mockWebsiteConfig, updateData);
     mockWebsiteConfig.updatedAt = new Date().toISOString();
@@ -750,7 +669,7 @@ export const handlers = [
 
   // 验证邀请码
   http.post('https://api.example.com/config/website/validate-invite', async ({ request }) => {
-    const { code } = await request.json() as any;
+    const { code } = await request.json() as InviteCodeData;
     const valid = code === mockWebsiteConfig.inviteCode;
     
     return HttpResponse.json({
@@ -819,14 +738,14 @@ export const handlers = [
 
   // 创建服务器
   http.post('https://api.example.com/servers', async ({ request }) => {
-    const serverData = await request.json() as any;
+    const serverData = await request.json() as ServerData;
     
     const newServer = {
       id: mockServers.length + 1,
       ...serverData,
-      uploadTraffic: serverData.uploadTraffic || 0,
-      downloadTraffic: serverData.downloadTraffic || 0,
-      status: serverData.status || 'offline',
+      registerTime: new Date().toISOString(),
+      uploadTraffic: 0,
+      downloadTraffic: 0
     };
     
     mockServers.push(newServer);
@@ -859,8 +778,8 @@ export const handlers = [
   // 更新服务器
   http.put('https://api.example.com/servers/:id', async ({ params, request }) => {
     const serverId = parseInt(params.id as string);
-    const serverData = await request.json() as any;
-    const serverIndex = mockServers.findIndex(s => s.id == serverId);
+    const serverData = await request.json() as ServerData;
+    const serverIndex = mockServers.findIndex(s => s.id === serverId);
     
     if (serverIndex === -1) {
       return HttpResponse.json(
@@ -972,13 +891,12 @@ export const handlers = [
   }),
 
   // 创建用户组
-  http.post('https://api.example.com/config/user-groups', async ({ request }) => {
-    const groupData = await request.json() as any;
+  http.post('https://api.example.com/user-groups', async ({ request }) => {
+    const groupData = await request.json() as UserGroupData;
     
     const newGroup = {
       id: mockUserGroups.length + 1,
-      ...groupData,
-      userCount: groupData.userCount || 0,
+      ...groupData
     };
     
     mockUserGroups.push(newGroup);
@@ -991,10 +909,10 @@ export const handlers = [
   }),
 
   // 更新用户组
-  http.put('https://api.example.com/config/user-groups/:id', async ({ params, request }) => {
+  http.put('https://api.example.com/user-groups/:id', async ({ params, request }) => {
     const groupId = parseInt(params.id as string);
-    const groupData = await request.json() as any;
-    const groupIndex = mockUserGroups.findIndex(g => g.id == groupId);
+    const groupData = await request.json() as UserGroupData;
+    const groupIndex = mockUserGroups.findIndex(g => g.id === groupId);
     
     if (groupIndex === -1) {
       return HttpResponse.json(
@@ -1044,9 +962,15 @@ export const handlers = [
 
   // 更新当前用户信息
   http.put('https://api.example.com/user/info', async ({ request }) => {
-    const updateData = await request.json() as any;
+    const updateData = await request.json() as UserInfoUpdateData;
     
-    Object.assign(mockUserInfo, updateData);
+    // 只更新允许的字段
+    const allowedFields = ['name', 'email', 'avatar', 'phone', 'bio'] as const;
+    Object.keys(updateData).forEach(key => {
+      if (allowedFields.includes(key as typeof allowedFields[number])) {
+        (mockUserInfo)[key as keyof UserInfoUpdateData] = updateData[key as keyof UserInfoUpdateData];
+      }
+    });
     
     return HttpResponse.json({
       success: true,
@@ -1056,21 +980,24 @@ export const handlers = [
   }),
 
   // 修改密码
-  http.put('https://api.example.com/user/info/password', async ({ request }) => {
-    const { oldPassword, newPassword } = await request.json() as any;
-    
-    // 模拟密码验证
-    if (oldPassword !== 'oldpass123') {
+  http.post('/api/users/change-password', async ({ request }) => {
+    try {
+      const data = await request.json();
+      const { oldPassword: _oldPassword, newPassword } = data as PasswordChangeData;
+      const _hashedNewPassword = await hashPassword(newPassword);
+      
+      // 模拟密码验证和更新
+      return HttpResponse.json({
+        success: true,
+        message: '密码修改成功',
+        data: null
+      });
+    } catch {
       return HttpResponse.json(
-        { success: false, message: "原密码错误" },
+        { success: false, message: '请求数据格式错误' },
         { status: 400 }
       );
     }
-    
-    return HttpResponse.json({
-      success: true,
-      message: "密码修改成功"
-    });
   }),
 
   // 获取流量统计
@@ -1131,6 +1058,26 @@ export const handlers = [
         { user: '赵六', value: 12, traffic: 120 },
         { user: '其他用户', value: 10, traffic: 100 },
       ]
+    });
+  }),
+
+  // 批量更新用户组
+  http.put('https://api.example.com/user-groups/batch', async ({ request }) => {
+    const updateData = await request.json() as BatchUpdateUserGroupData;
+    
+    const updatedGroups = mockUserGroups.map(group => {
+      if (updateData.ids.includes(group.id as number)) {
+        return { ...group, ...updateData.updateData };
+      }
+      return group;
+    });
+    
+    mockUserGroups.splice(0, mockUserGroups.length, ...updatedGroups);
+    
+    return HttpResponse.json({
+      success: true,
+      message: "用户组批量更新成功",
+      data: updatedGroups
     });
   })
 ]; 

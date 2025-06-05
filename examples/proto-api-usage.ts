@@ -2,7 +2,7 @@
 // 演示如何在多个项目中共享相同的API类型定义
 
 // ✅ Dashboard API 使用示例
-import { dashboardService, TimePeriod, LogLevel } from '@/services/dashboard';
+import { dashboardService, TimePeriod } from '@/services/dashboard';
 
 // ✅ Servers API 使用示例  
 import { serversService, ServerStatus } from '@/services/servers';
@@ -48,7 +48,7 @@ async function demonstrateProtoApiUsage() {
     console.log('用户流量统计：', userTraffic.data?.length || 0, '项');
 
   } catch (error) {
-    console.log('Dashboard API 调用示例（模拟）');
+    console.error('Dashboard API 调用失败:', error);
   }
 
   // ✅ 2. Servers API - 类型安全的服务器管理
@@ -85,7 +85,7 @@ async function demonstrateProtoApiUsage() {
     console.log('服务器列表数量：', serversList.data?.length || 0);
 
   } catch (error) {
-    console.log('Servers API 调用示例（模拟）');
+    console.error('Servers API 调用失败:', error);
   }
 
   // ✅ 3. User Info API - 类型安全的用户信息管理
@@ -120,7 +120,7 @@ async function demonstrateProtoApiUsage() {
     });
 
   } catch (error) {
-    console.log('User Info API 调用示例（模拟）');
+    console.error('User Info API 调用失败:', error);
   }
 
   // ✅ 4. 跨项目共享的优势展示
