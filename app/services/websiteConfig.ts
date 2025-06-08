@@ -25,7 +25,7 @@ export interface UpdateWebsiteConfigData {
 }
 
 class WebsiteConfigService {
-  private readonly endpoint = '/config/website';
+  private readonly endpoint = '/settings';
 
   /**
    * 获取网站配置
@@ -52,14 +52,14 @@ class WebsiteConfigService {
    * 验证邀请码
    */
   async validateInviteCode(code: string): Promise<ApiResponse<{ valid: boolean }>> {
-    return httpClient.post<{ valid: boolean }>(`${this.endpoint}/validate-invite`, { code });
+    return httpClient.post<{ valid: boolean }>(`${this.endpoint}/validateInvite`, { code });
   }
 
   /**
    * 生成新的邀请码
    */
   async generateInviteCode(): Promise<ApiResponse<{ inviteCode: string }>> {
-    return httpClient.post<{ inviteCode: string }>(`${this.endpoint}/generate-invite`);
+    return httpClient.post<{ inviteCode: string }>(`${this.endpoint}/inviteCode`);
   }
 }
 

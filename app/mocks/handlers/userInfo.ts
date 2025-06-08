@@ -7,7 +7,7 @@ import { mockUserInfo } from '@mock/data/userInfo';
 
 export const userInfoHandlers = [
   // 获取当前用户信息
-  http.get('https://api.example.com/user/info', () => {
+  http.get('/api/user/info', () => {
     return HttpResponse.json({
       success: true,
       data: mockUserInfo
@@ -15,7 +15,7 @@ export const userInfoHandlers = [
   }),
 
   // 更新当前用户信息
-  http.put('https://api.example.com/user/info', async ({ request }) => {
+  http.put('/api/user/info', async ({ request }) => {
     const updateData = await request.json() as UserInfoUpdateData;
     
     // 只更新允许的字段
@@ -34,7 +34,7 @@ export const userInfoHandlers = [
   }),
 
   // 修改密码
-  http.post('/api/users/change-password', async ({ request }) => {
+  http.post('/api/user/changePassword', async ({ request }) => {
     try {
       const data = await request.json();
       const { oldPassword: _oldPassword, newPassword } = data as PasswordChangeData;
@@ -55,7 +55,7 @@ export const userInfoHandlers = [
   }),
 
   // 获取流量统计
-  http.get('https://api.example.com/user/info/traffic-stats', () => {
+  http.get('/api/user/trafficStats', () => {
     return HttpResponse.json({
       success: true,
       data: {

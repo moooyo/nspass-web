@@ -5,22 +5,22 @@ package nspass.common.v1;
 // 通用分页请求
 message PaginationRequest {
   int32 page = 1;
-  int32 page_size = 2;
+  int32 pageSize = 2;
 }
 
 // 通用分页响应
 message PaginationResponse {
   int32 total = 1;
   int32 page = 2;
-  int32 page_size = 3;
-  int32 total_pages = 4;
+  int32 pageSize = 3;
+  int32 totalPages = 4;
 }
 
 // 通用API响应封装
 message ApiResponse {
   bool success = 1;
   optional string message = 2;
-  optional string error_code = 3;
+  optional string errorCode = 3;
 }
 
 // 批量操作请求
@@ -37,8 +37,8 @@ message OperationResult {
 // 批量操作响应
 message BatchOperationResponse {
   repeated OperationResult results = 1;
-  int32 success_count = 2;
-  int32 failure_count = 3;
+  int32 successCount = 2;
+  int32 failureCount = 3;
 }
 
 // 状态枚举

@@ -45,7 +45,7 @@ export interface UserConfigListParams {
 export type UpdateUserConfigData = Partial<CreateUserConfigData>;
 
 class UsersConfigService {
-  private readonly endpoint = '/config/users';
+  private readonly endpoint = '/users/settings';
 
   /**
    * 获取用户配置列表
@@ -102,7 +102,7 @@ class UsersConfigService {
    * 重置用户流量
    */
   async resetUserTraffic(id: React.Key): Promise<ApiResponse<void>> {
-    return httpClient.post<void>(`${this.endpoint}/${id}/reset-traffic`);
+    return httpClient.post<void>(`${this.endpoint}/${id}/resetTraffic`);
   }
 
   /**
@@ -116,7 +116,7 @@ class UsersConfigService {
    * 批量删除用户配置
    */
   async batchDeleteUserConfigs(ids: React.Key[]): Promise<ApiResponse<void>> {
-    return httpClient.post<void>(`${this.endpoint}/batch-delete`, { ids });
+    return httpClient.post<void>(`${this.endpoint}/batchDelete`, { ids });
   }
 
   /**
@@ -126,7 +126,7 @@ class UsersConfigService {
     ids: React.Key[], 
     updateData: UpdateUserConfigData
   ): Promise<ApiResponse<UserConfigItem[]>> {
-    return httpClient.put<UserConfigItem[]>(`${this.endpoint}/batch-update`, { 
+    return httpClient.put<UserConfigItem[]>(`${this.endpoint}/batchUpdate`, { 
       ids, 
       updateData 
     });

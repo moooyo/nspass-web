@@ -14,4 +14,15 @@ export const miscHandlers = [
       ]
     });
   }),
+  // 应用程序心跳检测
+  http.get('/api/ping', () => {
+    return HttpResponse.json({
+      success: true,
+      data: {
+        timestamp: new Date().toISOString(),
+        version: '1.0.0',
+        environment: 'development'
+      }
+    });
+  }),
 ]; 

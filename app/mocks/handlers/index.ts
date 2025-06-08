@@ -2,7 +2,7 @@
 
 export { userConfigHandlers } from '@mock/handlers/userConfig';
 export { websiteConfigHandlers } from '@mock/handlers/websiteConfig';
-export { userHandlers } from '@mock/handlers/users';
+export { usersHandlers } from '@mock/handlers/users';
 export { serverHandlers } from '@mock/handlers/servers';
 export { userGroupHandlers } from '@mock/handlers/userGroups';
 export { userInfoHandlers } from '@mock/handlers/userInfo';

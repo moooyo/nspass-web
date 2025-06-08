@@ -19,9 +19,9 @@ message ServerItem {
   optional string ipv6 = 4;
   string region = 5;
   string group = 6;
-  string register_time = 7;
-  double upload_traffic = 8; // MB
-  double download_traffic = 9; // MB
+  string registerTime = 7;
+  double uploadTraffic = 8; // MB
+  double downloadTraffic = 9; // MB
   ServerStatus status = 10;
 }
 
@@ -32,9 +32,9 @@ message CreateServerRequest {
   optional string ipv6 = 3;
   string region = 4;
   string group = 5;
-  string register_time = 6;
-  optional double upload_traffic = 7;
-  optional double download_traffic = 8;
+  string registerTime = 6;
+  optional double uploadTraffic = 7;
+  optional double downloadTraffic = 8;
   optional ServerStatus status = 9;
 }
 
@@ -45,16 +45,16 @@ message UpdateServerRequest {
   optional string ipv6 = 3;
   optional string region = 4;
   optional string group = 5;
-  optional string register_time = 6;
-  optional double upload_traffic = 7;
-  optional double download_traffic = 8;
+  optional string registerTime = 6;
+  optional double uploadTraffic = 7;
+  optional double downloadTraffic = 8;
   optional ServerStatus status = 9;
 }
 
 // 服务器列表查询参数
 message GetServersRequest {
   optional int32 page = 1;
-  optional int32 page_size = 2;
+  optional int32 pageSize = 2;
   optional string name = 3;
   optional ServerStatus status = 4;
   optional string region = 5;
@@ -94,11 +94,11 @@ message GetServerStatsRequest {
 // 服务器统计数据
 message ServerStats {
   int64 uptime = 1;
-  double cpu_usage = 2;
-  double memory_usage = 3;
-  double disk_usage = 4;
-  double network_in = 5;
-  double network_out = 6;
+  double cpuUsage = 2;
+  double memoryUsage = 3;
+  double diskUsage = 4;
+  double networkIn = 5;
+  double networkOut = 6;
 }
 
 // 区域选项

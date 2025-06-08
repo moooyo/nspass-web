@@ -2,6 +2,133 @@ syntax = "proto3";
 
 package nspass.egress.v1;
 
+import "common.proto";
+
+// 流量统计数据
+message TrafficStat {
+  int64 timestamp = 1; // Unix timestamp in seconds
+  double upload = 2; // Bytes
+  double download = 3; // Bytes
+}
+
+// 节点类型
+enum NodeType {
+  NODE_TYPE_UNSPECIFIED = 0;
+  NODE_TYPE_RELAY = 1;
+  NODE_TYPE_EXIT = 2;
+  NODE_TYPE_HYBRID = 3;
+}
+
+// 节点状态
+enum NodeStatus {
+  NODE_STATUS_UNSPECIFIED = 0;
+  NODE_STATUS_ONLINE = 1;
+  NODE_STATUS_OFFLINE = 2;
+  NODE_STATUS_MAINTENANCE = 3;
+  NODE_STATUS_ERROR = 4;
+}
+
+// 心跳请求
+message HeartbeatRequest {
+  string nodeId = 1;
+  NodeStatus status = 2;
+  repeated TrafficStat trafficStats = 3;
+  double cpuLoad = 4;
+  double memoryUsage = 5;
+  double diskUsage = 6;
+  int32 activeConnections = 7;
+}
+
+// 心跳响应
+message HeartbeatResponse {
+  nspass.common.v1.ApiResponse base = 1;
+  int64 serverTime = 2; // 服务器时间，用于时间同步
+  repeated ConfigUpdate configUpdates = 3; // 配置更新
+  bool needFullSync = 4; // 是否需要完全同步
+}
+
+// 配置更新类型
+enum ConfigUpdateType {
+  CONFIG_UPDATE_TYPE_UNSPECIFIED = 0;
+  CONFIG_UPDATE_TYPE_USER = 1;
+  CONFIG_UPDATE_TYPE_SYSTEM = 2;
+  CONFIG_UPDATE_TYPE_FORWARDING_RULE = 3;
+}
+
+// 配置更新
+message ConfigUpdate {
+  ConfigUpdateType type = 1;
+  string targetId = 2; // 用户ID或系统配置ID
+  string configJson = 3; // JSON格式的配置数据
+}
+
+// 注册节点请求
+message RegisterNodeRequest {
+  string hostname = 1;
+  string ipv4 = 2;
+  string ipv6 = 3;
+  NodeType type = 4;
+  string region = 5;
+  string version = 6;
+  map<string, string> capabilities = 7;
+  string apiKey = 8; // 用于验证
+}
+
+// 注册节点响应
+message RegisterNodeResponse {
+  nspass.common.v1.ApiResponse base = 1;
+  string nodeId = 2;
+  string configJson = 3; // 初始配置
+}
+
+// 同步请求
+message SyncRequest {
+  string nodeId = 1;
+  int64 lastSyncTimestamp = 2;
+}
+
+// 同步响应
+message SyncResponse {
+  nspass.common.v1.ApiResponse base = 1;
+  string fullConfigJson = 2; // 完整配置
+  int64 syncTimestamp = 3;
+}
+
+// 用户流量上报请求
+message UserTrafficReportRequest {
+  string nodeId = 1;
+  repeated UserTrafficRecord records = 2;
+}
+
+// 用户流量记录
+message UserTrafficRecord {
+  string userId = 1;
+  double upload = 2; // Bytes
+  double download = 3; // Bytes
+  int64 timestamp = 4;
+}
+
+// 用户流量上报响应
+message UserTrafficReportResponse {
+  nspass.common.v1.ApiResponse base = 1;
+  repeated string updatedUserIds = 2; // 需要更新配置的用户ID列表
+}
+
+// 出口节点服务
+service EgressService {
+  // 心跳检测
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  
+  // 注册节点
+  rpc RegisterNode(RegisterNodeRequest) returns (RegisterNodeResponse);
+  
+  // 同步配置
+  rpc SyncConfig(SyncRequest) returns (SyncResponse);
+  
+  // 上报用户流量
+  rpc ReportUserTraffic(UserTrafficReportRequest) returns (UserTrafficReportResponse);
+}
+
 // 出口模式枚举
 enum EgressMode {
   EGRESS_MODE_UNSPECIFIED = 0;
@@ -21,63 +148,63 @@ enum ForwardType {
 // 出口项目消息
 message EgressItem {
   string id = 1;
-  string egress_id = 2;
-  string server_id = 3;
-  EgressMode egress_mode = 4;
-  string egress_config = 5;
+  string egressId = 2;
+  string serverId = 3;
+  EgressMode egressMode = 4;
+  string egressConfig = 5;
   
   // 直出模式字段
-  optional string target_address = 6;
+  optional string targetAddress = 6;
   
   // iptables模式字段
-  optional ForwardType forward_type = 7;
-  optional string dest_address = 8;
-  optional string dest_port = 9;
+  optional ForwardType forwardType = 7;
+  optional string destAddress = 8;
+  optional string destPort = 9;
   
   // shadowsocks-2022模式字段
   optional string password = 10;
-  optional bool support_udp = 11;
+  optional bool supportUdp = 11;
 }
 
 // 创建出口请求
 message CreateEgressRequest {
-  optional string egress_id = 1;
-  string server_id = 2;
-  EgressMode egress_mode = 3;
+  optional string egressId = 1;
+  string serverId = 2;
+  EgressMode egressMode = 3;
   
   // 直出模式字段
-  optional string target_address = 4;
+  optional string targetAddress = 4;
   
   // iptables模式字段
-  optional ForwardType forward_type = 5;
-  optional string dest_address = 6;
-  optional string dest_port = 7;
+  optional ForwardType forwardType = 5;
+  optional string destAddress = 6;
+  optional string destPort = 7;
   
   // shadowsocks-2022模式字段
   optional string password = 8;
-  optional bool support_udp = 9;
+  optional bool supportUdp = 9;
 }
 
 // 更新出口请求
 message UpdateEgressRequest {
-  optional string egress_id = 1;
-  optional string server_id = 2;
-  optional EgressMode egress_mode = 3;
-  optional string target_address = 4;
-  optional ForwardType forward_type = 5;
-  optional string dest_address = 6;
-  optional string dest_port = 7;
+  optional string egressId = 1;
+  optional string serverId = 2;
+  optional EgressMode egressMode = 3;
+  optional string targetAddress = 4;
+  optional ForwardType forwardType = 5;
+  optional string destAddress = 6;
+  optional string destPort = 7;
   optional string password = 8;
-  optional bool support_udp = 9;
+  optional bool supportUdp = 9;
 }
 
 // 出口列表查询参数
 message EgressListParams {
   optional int32 page = 1;
-  optional int32 page_size = 2;
-  optional string egress_id = 3;
-  optional string server_id = 4;
-  optional EgressMode egress_mode = 5;
+  optional int32 pageSize = 2;
+  optional string egressId = 3;
+  optional string serverId = 4;
+  optional EgressMode egressMode = 5;
 }
 
 // 出口列表响应
@@ -85,7 +212,7 @@ message EgressListResponse {
   repeated EgressItem items = 1;
   int32 total = 2;
   int32 page = 3;
-  int32 page_size = 4;
+  int32 pageSize = 4;
 }
 
 // 测试连接响应
@@ -97,9 +224,9 @@ message TestConnectionResponse {
 
 // 出口统计响应
 message EgressStatsResponse {
-  int32 connections_count = 1;
-  int64 bytes_transferred = 2;
-  string last_activity = 3;
+  int32 connectionsCount = 1;
+  int64 bytesTransferred = 2;
+  string lastActivity = 3;
 }
 
 // 可用服务器项目
@@ -123,5 +250,5 @@ message ValidateConfigResponse {
 message ApiResponse {
   bool success = 1;
   optional string message = 2;
-  optional string error_code = 3;
+  optional string errorCode = 3;
 } 

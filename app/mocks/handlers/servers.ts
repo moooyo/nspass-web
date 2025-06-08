@@ -6,7 +6,7 @@ import { mockServers } from '@mock/data/servers';
 
 export const serverHandlers = [
   // 获取服务器列表
-  http.get('https://api.example.com/servers', ({ request }) => {
+  http.get('/api/servers', ({ request }) => {
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1');
     const pageSize = parseInt(url.searchParams.get('pageSize') || '10');
@@ -49,7 +49,7 @@ export const serverHandlers = [
   }),
 
   // 创建服务器
-  http.post('https://api.example.com/servers', async ({ request }) => {
+  http.post('/api/servers', async ({ request }) => {
     const serverData = await request.json() as ServerData;
     
     const newServer = {
@@ -70,7 +70,7 @@ export const serverHandlers = [
   }),
 
   // 获取单个服务器
-  http.get('https://api.example.com/servers/:id', ({ params }) => {
+  http.get('/api/servers/:id', ({ params }) => {
     const serverId = parseInt(params.id as string);
     const server = mockServers.find(s => s.id == serverId);
     
@@ -88,7 +88,7 @@ export const serverHandlers = [
   }),
 
   // 更新服务器
-  http.put('https://api.example.com/servers/:id', async ({ params, request }) => {
+  http.put('/api/servers/:id', async ({ params, request }) => {
     const serverId = parseInt(params.id as string);
     const serverData = await request.json() as ServerData;
     const serverIndex = mockServers.findIndex(s => s.id === serverId);
@@ -110,7 +110,7 @@ export const serverHandlers = [
   }),
 
   // 删除服务器
-  http.delete('https://api.example.com/servers/:id', ({ params }) => {
+  http.delete('/api/servers/:id', ({ params }) => {
     const serverId = parseInt(params.id as string);
     const serverIndex = mockServers.findIndex(s => s.id == serverId);
     
@@ -130,7 +130,7 @@ export const serverHandlers = [
   }),
 
   // 重启服务器
-  http.post('https://api.example.com/servers/:id/restart', ({ params }) => {
+  http.post('/api/servers/:id/restart', ({ params }) => {
     const serverId = parseInt(params.id as string);
     const server = mockServers.find(s => s.id == serverId);
     
@@ -148,7 +148,7 @@ export const serverHandlers = [
   }),
 
   // 获取服务器区域列表
-  http.get('https://api.example.com/servers/regions', () => {
+  http.get('/api/servers/regions', () => {
     return HttpResponse.json({
       success: true,
       data: [

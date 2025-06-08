@@ -2,7 +2,7 @@
 import {
   userConfigHandlers,
   websiteConfigHandlers,
-  userHandlers,
+  usersHandlers,
   serverHandlers,
   userGroupHandlers,
   userInfoHandlers,
@@ -15,7 +15,7 @@ import {
 export const handlers = [
   ...userConfigHandlers,     // 用户配置管理 (/api/config/users)
   ...websiteConfigHandlers,  // 网站配置 (/api/config/website)
-  ...userHandlers,           // 用户管理 (https://api.example.com/users)
+  ...usersHandlers,           // 用户管理 (https://api.example.com/users)
   ...serverHandlers,         // 服务器管理 (https://api.example.com/servers)
   ...userGroupHandlers,      // 用户组管理 (https://api.example.com/config/user-groups)
   ...userInfoHandlers,       // 用户信息 (https://api.example.com/user/info)

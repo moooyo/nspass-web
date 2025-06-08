@@ -1,8 +1,9 @@
 import { setupWorker } from 'msw/browser';
 import { handlers } from '@mock/handlers';
 
-// 创建service worker
-export const worker = setupWorker(...handlers);
+// 创建service worker，确保仅在浏览器环境中执行
+// 检查window对象是否存在，确保只在客户端执行
+export const worker = typeof window !== 'undefined' ? setupWorker(...handlers) : null;
 
 // 最大重试次数
 const MAX_RETRIES = 3;
@@ -13,17 +14,33 @@ let workerStarted = false;
 // 启动MSW的函数
 export const startMSW = async (retryCount = 0) => {
   if (typeof window === 'undefined') {
+    console.log('MSW: 不在浏览器环境中，无法启动');
+    return false;
+  }
+
+  if (!worker) {
+    console.error('MSW: worker未初始化，可能是在服务器端运行');
     return false;
   }
 
   // 如果worker已经启动，就不需要再次启动
   if (workerStarted) {
-    console.log('MSW 已经在运行中');
+    console.log('MSW: 已经在运行中');
+    console.log('MSW: 重置处理程序...');
+    console.log(`MSW: 当前处理程序数量: ${handlers.length}`);
     await worker.resetHandlers(...handlers);
     return true;
   }
 
   try {
+    console.log('MSW: 开始启动...');
+    console.log(`MSW: 加载了 ${handlers.length} 个处理程序`);
+    
+    // 打印所有处理程序的路径
+    handlers.forEach((handler, index) => {
+      console.log(`MSW: 处理程序 #${index+1} - ${handler.info.method} ${handler.info.path}`);
+    });
+    
     await worker.start({
       onUnhandledRequest: 'bypass', // 未处理的请求将被忽略
       serviceWorker: {
@@ -55,6 +72,11 @@ export const startMSW = async (retryCount = 0) => {
 
 // 停止MSW
 export const stopMSW = () => {
+  if (typeof window === 'undefined' || !worker) {
+    console.log('MSW: 不在浏览器环境中，或worker未初始化');
+    return false;
+  }
+
   if (!workerStarted) {
     console.log('MSW 未在运行');
     return true;
