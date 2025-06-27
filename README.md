@@ -124,6 +124,7 @@ fetch('https://api.example.com/auth/login')      // 用户登录
 ### 🔧 完整的API功能
 
 - ✅ **用户管理**: 增删改查、分页、筛选
+- ✅ **出口配置**: 支持直出、iptables、Shadowsocks-2022、Snell Surge
 - ✅ **状态管理**: 数据在会话期间保持
 - ✅ **错误处理**: 模拟各种API响应状态
 - ✅ **类型安全**: 完整的TypeScript支持
@@ -275,6 +276,7 @@ npm run clean:all
 - ⚡ [Next.js 文档](https://nextjs.org/docs)
 - 🎯 [TypeScript 文档](https://www.typescriptlang.org/)
 - 🛠️ [故障排除指南](./TROUBLESHOOTING.md)
+- 🚀 [Snell 协议指南](./docs/SNELL_GUIDE.md)
 
 ---
 
