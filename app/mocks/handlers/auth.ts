@@ -4,15 +4,17 @@ import type {
   LoginRequest,
   UserProfile
 } from '@/types/generated/api/users/user_management';
+import { mockLoginUsers, type MockUser } from '@/mocks/data/users';
 
-// 模拟用户数据
-const mockUser: UserProfile = {
-  id: '1',
-  username: 'testuser',
-  email: 'test@example.com',
-  avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=testuser',
-  createdAt: '2024-01-01T00:00:00Z',
-  lastLoginAt: '2024-01-07T10:00:00Z'
+// 登录验证函数
+const authenticateUser = (identifier: string, password: string): MockUser | null => {
+  // 根据用户名或邮箱查找用户
+  const user = mockLoginUsers.find(u => 
+    (u.username === identifier || u.email === identifier) && 
+    u.password === password &&
+    u.status === 'active'
+  );
+  return user || null;
 };
 
 // 认证相关的 API handlers
@@ -57,15 +59,38 @@ export const authHandlers = [
   http.post('/api/v1/auth/login', async ({ request }) => {
     const body = await request.json() as LoginRequest;
     
-    // 模拟验证
-    if (body.username === 'testuser' && body.password === 'password123') {
+    // 验证输入
+    if (!body.username || !body.password) {
+      return HttpResponse.json({
+        base: { 
+          success: false, 
+          message: '用户名和密码不能为空',
+          errorCode: 'INVALID_INPUT'
+        }
+      }, { status: 400 });
+    }
+
+    // 验证用户
+    const user = authenticateUser(body.username, body.password);
+    
+    if (user) {
+      // 更新最后登录时间
+      user.lastLoginAt = new Date().toISOString();
+      
       return HttpResponse.json({
         base: { success: true, message: '登录成功' },
         data: {
-          token: 'mock-jwt-token',
-          refreshToken: 'mock-refresh-token',
+          token: `mock-jwt-token-${user.id}`,
+          refreshToken: `mock-refresh-token-${user.id}`,
           expiresIn: 3600,
-          user: mockUser
+          user: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            avatar: user.avatar,
+            createdAt: user.createdAt,
+            lastLoginAt: user.lastLoginAt
+          }
         }
       });
     }

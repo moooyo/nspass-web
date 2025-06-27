@@ -52,7 +52,7 @@ npm run dev
 
 打开浏览器访问：
 
-- 🏠 **主页**: [http://localhost:3000](http://localhost:3000)
+- 🏠 **主页**: [http://localhost:3001](http://localhost:3001) (端口可能因环境而异)
 
 ### 4. 观察MSW工作
 
@@ -60,6 +60,47 @@ npm run dev
 ```
 🚀 MSW (Mock Service Worker) 已启动
 ```
+
+## 🔑 测试账号
+
+项目已内置完整的登录系统，包含多种登录方式和测试账号：
+
+### 🏠 演示页面
+访问 [http://localhost:3001/demo](http://localhost:3001/demo) 查看完整的功能演示和测试账号列表。
+
+### 🔐 登录页面
+访问 [http://localhost:3001/login](http://localhost:3001/login) 体验登录功能。
+
+### 👥 可用测试账号
+
+| 角色 | 用户名 | 邮箱 | 密码 | 说明 |
+|------|--------|------|------|------|
+| 👑 **管理员** | `admin` | `admin@nspass.com` | `admin123` | 系统管理员账号 |
+| 👤 **用户** | `user` | `user@nspass.com` | `user123` | 普通用户账号 |
+| 🎭 **演示** | `demo` | `demo@example.com` | `demo123` | 演示账号 |
+| 🧪 **测试1** | `john` | `john.doe@gmail.com` | `john123` | 测试用户John |
+| 🧪 **测试2** | `alice` | `alice.smith@outlook.com` | `alice123` | 测试用户Alice |
+
+### 🎯 登录方式
+
+- **账号密码登录**: 使用用户名 + 密码（如：`admin` + `admin123`）
+- **邮箱登录**: 使用邮箱 + 密码（如：`admin@nspass.com` + `admin123`）
+- **GitHub OAuth2**: 需要配置 `NEXT_PUBLIC_GITHUB_CLIENT_ID` 环境变量
+- **Google OAuth2**: 需要配置 `NEXT_PUBLIC_GOOGLE_CLIENT_ID` 环境变量  
+- **Microsoft OAuth2**: 需要配置 `NEXT_PUBLIC_MICROSOFT_CLIENT_ID` 环境变量
+
+### ⚙️ OAuth2 配置
+
+如需使用 OAuth2 登录，请创建 `.env.local` 文件：
+
+```bash
+# OAuth2 配置
+NEXT_PUBLIC_GITHUB_CLIENT_ID=your_github_client_id
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
+NEXT_PUBLIC_MICROSOFT_CLIENT_ID=your_microsoft_client_id
+```
+
+> 💡 **提示**: 未配置 OAuth2 时，点击相应按钮会显示配置提示，不会影响其他功能使用。
 
 ## 🎯 核心功能演示
 
