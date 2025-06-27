@@ -8,18 +8,22 @@ import {
   userInfoHandlers,
   authHandlers,
   dashboardHandlers,
+  rulesHandlers,
+  userManagementHandlers,
   miscHandlers
 } from '@mock/handlers/index';
 
 // 合并所有handlers
 export const handlers = [
+  ...authHandlers,           // 认证 (/api/v1/auth)
+  ...dashboardHandlers,      // 仪表盘 (/api/v1/dashboard)
+  ...rulesHandlers,          // 规则管理 (/api/v1/rules)
+  ...userManagementHandlers, // 用户管理 (/api/v1/user)
   ...userConfigHandlers,     // 用户配置管理 (/api/config/users)
   ...websiteConfigHandlers,  // 网站配置 (/api/config/website)
-  ...usersHandlers,           // 用户管理 (https://api.example.com/users)
+  ...usersHandlers,          // 用户管理 (https://api.example.com/users)
   ...serverHandlers,         // 服务器管理 (https://api.example.com/servers)
   ...userGroupHandlers,      // 用户组管理 (https://api.example.com/config/user-groups)
   ...userInfoHandlers,       // 用户信息 (https://api.example.com/user/info)
-  ...authHandlers,           // 认证 (https://api.example.com/auth)
-  ...dashboardHandlers,      // 仪表盘 (https://api.example.com/dashboard)
   ...miscHandlers,           // 其他杂项
 ]; 

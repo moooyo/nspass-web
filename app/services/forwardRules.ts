@@ -1,13 +1,34 @@
 import { httpClient, ApiResponse } from '@/utils/http-client';
+import type {
+  ForwardRule,
+  ForwardRuleType,
+  EgressMode,
+  RuleStatus,
+  RuleTrafficStats,
+  GetRulesRequest,
+  CreateRuleRequest,
+  GetRuleRequest,
+  UpdateRuleRequest,
+  DeleteRuleRequest,
+  BatchDeleteRulesRequest,
+  ToggleRuleRequest,
+  GetRuleTrafficStatsRequest,
+  GetRulesResponse,
+  CreateRuleResponse,
+  GetRuleResponse,
+  UpdateRuleResponse,
+  DeleteRuleResponse,
+  BatchDeleteRulesResponse,
+  ToggleRuleResponse,
+  GetRuleTrafficStatsResponse
+} from '@/types/generated/api/rules/rule_management';
+import type { ApiResponse as CommonApiResponse } from '@/types/generated/common';
 
 // 入口类型
 export type EntryType = 'HTTP' | 'SOCKS5' | 'SHADOWSOCKS' | 'TROJAN';
 
 // 出口类型
 export type ExitType = 'DIRECT' | 'PROXY' | 'REJECT';
-
-// 规则状态
-export type RuleStatus = 'ACTIVE' | 'PAUSED' | 'ERROR';
 
 // 服务器类型
 export type ServerType = 'NORMAL' | 'EXIT';
@@ -64,101 +85,123 @@ export interface ForwardRuleListParams {
 // 更新转发规则数据类型
 export type UpdateForwardRuleData = Partial<Omit<ForwardRuleItem, 'id'>>;
 
+// 将httpClient的ApiResponse转换为proto响应格式的辅助函数
+function toProtoResponse<T>(response: ApiResponse<T>): { base: CommonApiResponse; data?: T } {
+  return {
+    base: {
+      success: response.success,
+      message: response.message,
+      errorCode: response.success ? undefined : 'API_ERROR'
+    },
+    data: response.data
+  };
+}
+
 class ForwardRulesService {
-  private readonly endpoint = '/forward-rules';
+  private readonly endpoint = '/api/v1/rules';
 
   /**
    * 获取转发规则列表
    */
-  async getForwardRules(params: ForwardRuleListParams = {}): Promise<ApiResponse<ForwardRuleItem[]>> {
+  async getRules(params: GetRulesRequest = {}): Promise<GetRulesResponse> {
     const queryParams: Record<string, string> = {};
     
     if (params.page) queryParams.page = params.page.toString();
     if (params.pageSize) queryParams.pageSize = params.pageSize.toString();
-    if (params.ruleId) queryParams.ruleId = params.ruleId;
-    if (params.entryType) queryParams.entryType = params.entryType;
-    if (params.exitType) queryParams.exitType = params.exitType;
-    if (params.status) queryParams.status = params.status;
+    if (params.name) queryParams.name = params.name;
+    if (params.status) queryParams.status = params.status.toString();
 
-    return httpClient.get<ForwardRuleItem[]>(this.endpoint, queryParams);
+    const response = await httpClient.get<{
+      data: ForwardRule[];
+      total: number;
+      page: number;
+      pageSize: number;
+    }>(this.endpoint, queryParams);
+    
+    return {
+      base: {
+        success: response.success,
+        message: response.message,
+        errorCode: response.success ? undefined : 'API_ERROR'
+      },
+      data: response.data?.data || [],
+      total: response.data?.total || 0,
+      page: response.data?.page || 1,
+      pageSize: response.data?.pageSize || 10
+    };
   }
 
   /**
    * 创建新转发规则
    */
-  async createForwardRule(ruleData: CreateForwardRuleData): Promise<ApiResponse<ForwardRuleItem>> {
-    return httpClient.post<ForwardRuleItem>(this.endpoint, ruleData);
+  async createRule(ruleData: CreateRuleRequest): Promise<CreateRuleResponse> {
+    const response = await httpClient.post<ForwardRule>(this.endpoint, ruleData);
+    return toProtoResponse(response);
   }
 
   /**
    * 获取转发规则详情
    */
-  async getForwardRuleById(id: React.Key): Promise<ApiResponse<ForwardRuleItem>> {
-    return httpClient.get<ForwardRuleItem>(`${this.endpoint}/${id}`);
+  async getRule(request: GetRuleRequest): Promise<GetRuleResponse> {
+    const response = await httpClient.get<ForwardRule>(`${this.endpoint}/${request.id}`);
+    return toProtoResponse(response);
   }
 
   /**
    * 更新转发规则信息
    */
-  async updateForwardRule(id: React.Key, ruleData: UpdateForwardRuleData): Promise<ApiResponse<ForwardRuleItem>> {
-    return httpClient.put<ForwardRuleItem>(`${this.endpoint}/${id}`, ruleData);
+  async updateRule(request: UpdateRuleRequest): Promise<UpdateRuleResponse> {
+    const { id, ...updateData } = request;
+    const response = await httpClient.put<ForwardRule>(`${this.endpoint}/${id}`, updateData);
+    return toProtoResponse(response);
   }
 
   /**
    * 删除转发规则
    */
-  async deleteForwardRule(id: React.Key): Promise<ApiResponse<void>> {
-    return httpClient.delete<void>(`${this.endpoint}/${id}`);
+  async deleteRule(request: DeleteRuleRequest): Promise<DeleteRuleResponse> {
+    const response = await httpClient.delete<void>(`${this.endpoint}/${request.id}`);
+    return {
+      base: {
+        success: response.success,
+        message: response.message,
+        errorCode: response.success ? undefined : 'API_ERROR'
+      }
+    };
   }
 
   /**
    * 批量删除转发规则
    */
-  async batchDeleteForwardRules(ids: React.Key[]): Promise<ApiResponse<void>> {
-    return httpClient.post<void>(`${this.endpoint}/batch-delete`, { ids });
-  }
-
-  /**
-   * 暂停/启动转发规则
-   */
-  async toggleRuleStatus(id: React.Key, status: RuleStatus): Promise<ApiResponse<ForwardRuleItem>> {
-    return httpClient.put<ForwardRuleItem>(`${this.endpoint}/${id}/status`, { status });
-  }
-
-  /**
-   * 复制转发规则
-   */
-  async copyForwardRule(id: React.Key): Promise<ApiResponse<ForwardRuleItem>> {
-    return httpClient.post<ForwardRuleItem>(`${this.endpoint}/${id}/copy`);
-  }
-
-  /**
-   * 诊断转发规则
-   */
-  async diagnoseRule(id: React.Key): Promise<ApiResponse<{
-    status: 'healthy' | 'warning' | 'error';
-    message: string;
-    details: {
-      entryConnectionTest: boolean;
-      exitConnectionTest: boolean;
-      latency: number;
-      throughput: number;
+  async batchDeleteRules(request: BatchDeleteRulesRequest): Promise<BatchDeleteRulesResponse> {
+    const response = await httpClient.post<{ deletedCount: number }>(`${this.endpoint}/batch-delete`, { ids: request.ids });
+    return {
+      base: {
+        success: response.success,
+        message: response.message,
+        errorCode: response.success ? undefined : 'API_ERROR'
+      },
+      deletedCount: response.data?.deletedCount || 0
     };
-  }>> {
-    return httpClient.post(`${this.endpoint}/${id}/diagnose`);
   }
 
   /**
-   * 获取转发规则统计信息
+   * 启用/禁用转发规则
    */
-  async getRuleStats(id: React.Key): Promise<ApiResponse<{
-    totalConnections: number;
-    activeConnections: number;
-    bytesTransferred: number;
-    latency: number;
-    throughput: number;
-  }>> {
-    return httpClient.get(`${this.endpoint}/${id}/stats`);
+  async toggleRule(request: ToggleRuleRequest): Promise<ToggleRuleResponse> {
+    const response = await httpClient.post<ForwardRule>(`${this.endpoint}/${request.id}/toggle`, { enabled: request.enabled });
+    return toProtoResponse(response);
+  }
+
+  /**
+   * 获取规则流量统计
+   */
+  async getRuleTrafficStats(request: GetRuleTrafficStatsRequest): Promise<GetRuleTrafficStatsResponse> {
+    const queryParams: Record<string, string> = {};
+    if (request.days) queryParams.days = request.days.toString();
+
+    const response = await httpClient.get<RuleTrafficStats>(`${this.endpoint}/${request.id}/traffic-stats`, queryParams);
+    return toProtoResponse(response);
   }
 
   /**
@@ -215,4 +258,19 @@ class ForwardRulesService {
 
 // 创建并导出服务实例
 export const forwardRulesService = new ForwardRulesService();
-export default ForwardRulesService; 
+export default ForwardRulesService;
+
+// 导出类型和枚举
+export type {
+  ForwardRule,
+  RuleTrafficStats,
+  GetRulesRequest,
+  CreateRuleRequest,
+  UpdateRuleRequest
+} from '@/types/generated/api/rules/rule_management';
+
+export {
+  ForwardRuleType,
+  EgressMode,
+  RuleStatus
+} from '@/types/generated/api/rules/rule_management'; 

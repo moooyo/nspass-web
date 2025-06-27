@@ -8,4 +8,6 @@ export { userGroupHandlers } from '@mock/handlers/userGroups';
 export { userInfoHandlers } from '@mock/handlers/userInfo';
 export { authHandlers } from '@mock/handlers/auth';
 export { dashboardHandlers } from '@mock/handlers/dashboard';
-export { miscHandlers } from '@mock/handlers/misc'; 
+export { miscHandlers } from '@mock/handlers/misc';
+export { userManagementHandlers } from './userManagement';
+export { rulesHandlers } from './rules'; 
