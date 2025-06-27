@@ -1,9 +1,11 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { EditOutlined, HomeOutlined, MenuFoldOutlined, MenuUnfoldOutlined, UnorderedListOutlined, UserOutlined, ApiOutlined, LogoutOutlined, DownOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
-import { Button, Layout, Menu, theme, Dropdown, Avatar, Space, Typography } from 'antd';
+import { Button, Layout, Menu, theme, Dropdown, Avatar, Space, Typography, Spin } from 'antd';
 import { message } from '@/utils/message';
+import { useAuth } from '@/components/hooks/useAuth';
 
 // 导入内容组件
 import HomeContent from './components/content/Home';
@@ -127,9 +129,19 @@ const Logo: React.FC<{ collapsed: boolean }> = ({ collapsed }) => {
 };
 
 export default function Home() {
+  const router = useRouter();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
+  
   // 修改初始状态，不默认展开任何菜单
   const [stateOpenKeys, setStateOpenKeys] = useState<string[]>([]);
   const [selectedKey, setSelectedKey] = useState<string>('home');
+
+  // 检查登录状态
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isLoading, isAuthenticated, router]);
 
   const onOpenChange: MenuProps['onOpenChange'] = (openKeys) => {
     const currentOpenKey = openKeys.find((key) => stateOpenKeys.indexOf(key) === -1);
@@ -156,10 +168,15 @@ export default function Home() {
     setSelectedKey(key);
   };
 
-  const handleLogout = () => {
-    message.success('注销成功');
-    // 这里可以添加实际的注销逻辑，比如清除token、跳转到登录页等
-    console.log('执行注销操作');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      message.success('注销成功');
+      router.push('/login');
+    } catch (error) {
+      message.error('注销失败');
+      console.error('注销错误:', error);
+    }
   };
 
   // 用户下拉菜单
@@ -202,6 +219,28 @@ export default function Home() {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
+  // 如果正在加载或未登录，显示加载状态
+  if (isLoading) {
+    return (
+      <div style={{ 
+        height: '100vh', 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center',
+        flexDirection: 'column',
+        gap: '16px'
+      }}>
+        <Spin size="large" />
+        <Text type="secondary">正在加载...</Text>
+      </div>
+    );
+  }
+
+  // 如果未登录，不渲染任何内容（将被重定向到登录页）
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <Layout style={{ minHeight: '100vh', width: '100%', overflow: 'hidden' }}>
       <Sider trigger={null} collapsible collapsed={collapsed}>
@@ -238,12 +277,13 @@ export default function Home() {
           <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
             <Space style={{ cursor: 'pointer', padding: '8px 12px', borderRadius: '8px' }}>
               <Avatar 
+                src={user?.avatar}
                 style={{ 
                   backgroundColor: '#1890ff' 
                 }} 
                 icon={<UserOutlined />} 
               />
-              <Text>管理员</Text>
+              <Text>{user?.name || '用户'}</Text>
               <DownOutlined style={{ fontSize: '12px' }} />
             </Space>
           </Dropdown>

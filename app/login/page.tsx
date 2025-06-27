@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   LockOutlined,
   UserOutlined,
@@ -17,19 +17,30 @@ import {
   ProFormCheckbox,
   ProFormText,
 } from '@ant-design/pro-components';
-import { theme, Divider, Space, Button, Tabs } from 'antd';
+import { theme, Divider, Space, Button, Tabs, Spin, Typography } from 'antd';
 import { message } from '@/utils/message';
 import { useRouter } from 'next/navigation';
 import { OAuth2Service, OAuth2Factory } from '@/utils/oauth2';
 import { authService } from '@/services/auth';
+import { useAuth } from '@/components/hooks/useAuth';
+
+const { Text } = Typography;
 
 type LoginType = 'account' | 'email';
 
 const LoginPage = () => {
   const { token } = theme.useToken();
   const router = useRouter();
+  const { isAuthenticated, isLoading, login: authLogin } = useAuth();
   const [loginType, setLoginType] = useState<LoginType>('account');
   const [showAllOAuth, setShowAllOAuth] = useState(false);
+
+  // 如果已登录，重定向到主页
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.push('/');
+    }
+  }, [isLoading, isAuthenticated, router]);
 
   // 登录验证
   const handleLogin = async (values: any) => {
@@ -48,7 +59,14 @@ const LoginPage = () => {
       if (response.base.success && response.data) {
         // 保存认证信息
         authService.saveAuthData(response.data);
-        localStorage.setItem('login_method', loginType);
+        
+        // 使用 useAuth hook 更新登录状态
+        const user = {
+          ...response.data.user,
+          name: response.data.user.username, // 映射 username 到 name
+          provider: 'local'
+        };
+        authLogin(user, loginType);
         
         message.success(response.base.message || '登录成功！');
         router.push('/');
@@ -127,6 +145,29 @@ const LoginPage = () => {
       label: '邮箱登录',
     },
   ];
+
+  // 如果正在加载，显示加载状态
+  if (isLoading) {
+    return (
+      <div style={{ 
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        flexDirection: 'column',
+        gap: '16px'
+      }}>
+        <Spin size="large" />
+        <Text style={{ color: 'white' }}>正在检查登录状态...</Text>
+      </div>
+    );
+  }
+
+  // 如果已登录，不显示登录表单（将被重定向）
+  if (isAuthenticated) {
+    return null;
+  }
 
   return (
     <ProConfigProvider hashed={false}>

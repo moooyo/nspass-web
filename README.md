@@ -159,6 +159,10 @@ npm run start        # 启动生产服务器
 
 # 代码质量
 npm run lint         # ESLint 检查
+
+# 缓存清理
+npm run clean        # 清理缓存文件
+npm run clean:all    # 完全清理并重新安装依赖
 ```
 
 ## 📖 使用指南
@@ -250,12 +254,27 @@ npm run start
 
 MIT License
 
+## 🛠️ 故障排除
+
+如果遇到webpack缓存错误或其他问题，请查看 [故障排除指南](./TROUBLESHOOTING.md)。
+
+常见问题快速解决：
+
+```bash
+# webpack缓存错误
+npm run clean
+
+# 完全重置项目
+npm run clean:all
+```
+
 ## 🔗 相关链接
 
 - 📚 [MSW 官方文档](https://mswjs.io/)
 - 🎨 [Ant Design 文档](https://ant.design/)
 - ⚡ [Next.js 文档](https://nextjs.org/docs)
 - 🎯 [TypeScript 文档](https://www.typescriptlang.org/)
+- 🛠️ [故障排除指南](./TROUBLESHOOTING.md)
 
 ---
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { OAuth2User } from '@/utils/oauth2';
+import { authService } from '@/services/auth';
 
 export interface User extends OAuth2User {
   provider: string;
@@ -14,7 +15,7 @@ export interface AuthState {
 
 export interface AuthActions {
   login: (user: User, method: string) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshUser: () => void;
 }
 
@@ -75,18 +76,10 @@ export const useAuth = (): UseAuthReturn => {
   }, []);
 
   // 退出登录
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     try {
-      localStorage.removeItem('user');
-      localStorage.removeItem('login_method');
-      
-      // 清理所有OAuth2相关的配置
-      const keys = Object.keys(localStorage);
-      keys.forEach(key => {
-        if (key.startsWith('oauth2_')) {
-          localStorage.removeItem(key);
-        }
-      });
+      // 调用 authService 进行完整清理
+      await authService.logout();
       
       setState({
         user: null,
@@ -95,7 +88,14 @@ export const useAuth = (): UseAuthReturn => {
         loginMethod: null,
       });
     } catch (error) {
-      console.error('清理用户信息失败:', error);
+      console.error('退出登录失败:', error);
+      // 即使出错也要清理本地状态
+      setState({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        loginMethod: null,
+      });
     }
   }, []);
 

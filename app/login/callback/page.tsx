@@ -5,10 +5,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Spin, Result, Button } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 import { OAuth2Service, OAuth2Factory, OAuth2User } from '@/utils/oauth2';
+import { useAuth } from '@/components/hooks/useAuth';
 
 export default function OAuth2CallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { login: authLogin } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<OAuth2User | null>(null);
@@ -67,9 +69,8 @@ export default function OAuth2CallbackPage() {
 
         setUser(userInfo);
         
-        // 保存用户信息到localStorage（实际应用中应该保存到服务器）
-        localStorage.setItem('user', JSON.stringify(userInfo));
-        localStorage.setItem('login_method', 'oauth2');
+        // 使用 useAuth hook 更新登录状态
+        authLogin(userInfo, 'oauth2');
 
         // 清理OAuth2配置
         localStorage.removeItem(`oauth2_${provider}_config`);
