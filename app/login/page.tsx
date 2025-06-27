@@ -17,7 +17,8 @@ import {
   ProFormCheckbox,
   ProFormText,
 } from '@ant-design/pro-components';
-import { theme, message, Divider, Space, Button, Tabs } from 'antd';
+import { theme, Divider, Space, Button, Tabs } from 'antd';
+import { message } from '@/utils/message';
 import { useRouter } from 'next/navigation';
 import { OAuth2Service, OAuth2Factory } from '@/utils/oauth2';
 import { authService } from '@/services/auth';

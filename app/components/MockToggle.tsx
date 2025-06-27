@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useContext, useEffect, useState, useCallback } from 'react';
-import { message } from 'antd';
+import { App } from 'antd';
 import { ApiOutlined } from '@ant-design/icons';
 import { MSWContext } from './MSWProvider';
 
@@ -13,7 +13,7 @@ export const MockToggle: React.FC = () => {
   const { enabled: mockEnabled, setEnabled: setMockEnabled } = useContext(MSWContext);
   
   // 消息API
-  const [messageApi, contextHolder] = message.useMessage();
+  const { message: messageApi } = App.useApp();
   // 是否正在加载中
   const [isLoading, setIsLoading] = useState(false);
 
@@ -108,7 +108,6 @@ export const MockToggle: React.FC = () => {
 
   return (
     <>
-      {contextHolder}
       <button
         onClick={toggleMock}
         title={isLoading 

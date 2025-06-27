@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Button, Card, List, Typography, Divider, message } from 'antd';
+import { Button, Card, List, Typography, Divider } from 'antd';
+import { message } from '@/utils/message';
 import { httpClient } from '@/utils/http-client';
 import { initMSW } from '../init-msw';
 

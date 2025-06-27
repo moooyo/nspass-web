@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Button, message, Tag, Popconfirm, Tooltip } from 'antd';
+import { Button, Tag, Popconfirm, Tooltip } from 'antd';
+import { message } from '@/utils/message';
 import {
     EditableProTable,
     ProColumns,

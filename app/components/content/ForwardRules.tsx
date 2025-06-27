@@ -1,5 +1,6 @@
 import React, { useState, FC, useRef } from 'react';
-import { Button, message, Tag, Popconfirm, Badge, Space, Tooltip, Modal, Form, Card, Row, Col, Typography, Divider } from 'antd';
+import { Button, Tag, Popconfirm, Badge, Space, Tooltip, Modal, Form, Card, Row, Col, Typography, Divider } from 'antd';
+import { message } from '@/utils/message';
 import {
     EditableProTable,
     ProColumns,

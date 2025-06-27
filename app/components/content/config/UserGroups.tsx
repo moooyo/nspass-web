@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Button, message } from 'antd';
+import { Button } from 'antd';
+import { message } from '@/utils/message';
 import {
     EditableProTable,
     ProColumns,
