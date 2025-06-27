@@ -19,7 +19,7 @@ import Users from './components/content/config/Users';
 import UserGroups from './components/content/config/UserGroups';
 import Servers from './components/content/config/Servers';
 
-const { Header, Sider, Content } = Layout;
+const { Header, Sider, Content, Footer } = Layout;
 const { Text } = Typography;
 
 type MenuItem = Required<MenuProps>['items'][number];
@@ -304,6 +304,54 @@ export default function Home() {
         >
           {renderContent()}
         </Content>
+        <Footer style={{ textAlign: 'center', color: '#999', padding: '12px 0' }}>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            gap: '6px',
+            userSelect: 'none',
+            pointerEvents: 'none'
+          }}>
+            <img 
+              src="https://www.cursor.com/assets/images/logo.svg" 
+              alt="Cursor Logo" 
+              width="16" 
+              height="16" 
+              style={{ 
+                opacity: 0.6,
+                filter: 'grayscale(1)'
+              }}
+              onError={(e) => {
+                // 如果官方logo加载失败，使用备用的SVG
+                e.currentTarget.style.display = 'none';
+                const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                if (nextElement) {
+                  nextElement.style.display = 'block';
+                }
+              }}
+            />
+            <svg 
+              width="16" 
+              height="16" 
+              viewBox="0 0 24 24" 
+              fill="currentColor"
+              style={{ 
+                opacity: 0.6,
+                display: 'none'
+              }}
+            >
+              <path d="M12 2L2 7V17L12 22L22 17V7L12 2ZM12 4.09L19.18 8L12 11.91L4.82 8L12 4.09ZM4 9.5L11 13.41V20L4 16.5V9.5ZM13 20V13.41L20 9.5V16.5L13 20Z"/>
+            </svg>
+            <Text type="secondary" style={{ 
+              fontSize: '12px',
+              userSelect: 'none',
+              pointerEvents: 'none'
+            }}>
+              Powered by Cursor
+            </Text>
+          </div>
+        </Footer>
       </Layout>
     </Layout>
   );
