@@ -10,6 +10,7 @@ import {
   dashboardHandlers,
   rulesHandlers,
   userManagementHandlers,
+  routeHandlers,
   miscHandlers
 } from '@mock/handlers/index';
 
@@ -18,6 +19,7 @@ export const handlers = [
   ...authHandlers,           // 认证 (/api/v1/auth)
   ...dashboardHandlers,      // 仪表盘 (/api/v1/dashboard)
   ...rulesHandlers,          // 规则管理 (/api/v1/rules)
+  ...routeHandlers,          // 线路管理 (/api/routes)
   ...userManagementHandlers, // 用户管理 (/api/v1/user)
   ...userConfigHandlers,     // 用户配置管理 (/api/config/users)
   ...websiteConfigHandlers,  // 网站配置 (/api/config/website)

@@ -12,6 +12,7 @@ import HomeContent from './components/content/Home';
 import UserInfo from './components/content/UserInfo';
 import ForwardRules from './components/content/ForwardRules';
 import Egress from './components/content/Egress';
+import Routes from './components/content/Routes';
 import Dashboard from './components/content/config/Dashboard';
 import Website from './components/content/config/Website';
 import Users from './components/content/config/Users';
@@ -44,6 +45,7 @@ const items: MenuItem[] = [
   getItem('用户信息', 'user', <UserOutlined />),
   getItem('转发规则', 'forward_rules', <UnorderedListOutlined />),
   getItem('出口配置', 'egress', <ApiOutlined />),
+  getItem('查看线路', 'routes', <UnorderedListOutlined />),
   
   getItem('系统配置', 'config', <EditOutlined />, [
     getItem('仪表盘', 'dashboard'),
@@ -199,6 +201,8 @@ export default function Home() {
         return <ForwardRules />;
       case 'egress':
         return <Egress />;
+      case 'routes':
+        return <Routes />;
       case 'dashboard':
         return <Dashboard />;
       case 'website':

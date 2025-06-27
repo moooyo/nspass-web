@@ -10,4 +10,5 @@ export { authHandlers } from '@mock/handlers/auth';
 export { dashboardHandlers } from '@mock/handlers/dashboard';
 export { miscHandlers } from '@mock/handlers/misc';
 export { userManagementHandlers } from './userManagement';
-export { rulesHandlers } from './rules'; 
+export { rulesHandlers } from './rules';
+export { routeHandlers } from './routes'; 
