@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { MSWProvider } from "./components/MSWProvider";
 import { AntdProvider } from "./components/AntdProvider";
+import { ThemeProvider } from "./components/hooks/useTheme";
 
 // 避免在导入时执行初始化
 // 使用动态导入在适当时机初始化MSW
@@ -41,11 +42,13 @@ export default function RootLayout({
   return (
     <html lang="zh">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <MSWProvider>
-          <AntdProvider>
-            {children}
-          </AntdProvider>
-        </MSWProvider>
+        <ThemeProvider>
+          <MSWProvider>
+            <AntdProvider>
+              {children}
+            </AntdProvider>
+          </MSWProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

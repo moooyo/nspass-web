@@ -1,11 +1,12 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { EditOutlined, HomeOutlined, MenuFoldOutlined, MenuUnfoldOutlined, UnorderedListOutlined, UserOutlined, ApiOutlined, LogoutOutlined, DownOutlined } from '@ant-design/icons';
+import { EditOutlined, HomeOutlined, MenuFoldOutlined, MenuUnfoldOutlined, UnorderedListOutlined, UserOutlined, ApiOutlined, LogoutOutlined, DownOutlined, SunOutlined, MoonOutlined, DashboardOutlined, SettingOutlined, TeamOutlined, UsergroupAddOutlined, CloudServerOutlined, CloudOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { Button, Layout, Menu, theme, Dropdown, Avatar, Space, Typography, Spin } from 'antd';
 import { message } from '@/utils/message';
 import { useAuth } from '@/components/hooks/useAuth';
+import { useTheme } from '@/components/hooks/useTheme';
 
 // 导入内容组件
 import HomeContent from './components/content/Home';
@@ -48,96 +49,24 @@ const items: MenuItem[] = [
   getItem('出口配置', 'egress', <ApiOutlined />),
   getItem('查看线路', 'routes', <UnorderedListOutlined />),
   
-  getItem('系统配置', 'config', <EditOutlined />, [
-    getItem('仪表盘', 'dashboard'),
-    getItem('网站配置', 'website'),
-    getItem('用户管理', 'users'),
-    getItem('用户组管理', 'user_groups'),
-    getItem('服务器管理', 'servers'),
-    getItem('DNS配置', 'dns_config'),
-  ]),
+  // 分隔线，分隔基础功能和系统管理功能
+  { type: 'divider' },
+  
+  getItem('仪表盘', 'dashboard', <DashboardOutlined />),
+  getItem('网站配置', 'website', <SettingOutlined />),
+  getItem('用户管理', 'users', <TeamOutlined />),
+  getItem('用户组管理', 'user_groups', <UsergroupAddOutlined />),
+  getItem('服务器管理', 'servers', <CloudServerOutlined />),
+  getItem('DNS配置', 'dns_config', <CloudOutlined />),
 ];
 
-// rootSubmenuKeys of first level
-const rootSubmenuKeys = ['config'];
-
-// 根据菜单项生成层级键映射
-type LevelKeysProps = {
-  key?: string;
-  children?: LevelKeysProps[];
-};
-
-const getLevelKeys = (items1: LevelKeysProps[]) => {
-  const key: Record<string, number> = {};
-  const func = (items2: LevelKeysProps[], level = 1) => {
-    items2.forEach((item) => {
-      if (item.key) {
-        key[item.key] = level;
-      }
-      if (item.children) {
-        func(item.children, level + 1);
-      }
-    });
-  };
-  func(items1);
-  return key;
-};
-
-const levelKeys = getLevelKeys(items as LevelKeysProps[]);
-
-// Logo组件
-const Logo: React.FC<{ collapsed: boolean }> = ({ collapsed }) => {
-  return (
-    <div 
-      style={{
-        height: '64px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: collapsed ? 'center' : 'flex-start',
-        padding: collapsed ? '0' : '0 16px',
-        background: 'rgba(255, 255, 255, 0.3)',
-        margin: '16px',
-        borderRadius: '8px',
-      }}
-    >
-      <div 
-        style={{
-          width: '32px',
-          height: '32px',
-          background: 'linear-gradient(135deg, #1890ff 0%, #722ed1 100%)',
-          borderRadius: '8px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'white',
-          fontWeight: 'bold',
-          fontSize: '18px',
-        }}
-      >
-        N
-      </div>
-      {!collapsed && (
-        <Text 
-          style={{ 
-            color: 'white', 
-            marginLeft: '12px', 
-            fontWeight: '600',
-            fontSize: '16px'
-          }}
-        >
-          NSPass
-        </Text>
-      )}
-    </div>
-  );
-};
+// 由于现在都是一级菜单，不再需要复杂的层级逻辑
 
 export default function Home() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const { theme: currentTheme, toggleTheme } = useTheme();
   
-  // 修改初始状态，不默认展开任何菜单
-  const [stateOpenKeys, setStateOpenKeys] = useState<string[]>([]);
   const [selectedKey, setSelectedKey] = useState<string>('home');
 
   // URL hash与菜单key的映射关系
@@ -228,11 +157,6 @@ export default function Home() {
       const newUrl = `${window.location.pathname}${window.location.search}#${hash}`;
       window.history.replaceState(null, '', newUrl);
     }
-    
-    // 如果是子菜单项，自动展开父菜单
-    if (['dashboard', 'website', 'users', 'user_groups', 'servers', 'dns_config'].includes(initialTab)) {
-      setStateOpenKeys(['config']);
-    }
   }, []);
 
   // 监听hash变化（浏览器前进后退）
@@ -240,11 +164,6 @@ export default function Home() {
     const handleHashChange = () => {
       const newTab = getInitialTabFromHash();
       setSelectedKey(newTab);
-      
-      // 如果是子菜单项，自动展开父菜单
-      if (['dashboard', 'website', 'users', 'user_groups', 'servers', 'dns_config'].includes(newTab)) {
-        setStateOpenKeys(['config']);
-      }
     };
 
     window.addEventListener('hashchange', handleHashChange);
@@ -284,26 +203,7 @@ export default function Home() {
     }
   }, [isLoading, isAuthenticated, router]);
 
-  const onOpenChange: MenuProps['onOpenChange'] = (openKeys) => {
-    const currentOpenKey = openKeys.find((key) => stateOpenKeys.indexOf(key) === -1);
-    // open
-    if (currentOpenKey !== undefined) {
-      const repeatIndex = openKeys
-        .filter((key) => key !== currentOpenKey)
-        .findIndex((key) => levelKeys[key] === levelKeys[currentOpenKey]);
-
-      setStateOpenKeys(
-        openKeys
-          // remove repeat key
-          .filter((_, index) => index !== repeatIndex)
-          // remove current level all child
-          .filter((key) => levelKeys[key] <= levelKeys[currentOpenKey]),
-      );
-    } else {
-      // close
-      setStateOpenKeys(openKeys);
-    }
-  };
+  // 由于现在都是一级菜单，不再需要复杂的openKeys逻辑
 
   const handleMenuSelect = ({ key }: { key: string }) => {
     setSelectedKey(key);
@@ -395,62 +295,150 @@ export default function Home() {
   return (
     <Layout style={{ minHeight: '100vh', width: '100%', overflow: 'hidden' }}>
       <Sider trigger={null} collapsible collapsed={collapsed}>
-        <Logo collapsed={collapsed} />
+        {/* LOGO放在侧边栏顶部 */}
+        <div style={{ 
+          padding: collapsed ? '16px 8px' : '20px 16px',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          marginBottom: '8px'
+        }}>
+          <div 
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: collapsed ? '0' : '12px',
+              justifyContent: collapsed ? 'center' : 'flex-start'
+            }}
+          >
+            <div 
+              style={{
+                width: '36px',
+                height: '36px',
+                background: currentTheme === 'light'
+                  ? 'linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)'
+                  : 'linear-gradient(135deg, #13c2c2 0%, #36cfc9 100%)',
+                borderRadius: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: '18px',
+                boxShadow: currentTheme === 'light'
+                  ? '0 4px 20px rgba(24, 144, 255, 0.6), 0 0 0 2px rgba(255, 255, 255, 0.2)'
+                  : '0 4px 20px rgba(19, 194, 194, 0.8), 0 0 0 2px rgba(255, 255, 255, 0.3)',
+                position: 'relative',
+                overflow: 'hidden',
+                flexShrink: 0,
+                border: currentTheme === 'light'
+                  ? '2px solid rgba(255, 255, 255, 0.3)'
+                  : '2px solid rgba(255, 255, 255, 0.4)',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+            >
+              <div style={{
+                position: 'absolute',
+                top: '-50%',
+                left: '-50%',
+                width: '200%',
+                height: '200%',
+                background: 'linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.2) 50%, transparent 70%)',
+                animation: 'shimmer 3s infinite'
+              }} />
+              N
+            </div>
+                         {!collapsed && (
+               <div>
+                 <div 
+                   style={{ 
+                     color: '#ffffff !important',
+                     fontWeight: '700',
+                     fontSize: '20px',
+                     letterSpacing: '0.5px',
+                     lineHeight: 1.2,
+                     textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)',
+                     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                   }}
+                 >
+                   NSPass
+                 </div>
+                 <div 
+                   style={{ 
+                     color: 'rgba(255, 255, 255, 0.9) !important',
+                     fontSize: '12px',
+                     fontWeight: '600',
+                     letterSpacing: '1px',
+                     textTransform: 'uppercase',
+                     marginTop: '2px',
+                     textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)',
+                     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                   }}
+                 >
+                   管理中心
+                 </div>
+               </div>
+             )}
+          </div>
+        </div>
+        
         <Menu
           theme="dark"
           mode="inline"
           selectedKeys={[selectedKey]}
-          openKeys={stateOpenKeys}
-          onOpenChange={onOpenChange}
           onSelect={handleMenuSelect}
           items={items}
         />
       </Sider>
       <Layout style={{ width: '100%', overflow: 'hidden' }}>
         <Header style={{ 
-          padding: '0 24px', 
+          padding: '0', 
           background: colorBgContainer,
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center'
+          alignItems: 'center',
+          height: '64px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px', height: '100%', padding: '0 16px' }}>
             <Button
               type="text"
               icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
               onClick={() => setCollapsed(!collapsed)}
               style={{
                 fontSize: '16px',
-                width: 64,
-                height: 64,
+                width: 48,
+                height: 48,
+                borderRadius: '12px'
               }}
             />
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {['dashboard', 'website', 'users', 'user_groups', 'servers', 'dns_config'].includes(selectedKey) && (
-                <>
-                  <Text type="secondary">系统配置</Text>
-                  <Text type="secondary">/</Text>
-                </>
-              )}
-              <Text strong style={{ fontSize: '16px' }}>
+              <Text strong style={{ fontSize: '18px', color: 'var(--text-primary)' }}>
                 {keyToDisplayNameMap[selectedKey] || '首页'}
               </Text>
             </div>
           </div>
           
-          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-            <Space style={{ cursor: 'pointer', padding: '8px 12px', borderRadius: '8px' }}>
-              <Avatar 
-                src={user?.avatar}
-                style={{ 
-                  backgroundColor: '#1890ff' 
-                }} 
-                icon={<UserOutlined />} 
-              />
-              <Text>{user?.name || '用户'}</Text>
-              <DownOutlined style={{ fontSize: '12px' }} />
-            </Space>
-          </Dropdown>
+          <Space size="middle">
+            <div 
+              className="theme-toggle"
+              onClick={toggleTheme}
+              title={currentTheme === 'light' ? '切换到深色模式' : '切换到浅色模式'}
+            >
+              {currentTheme === 'light' ? <MoonOutlined /> : <SunOutlined />}
+            </div>
+            
+            <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
+              <Space style={{ cursor: 'pointer', padding: '8px 12px', borderRadius: '8px' }}>
+                <Avatar 
+                  src={user?.avatar}
+                  style={{ 
+                    backgroundColor: '#1890ff' 
+                  }} 
+                  icon={<UserOutlined />} 
+                />
+                <Text>{user?.name || '用户'}</Text>
+                <DownOutlined style={{ fontSize: '12px' }} />
+              </Space>
+            </Dropdown>
+          </Space>
         </Header>
         <Content
           style={{
