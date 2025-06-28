@@ -140,6 +140,143 @@ export default function Home() {
   const [stateOpenKeys, setStateOpenKeys] = useState<string[]>([]);
   const [selectedKey, setSelectedKey] = useState<string>('home');
 
+  // URL hash与菜单key的映射关系
+  const hashToKeyMap: Record<string, string> = {
+    // 主菜单简化映射
+    'home': 'home',
+    'user': 'user', 
+    'rules': 'forward_rules',
+    'forward': 'forward_rules',
+    'forward_rules': 'forward_rules',
+    'egress': 'egress',
+    'routes': 'routes',
+    // 系统配置简化映射
+    'config': 'dashboard',
+    'dashboard': 'dashboard',
+    'website': 'website',
+    'users': 'users',
+    'groups': 'user_groups',
+    'user_groups': 'user_groups',
+    'servers': 'servers',
+    'dns': 'dns_config',
+    'dns_config': 'dns_config',
+  };
+
+  const keyToHashMap: Record<string, string> = {
+    'home': 'home',
+    'user': 'user',
+    'forward_rules': 'rules',
+    'egress': 'egress', 
+    'routes': 'routes',
+    'dashboard': 'config',
+    'website': 'website',
+    'users': 'users',
+    'user_groups': 'groups',
+    'servers': 'servers',
+    'dns_config': 'dns',
+  };
+
+  // 页面标题映射
+  const keyToTitleMap: Record<string, string> = {
+    'home': 'NSPass - 首页',
+    'user': 'NSPass - 用户信息',
+    'forward_rules': 'NSPass - 转发规则',
+    'egress': 'NSPass - 出口配置',
+    'routes': 'NSPass - 查看线路',
+    'dashboard': 'NSPass - 仪表盘',
+    'website': 'NSPass - 网站配置',
+    'users': 'NSPass - 用户管理',
+    'user_groups': 'NSPass - 用户组管理',
+    'servers': 'NSPass - 服务器管理',
+    'dns_config': 'NSPass - DNS配置',
+  };
+
+  // 页面显示名称映射
+  const keyToDisplayNameMap: Record<string, string> = {
+    'home': '首页',
+    'user': '用户信息',
+    'forward_rules': '转发规则',
+    'egress': '出口配置',
+    'routes': '查看线路',
+    'dashboard': '仪表盘',
+    'website': '网站配置',
+    'users': '用户管理',
+    'user_groups': '用户组管理',
+    'servers': '服务器管理',
+    'dns_config': 'DNS配置',
+  };
+
+  // 从URL hash获取初始tab
+  const getInitialTabFromHash = () => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.substring(1); // 移除 # 号
+      if (hash && hashToKeyMap[hash]) {
+        return hashToKeyMap[hash];
+      }
+    }
+    return 'home';
+  };
+
+  // 初始化时根据URL hash设置selectedKey
+  useEffect(() => {
+    const initialTab = getInitialTabFromHash();
+    setSelectedKey(initialTab);
+    
+    // 如果URL中没有hash，设置默认hash
+    if (typeof window !== 'undefined' && !window.location.hash) {
+      const hash = keyToHashMap[initialTab] || initialTab;
+      const newUrl = `${window.location.pathname}${window.location.search}#${hash}`;
+      window.history.replaceState(null, '', newUrl);
+    }
+    
+    // 如果是子菜单项，自动展开父菜单
+    if (['dashboard', 'website', 'users', 'user_groups', 'servers', 'dns_config'].includes(initialTab)) {
+      setStateOpenKeys(['config']);
+    }
+  }, []);
+
+  // 监听hash变化（浏览器前进后退）
+  useEffect(() => {
+    const handleHashChange = () => {
+      const newTab = getInitialTabFromHash();
+      setSelectedKey(newTab);
+      
+      // 如果是子菜单项，自动展开父菜单
+      if (['dashboard', 'website', 'users', 'user_groups', 'servers', 'dns_config'].includes(newTab)) {
+        setStateOpenKeys(['config']);
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // 更新页面标题
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.title = keyToTitleMap[selectedKey] || 'NSPass';
+    }
+  }, [selectedKey]);
+
+  // 在开发环境下显示导航提示
+  useEffect(() => {
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+      console.log('🔗 NSPass URL导航提示:');
+      console.log('您可以直接通过URL访问以下页面:');
+      console.log('• 首页: #home');
+      console.log('• 用户信息: #user');
+      console.log('• 转发规则: #rules');
+      console.log('• 出口配置: #egress');
+      console.log('• 查看线路: #routes');
+      console.log('• 仪表盘: #config');
+      console.log('• 网站配置: #website');
+      console.log('• 用户管理: #users');
+      console.log('• 用户组管理: #groups');
+      console.log('• 服务器管理: #servers');
+      console.log('• DNS配置: #dns');
+    }
+  }, []);
+
   // 检查登录状态
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -170,6 +307,12 @@ export default function Home() {
 
   const handleMenuSelect = ({ key }: { key: string }) => {
     setSelectedKey(key);
+    // 更新URL hash，使用简化的hash名称
+    if (typeof window !== 'undefined') {
+      const hash = keyToHashMap[key] || key;
+      const newUrl = `${window.location.pathname}${window.location.search}#${hash}`;
+      window.history.pushState(null, '', newUrl);
+    }
   };
 
   const handleLogout = async () => {
@@ -271,16 +414,29 @@ export default function Home() {
           justifyContent: 'space-between',
           alignItems: 'center'
         }}>
-          <Button
-            type="text"
-            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-            onClick={() => setCollapsed(!collapsed)}
-            style={{
-              fontSize: '16px',
-              width: 64,
-              height: 64,
-            }}
-          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <Button
+              type="text"
+              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              onClick={() => setCollapsed(!collapsed)}
+              style={{
+                fontSize: '16px',
+                width: 64,
+                height: 64,
+              }}
+            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {['dashboard', 'website', 'users', 'user_groups', 'servers', 'dns_config'].includes(selectedKey) && (
+                <>
+                  <Text type="secondary">系统配置</Text>
+                  <Text type="secondary">/</Text>
+                </>
+              )}
+              <Text strong style={{ fontSize: '16px' }}>
+                {keyToDisplayNameMap[selectedKey] || '首页'}
+              </Text>
+            </div>
+          </div>
           
           <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
             <Space style={{ cursor: 'pointer', padding: '8px 12px', borderRadius: '8px' }}>
