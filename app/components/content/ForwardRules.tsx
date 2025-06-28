@@ -1,4 +1,4 @@
-import React, { useState, FC, useRef } from 'react';
+import React, { useState, FC, useRef, useCallback, useMemo, useEffect } from 'react';
 import { Button, Tag, Popconfirm, Badge, Space, Tooltip, Modal, Form, Card, Row, Col, Typography, Divider } from 'antd';
 import { message } from '@/utils/message';
 import {
@@ -297,6 +297,9 @@ const ForwardRules: React.FC = () => {
     const [selectedPath, setSelectedPath] = useState<ServerItem[]>([]);
     const [exitServer, setExitServer] = useState<ServerItem | null>(null);
     const [form] = Form.useForm();
+    
+    // 地图缓存相关状态
+    const mapContainerRef = useRef<HTMLDivElement | null>(null);
 
     // 暂停/启动规则
     const toggleRuleStatus = (record: ForwardRuleItem) => {
@@ -350,6 +353,8 @@ const ForwardRules: React.FC = () => {
         setSelectedPath([]);
         setExitServer(null);
         setModalVisible(true);
+        // 标记地图已渲染，确保缓存
+        setMapRendered(true);
     };
 
     // 打开编辑弹窗
@@ -364,27 +369,86 @@ const ForwardRules: React.FC = () => {
         setExitServer(null); // 可以根据exitConfig恢复
         
         setModalVisible(true);
+        // 标记地图已渲染，确保缓存
+        setMapRendered(true);
     };
 
-    // 处理服务器选择
-    const handleServerSelect = (server: ServerItem) => {
+    // 处理服务器选择 - 使用useCallback缓存
+    const handleServerSelect = useCallback((server: ServerItem) => {
         if (server.type === 'NORMAL') {
             // 添加普通服务器到路径
-            setSelectedPath([...selectedPath, server]);
+            setSelectedPath(prevPath => [...prevPath, server]);
         } else if (server.type === 'EXIT') {
             // 替换出口服务器
             setExitServer(server);
         }
-    };
+    }, []);
+    
+    // 使用简单的状态控制地图是否已经渲染
+    const [mapRendered, setMapRendered] = useState(false);
+    // 窗口尺寸状态，用于比较是否真正改变
+    const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
+    // 地图刷新版本，只在窗口尺寸改变时递增
+    const [mapVersion, setMapVersion] = useState(0);
+    
+    // 确保地图只在Modal第一次打开时渲染，之后一直保持
+    const shouldRenderMap = modalVisible || mapRendered;
+    
+        // 监听窗口大小变化
+    useEffect(() => {
+        let resizeTimeout: NodeJS.Timeout;
+        
+        const handleResize = () => {
+            const newSize = {
+                width: window.innerWidth,
+                height: window.innerHeight
+            };
+            
+            // 检查窗口尺寸是否真正改变
+            const sizeChanged = windowSize.width !== newSize.width || windowSize.height !== newSize.height;
+            
+            setWindowSize(newSize);
+            
+            // 清除之前的定时器，避免频繁调整
+            if (resizeTimeout) {
+                clearTimeout(resizeTimeout);
+            }
+            
+            // 只有在窗口尺寸真正改变且地图已渲染时才重新渲染地图
+            if (sizeChanged && mapRendered) {
+                resizeTimeout = setTimeout(() => {
+                    setMapVersion(prev => prev + 1);
+                }, 300); // 延迟重新渲染，避免频繁操作
+            }
+        };
+        
+        // 初始化窗口尺寸
+        if (typeof window !== 'undefined') {
+            handleResize();
+            window.addEventListener('resize', handleResize);
+        }
+        
+        return () => {
+            if (typeof window !== 'undefined') {
+                window.removeEventListener('resize', handleResize);
+            }
+            if (resizeTimeout) {
+                clearTimeout(resizeTimeout);
+            }
+        };
+    }, [windowSize.width, windowSize.height, mapRendered]);
+    
+    // 当Modal打开时不需要特殊处理，因为地图会保持缓存
     
     // 重置路径配置
-    const resetPathConfig = () => {
+    const resetPathConfig = useCallback(() => {
         setSelectedPath([]);
         setExitServer(null);
+        // 不重置地图初始化状态，保持地图缓存
         // 移除这些配置项，因为出口服务器是只读的
         // setExitConfig('');
         // setSelectedExitType('PROXY');
-    };
+    }, []);
     
     // 提交配置
     const handleSubmit = () => {
@@ -900,7 +964,7 @@ const ForwardRules: React.FC = () => {
                 title={modalMode === 'create' ? '配置转发规则路径' : '编辑转发规则路径'}
                 open={modalVisible}
                 width={900}
-                destroyOnHidden={true}
+                destroyOnClose={false}
                 onCancel={() => {
                     setModalVisible(false);
                     resetPathConfig();
@@ -910,16 +974,32 @@ const ForwardRules: React.FC = () => {
                 cancelText="取消"
             >
                 <Form form={form} layout="vertical">
-                    {/* 世界地图部分 */}
-                    <div style={{ height: 500 }}>
-                        {typeof window !== 'undefined' && (
-                            <DynamicLeafletWrapper 
-                                selectedPath={selectedPath}
-                                sampleServers={sampleServers}
-                                exitServer={exitServer}
-                                handleServerSelect={handleServerSelect}
-                                serverTypeEnum={serverTypeEnum}
-                            />
+                    {/* 世界地图部分 - 简单的条件渲染缓存 */}
+                    <div 
+                        ref={mapContainerRef}
+                        style={{ height: 500 }}
+                    >
+                        {shouldRenderMap ? (
+                            typeof window !== 'undefined' && (
+                                <DynamicLeafletWrapper 
+                                    key={`map-version-${mapVersion}`}
+                                    selectedPath={selectedPath}
+                                    sampleServers={sampleServers}
+                                    exitServer={exitServer}
+                                    handleServerSelect={handleServerSelect}
+                                    serverTypeEnum={serverTypeEnum}
+                                />
+                            )
+                        ) : (
+                            <div style={{ 
+                                height: 500, 
+                                display: 'flex', 
+                                justifyContent: 'center', 
+                                alignItems: 'center', 
+                                background: '#f5f5f5' 
+                            }}>
+                                准备地图组件...
+                            </div>
                         )}
                     </div>
                     
