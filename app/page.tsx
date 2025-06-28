@@ -18,6 +18,7 @@ import Website from './components/content/config/Website';
 import Users from './components/content/config/Users';
 import UserGroups from './components/content/config/UserGroups';
 import Servers from './components/content/config/Servers';
+import DnsConfig from './components/content/config/DnsConfig';
 
 const { Header, Sider, Content, Footer } = Layout;
 const { Text } = Typography;
@@ -53,6 +54,7 @@ const items: MenuItem[] = [
     getItem('用户管理', 'users'),
     getItem('用户组管理', 'user_groups'),
     getItem('服务器管理', 'servers'),
+    getItem('DNS配置', 'dns_config'),
   ]),
 ];
 
@@ -213,6 +215,8 @@ export default function Home() {
         return <UserGroups />;
       case 'servers':
         return <Servers />;
+      case 'dns_config':
+        return <DnsConfig />;
       default:
         return <HomeContent />;
     }

@@ -11,4 +11,5 @@ export { dashboardHandlers } from '@mock/handlers/dashboard';
 export { miscHandlers } from '@mock/handlers/misc';
 export { userManagementHandlers } from './userManagement';
 export { rulesHandlers } from './rules';
-export { routeHandlers } from './routes'; 
+export { routeHandlers } from './routes';
+export { dnsConfigHandlers } from './dnsConfig'; 

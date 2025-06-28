@@ -11,7 +11,8 @@ import {
   rulesHandlers,
   userManagementHandlers,
   routeHandlers,
-  miscHandlers
+  miscHandlers,
+  dnsConfigHandlers
 } from '@mock/handlers/index';
 
 // 合并所有handlers
@@ -27,5 +28,6 @@ export const handlers = [
   ...serverHandlers,         // 服务器管理 (https://api.example.com/servers)
   ...userGroupHandlers,      // 用户组管理 (https://api.example.com/config/user-groups)
   ...userInfoHandlers,       // 用户信息 (https://api.example.com/user/info)
+  ...dnsConfigHandlers,      // DNS配置管理 (/api/v1/dns/configs)
   ...miscHandlers,           // 其他杂项
 ]; 

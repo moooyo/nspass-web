@@ -109,4 +109,14 @@ export interface UserInfoData extends UserInfoUpdateData {
   role: string;
   status: string;
   createTime: string;
+}
+
+// =================== DNS配置相关类型 ===================
+export interface DnsConfigData {
+  id?: number;
+  configName: string;
+  provider: string;
+  domain: string;
+  configParams: string; // JSON字符串
+  createdAt: string;
 } 
