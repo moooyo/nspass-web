@@ -1,141 +1,185 @@
-// 使用 proto 生成类型的 Servers Service
-import { httpClient, ApiResponse } from '@/utils/http-client';
 import type {
   ServerItem,
-  CreateServerRequest,
-  GetServersRequest,
-  GetServerByIdRequest,
-  UpdateServerByIdRequest,
-  DeleteServerRequest,
-  BatchDeleteServersRequest,
-  RestartServerRequest,
-  GetServerStatsRequest,
-  ServerStats,
-  RegionOption,
-  GetServersResponse,
-  CreateServerResponse,
-  GetServerByIdResponse,
-  UpdateServerResponse,
-  DeleteServerResponse,
-  BatchDeleteServersResponse,
-  RestartServerResponse,
-  GetServerStatsResponse,
-  GetRegionsResponse
-} from '@/types/generated/api/servers/servers';
-import { ServerStatus } from '@/types/generated/api/servers/servers';
-import type { ApiResponse as CommonApiResponse } from '@/types/generated/common';
+  ServerStatus
+} from '@/types/generated/api/servers/server_management';
 
-// 将httpClient的ApiResponse转换为proto响应格式的辅助函数
-function toProtoResponse<T>(response: ApiResponse<T>): { base?: CommonApiResponse; data?: T } {
-  return {
-    base: {
-      success: response.success,
-      message: response.message,
-      errorCode: response.success ? undefined : 'API_ERROR'
-    },
-    data: response.data
-  };
+// 状态映射函数
+export const statusToString = (status: ServerStatus): string => {
+  switch (status) {
+    case 1: // SERVER_STATUS_ONLINE
+      return 'online';
+    case 2: // SERVER_STATUS_OFFLINE
+      return 'offline';
+    case 3: // SERVER_STATUS_PENDING_INSTALL
+      return 'pending_install';
+    case 4: // SERVER_STATUS_UNKNOWN
+      return 'unknown';
+    default:
+      return 'unknown';
+  }
+};
+
+export const stringToStatus = (status: string): ServerStatus => {
+  switch (status) {
+    case 'online':
+      return 1; // SERVER_STATUS_ONLINE
+    case 'offline':
+      return 2; // SERVER_STATUS_OFFLINE
+    case 'pending_install':
+      return 3; // SERVER_STATUS_PENDING_INSTALL
+    case 'unknown':
+      return 4; // SERVER_STATUS_UNKNOWN
+    default:
+      return 4; // SERVER_STATUS_UNKNOWN
+  }
+};
+
+// 请求参数接口
+export interface ServerListParams {
+  current?: number;
+  pageSize?: number;
+  name?: string;
+  status?: string;
+  country?: string;
+  group?: string;
 }
 
-class ServersService {
-  private readonly endpoint = '/servers';
+// 创建服务器参数
+export interface CreateServerParams {
+  name: string;
+  country?: string;
+  group?: string;
+  registerTime?: string;
+  uploadTraffic?: number;
+  downloadTraffic?: number;
+}
+
+// 更新服务器参数
+export interface UpdateServerParams {
+  name?: string;
+  ipv4?: string;
+  ipv6?: string;
+  country?: string;
+  group?: string;
+  registerTime?: string;
+  uploadTraffic?: number;
+  downloadTraffic?: number;
+  status?: string;
+}
+
+// 服务器 API 服务
+export class ServerService {
+  private static readonly BASE_URL = '/api/v1/servers';
 
   /**
    * 获取服务器列表
    */
-  async getServers(params: GetServersRequest = {}): Promise<GetServersResponse> {
-    const queryParams: Record<string, string> = {};
+  static async getServers(params: ServerListParams = {}): Promise<{
+    data: ServerItem[];
+    success: boolean;
+    total: number;
+  }> {
+    const url = new URL(this.BASE_URL, window.location.origin);
     
-    if (params.page) queryParams.page = params.page.toString();
-    if (params.pageSize) queryParams.pageSize = params.pageSize.toString();
-    if (params.name) queryParams.name = params.name;
-    if (params.status && params.status !== ServerStatus.SERVER_STATUS_UNSPECIFIED) {
-      queryParams.status = params.status;
+    if (params.current) url.searchParams.set('page', params.current.toString());
+    if (params.pageSize) url.searchParams.set('pageSize', params.pageSize.toString());
+    if (params.name) url.searchParams.set('name', params.name);
+    if (params.status && params.status !== 'all') {
+      url.searchParams.set('status', stringToStatus(params.status).toString());
     }
-    if (params.region) queryParams.region = params.region;
+    if (params.country && params.country !== 'all') {
+      url.searchParams.set('country', params.country);
+    }
 
-    const response = await httpClient.get<ServerItem[]>(this.endpoint, queryParams);
-    return toProtoResponse(response);
+    const response = await fetch(url.toString());
+    const result = await response.json();
+
+    if (!result.base?.success) {
+      throw new Error(result.base?.message || '获取服务器列表失败');
+    }
+
+    return {
+      data: result.data || [],
+      success: true,
+      total: result.data?.length || 0
+    };
   }
 
   /**
-   * 创建新服务器
+   * 创建服务器
    */
-  async createServer(serverData: CreateServerRequest): Promise<CreateServerResponse> {
-    const response = await httpClient.post<ServerItem>(this.endpoint, serverData);
-    return toProtoResponse(response);
+  static async createServer(data: CreateServerParams): Promise<ServerItem> {
+    const response = await fetch(this.BASE_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    const result = await response.json();
+
+    if (!result.base?.success) {
+      throw new Error(result.base?.message || '创建服务器失败');
+    }
+
+    return result.data;
   }
 
   /**
-   * 获取服务器详情
+   * 更新服务器
    */
-  async getServerById(params: GetServerByIdRequest): Promise<GetServerByIdResponse> {
-    const response = await httpClient.get<ServerItem>(`${this.endpoint}/${params.id}`);
-    return toProtoResponse(response);
-  }
+  static async updateServer(id: string, data: UpdateServerParams): Promise<ServerItem> {
+    const updateData = { ...data };
+    
+    // 转换状态值
+    if (updateData.status) {
+      updateData.status = stringToStatus(updateData.status).toString();
+    }
 
-  /**
-   * 更新服务器信息
-   */
-  async updateServer(params: UpdateServerByIdRequest): Promise<UpdateServerResponse> {
-    const response = await httpClient.put<ServerItem>(`${this.endpoint}/${params.id}`, params.data);
-    return toProtoResponse(response);
+    const response = await fetch(`${this.BASE_URL}/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updateData),
+    });
+
+    const result = await response.json();
+
+    if (!result.base?.success) {
+      throw new Error(result.base?.message || '更新服务器失败');
+    }
+
+    return result.data;
   }
 
   /**
    * 删除服务器
    */
-  async deleteServer(params: DeleteServerRequest): Promise<DeleteServerResponse> {
-    const response = await httpClient.delete<void>(`${this.endpoint}/${params.id}`);
-    return toProtoResponse(response);
+  static async deleteServer(id: string): Promise<void> {
+    const response = await fetch(`${this.BASE_URL}/${id}`, {
+      method: 'DELETE',
+    });
+
+    const result = await response.json();
+
+    if (!result.base?.success) {
+      throw new Error(result.base?.message || '删除服务器失败');
+    }
   }
 
   /**
-   * 批量删除服务器
+   * 安装服务器（模拟操作）
    */
-  async batchDeleteServers(params: BatchDeleteServersRequest): Promise<BatchDeleteServersResponse> {
-    const response = await httpClient.post<void>(`${this.endpoint}/batch-delete`, { ids: params.ids });
-    return toProtoResponse(response);
+  static async installServer(id: string): Promise<void> {
+    // 这里可以调用实际的安装 API
+    // 目前仅模拟操作
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      await navigator.clipboard.writeText('安装成功');
+    } catch (error) {
+      console.error('复制到剪切板失败:', error);
+    }
   }
-
-  /**
-   * 重启服务器
-   */
-  async restartServer(params: RestartServerRequest): Promise<RestartServerResponse> {
-    const response = await httpClient.post<void>(`${this.endpoint}/${params.id}/restart`);
-    return toProtoResponse(response);
-  }
-
-  /**
-   * 获取服务器统计信息
-   */
-  async getServerStats(params: GetServerStatsRequest): Promise<GetServerStatsResponse> {
-    const response = await httpClient.get<ServerStats>(`${this.endpoint}/${params.id}/stats`);
-    return toProtoResponse(response);
-  }
-
-  /**
-   * 获取服务器区域列表
-   */
-  async getRegions(): Promise<GetRegionsResponse> {
-    const response = await httpClient.get<RegionOption[]>(`${this.endpoint}/regions`);
-    return toProtoResponse(response);
-  }
-}
-
-// 创建并导出服务实例
-export const serversService = new ServersService();
-export default ServersService;
-
-// 导出常用类型和枚举
-export type {
-  ServerItem,
-  CreateServerRequest,
-  UpdateServerRequest,
-  GetServersRequest,
-  ServerStats,
-  RegionOption
-} from '@/types/generated/api/servers/servers';
-
-// 单独导出枚举作为值
-export { ServerStatus } from '@/types/generated/api/servers/servers'; 
+} 

@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import { Button, Tag, Modal } from 'antd';
-import { message } from '@/utils/message';
+import React, { useState, useRef } from 'react';
+import { Button, Tag, message } from 'antd';
 import {
     ProTable,
     ProColumns,
@@ -11,54 +10,158 @@ import {
     ModalForm,
     ProFormDigit,
     ProFormDatePicker,
+    ActionType
 } from '@ant-design/pro-components';
-import { PlusOutlined, EditOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DownloadOutlined, DeleteOutlined } from '@ant-design/icons';
+import ReactCountryFlag from 'react-country-flag';
+import { 
+  ServerService, 
+  statusToString,
+  stringToStatus,
+  type ServerListParams,
+  type CreateServerParams,
+  type UpdateServerParams
+} from '@/services/servers';
+import type { ServerItem } from '@/types/generated/api/servers/server_management';
 
-type ServerItem = {
-    id: React.Key;
-    name?: string;
-    ipv4?: string;
-    ipv6?: string;
-    region?: string;
-    group?: string;
-    registerTime?: string;
-    uploadTraffic?: number;
-    downloadTraffic?: number;
-    status?: 'online' | 'offline';
-};
+// 导入国家数据
+const countryFlagEmoji = require('country-flag-emoji');
 
-const defaultData: ServerItem[] = [
-    {
-        id: 1,
-        name: '服务器01',
-        ipv4: '192.168.1.1',
-        ipv6: '2001:0db8:85a3:0000:0000:8a2e:0370:7334',
-        region: '亚洲',
-        group: '主要服务器',
-        registerTime: '2023-01-01',
-        uploadTraffic: 1024,
-        downloadTraffic: 2048,
-        status: 'online',
-    },
-    {
-        id: 2,
-        name: '服务器02',
-        ipv4: '192.168.1.2',
-        ipv6: '2001:0db8:85a3:0000:0000:8a2e:0370:7335',
-        region: '欧洲',
-        group: '备用服务器',
-        registerTime: '2023-02-01',
-        uploadTraffic: 512,
-        downloadTraffic: 1024,
-        status: 'offline',
-    },
+// 从第三方库获取所有国家数据
+const allCountries = countryFlagEmoji.list;
+
+// 常用国家代码
+const popularCountryCodes = [
+    'CN', 'US', 'JP', 'DE', 'GB', 'FR', 'CA', 'AU', 'KR', 'SG', 
+    'HK', 'TW', 'RU', 'IN', 'BR', 'NL', 'CH', 'SE', 'NO', 'IT'
 ];
 
+// 生成完整的国家选项列表
+const getCountryOptions = () => {
+    // 获取常用国家
+    const popularCountries = popularCountryCodes
+        .map(code => countryFlagEmoji.get(code))
+        .filter(Boolean);
+    
+    // 获取其他国家（排除常用国家）
+    const otherCountries = allCountries.filter((country: any) => 
+        !popularCountryCodes.includes(country.code)
+    );
+    
+    const createCountryOption = (country: any) => ({
+        label: (
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <ReactCountryFlag 
+                    countryCode={country.code}
+                    svg
+                    style={{
+                        width: '16px',
+                        height: '12px'
+                    }}
+                />
+                {country.name}
+            </span>
+        ),
+        value: country.name
+    });
+    
+    return [
+        // 常用国家分组
+        {
+            label: '── 常用国家 ──',
+            value: 'divider-popular',
+            disabled: true
+        },
+        ...popularCountries.map(createCountryOption),
+        // 其他国家分组
+        {
+            label: '── 其他国家 ──',
+            value: 'divider-others', 
+            disabled: true
+        },
+        ...otherCountries.map(createCountryOption)
+    ];
+};
+
+// 根据国家名称获取国家代码
+const getCountryCodeByName = (countryName: string): string | null => {
+    const country = allCountries.find((c: any) => c.name === countryName);
+    return country ? country.code : null;
+};
+
+// 根据国家名称获取国旗组件
+const getFlagByCountryName = (countryName?: string) => {
+    if (!countryName) return <span style={{ marginRight: '6px' }}>🌍</span>;
+    
+    const countryCode = getCountryCodeByName(countryName);
+    if (!countryCode) return <span style={{ marginRight: '6px' }}>🌍</span>;
+    
+    return (
+        <ReactCountryFlag 
+            countryCode={countryCode}
+            svg
+            style={{
+                width: '20px',
+                height: '15px',
+                marginRight: '6px'
+            }}
+            title={countryName}
+        />
+    );
+};
+
 const Servers: React.FC = () => {
-    const [dataSource, setDataSource] = useState<ServerItem[]>(defaultData);
+    const actionRef = useRef<ActionType>(null);
     const [modalVisible, setModalVisible] = useState<boolean>(false);
     const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
     const [currentRecord, setCurrentRecord] = useState<ServerItem | null>(null);
+    const [currentServers, setCurrentServers] = useState<ServerItem[]>([]);
+
+    // 获取当前服务器中存在的国家（去重）
+    const getAvailableCountries = () => {
+        return [...new Set(
+            currentServers
+                .map(server => server.country)
+                .filter(Boolean) // 过滤掉空值
+        )] as string[];
+    };
+
+    // 为搜索筛选生成国家valueEnum
+    const getCountryValueEnum = () => {
+        const countries = getAvailableCountries();
+        const valueEnum: Record<string, { text: string; status: string }> = {
+            all: { text: '全部', status: 'Default' }
+        };
+        
+        countries.forEach(country => {
+            valueEnum[country] = { text: country, status: 'Default' };
+        });
+        
+        return valueEnum;
+    };
+
+    // 获取当前服务器中存在的服务器组（去重）
+    const getAvailableGroups = () => {
+        return [...new Set(
+            currentServers
+                .map(server => server.group)
+                .filter(Boolean) // 过滤掉空值
+        )] as string[];
+    };
+
+    // 为搜索筛选生成服务器组valueEnum
+    const getGroupValueEnum = () => {
+        const groups = getAvailableGroups();
+        const valueEnum: Record<string, { text: string; status: string }> = {
+            all: { text: '全部', status: 'Default' }
+        };
+        
+        groups.forEach(group => {
+            valueEnum[group] = { text: group, status: 'Default' };
+        });
+        
+        return valueEnum;
+    };
 
     // 打开新增弹窗
     const openCreateModal = () => {
@@ -78,44 +181,62 @@ const Servers: React.FC = () => {
     const handleModalSubmit = async (values: any) => {
         try {
             if (modalMode === 'create') {
-                const newServer: ServerItem = {
-                    id: Date.now(),
+                const createData: CreateServerParams = {
                     name: values.name,
-                    ipv4: values.ipv4,
-                    ipv6: values.ipv6,
-                    region: values.region,
+                    country: values.country,
                     group: values.group,
-                    registerTime: values.registerTime,
+                    registerTime: values.registerTime || new Date().toISOString(),
                     uploadTraffic: values.uploadTraffic || 0,
                     downloadTraffic: values.downloadTraffic || 0,
-                    status: values.status || 'offline',
                 };
-                setDataSource([...dataSource, newServer]);
+                
+                await ServerService.createServer(createData);
                 message.success('服务器创建成功');
             } else {
                 if (!currentRecord) return false;
                 
-                const updatedDataSource = dataSource.map(item => 
-                    item.id === currentRecord.id ? { ...item, ...values } : item
-                );
-                setDataSource(updatedDataSource);
+                const updateData: UpdateServerParams = {
+                    ...values,
+                    status: values.status // 保持字符串格式，服务层会转换
+                };
+                
+                await ServerService.updateServer(currentRecord.id, updateData);
                 message.success('服务器更新成功');
             }
 
             setModalVisible(false);
             setCurrentRecord(null);
+            actionRef.current?.reload();
             return true;
         } catch (error) {
             console.error('操作失败:', error);
-            message.error('操作失败');
+            message.error(error instanceof Error ? error.message : '操作失败');
             return false;
         }
     };
 
     // 删除服务器
-    const deleteServer = (record: ServerItem) => {
-        setDataSource(dataSource.filter((item) => item.id !== record.id));
-        message.success('删除成功');
+    const deleteServer = async (record: ServerItem) => {
+        try {
+            await ServerService.deleteServer(record.id);
+            message.success('删除成功');
+            actionRef.current?.reload();
+        } catch (error) {
+            console.error('删除失败:', error);
+            message.error(error instanceof Error ? error.message : '删除失败');
+        }
+    };
+
+    // 处理安装
+    const handleInstall = async (record: ServerItem) => {
+        try {
+            await ServerService.installServer(record.id);
+            message.success('安装成功');
+            actionRef.current?.reload();
+        } catch (error) {
+            console.error('安装失败:', error);
+            message.error(error instanceof Error ? error.message : '安装失败');
+        }
     };
 
     const columns: ProColumns<ServerItem>[] = [
@@ -128,58 +249,83 @@ const Servers: React.FC = () => {
             title: 'IPV4地址',
             dataIndex: 'ipv4',
             width: '15%',
+            hideInSearch: true,
         },
         {
             title: 'IPV6地址',
             dataIndex: 'ipv6',
             width: '20%',
+            hideInSearch: true,
         },
         {
-            title: '区域',
-            dataIndex: 'region',
+            title: '国家',
+            dataIndex: 'country',
             width: '10%',
+            valueEnum: getCountryValueEnum(),
+            render: (_, record) => (
+                <span>
+                    {getFlagByCountryName(record.country)} {record.country}
+                </span>
+            ),
         },
         {
             title: '服务器组',
             dataIndex: 'group',
             width: '10%',
+            valueEnum: getGroupValueEnum(),
         },
         {
             title: '注册时间',
             dataIndex: 'registerTime',
             valueType: 'date',
             width: '15%',
+            hideInSearch: true,
         },
         {
             title: '上传流量 (MB)',
             dataIndex: 'uploadTraffic',
             valueType: 'digit',
             width: '12%',
+            hideInSearch: true,
         },
         {
             title: '下载流量 (MB)',
             dataIndex: 'downloadTraffic',
             valueType: 'digit',
             width: '12%',
+            hideInSearch: true,
         },
         {
             title: '状态',
             dataIndex: 'status',
+            width: '10%',
             valueEnum: {
+                all: { text: '全部', status: 'Default' },
                 online: { text: '在线', status: 'Success' },
                 offline: { text: '离线', status: 'Error' },
+                pending_install: { text: '等待安装', status: 'Processing' },
+                unknown: { text: '未知', status: 'Warning' },
             },
-            render: (_, record) => (
-                <Tag color={record.status === 'online' ? 'green' : 'red'}>
-                    {record.status === 'online' ? '在线' : '离线'}
-                </Tag>
-            ),
-            width: '10%',
+            render: (_, record) => {
+                const statusText = statusToString(record.status);
+                const statusConfig = {
+                    online: { color: 'green', text: '在线' },
+                    offline: { color: 'red', text: '离线' },
+                    pending_install: { color: 'blue', text: '等待安装' },
+                    unknown: { color: 'orange', text: '未知' },
+                };
+                const config = statusConfig[statusText as keyof typeof statusConfig] || statusConfig.unknown;
+                return (
+                    <Tag color={config.color}>
+                        {config.text}
+                    </Tag>
+                );
+            },
         },
         {
             title: '操作',
             valueType: 'option',
-            width: '15%',
+            width: '20%',
             render: (_, record) => (
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                     <Button
@@ -191,11 +337,24 @@ const Servers: React.FC = () => {
                     >
                         编辑
                     </Button>
+                    {statusToString(record.status) === 'pending_install' && (
+                        <Button
+                            key="install"
+                            type="link"
+                            size="small"
+                            style={{ color: '#1890ff' }}
+                            icon={<DownloadOutlined />}
+                            onClick={() => handleInstall(record)}
+                        >
+                            安装
+                        </Button>
+                    )}
                     <Button
                         key="delete"
                         type="link"
                         size="small"
                         danger
+                        icon={<DeleteOutlined />}
                         onClick={() => deleteServer(record)}
                     >
                         删除
@@ -214,10 +373,13 @@ const Servers: React.FC = () => {
                 open={modalVisible}
                 onOpenChange={setModalVisible}
                 onFinish={handleModalSubmit}
-                initialValues={modalMode === 'edit' ? currentRecord || {} : {
+                initialValues={modalMode === 'edit' && currentRecord ? {
+                    ...currentRecord,
+                    status: statusToString(currentRecord.status)
+                } : {
                     uploadTraffic: 0,
                     downloadTraffic: 0,
-                    status: 'offline'
+                    registerTime: new Date().toISOString().split('T')[0],
                 }}
                 modalProps={{
                     destroyOnHidden: true,
@@ -229,21 +391,28 @@ const Servers: React.FC = () => {
                     placeholder="请输入服务器名称"
                     rules={[{ required: true, message: '服务器名称为必填项' }]}
                 />
-                <ProFormText
-                    name="ipv4"
-                    label="IPV4地址"
-                    placeholder="请输入IPV4地址"
-                    rules={[{ required: true, message: 'IPV4地址为必填项' }]}
-                />
-                <ProFormText
-                    name="ipv6"
-                    label="IPV6地址"
-                    placeholder="请输入IPV6地址"
-                />
-                <ProFormText
-                    name="region"
-                    label="区域"
-                    placeholder="请输入区域"
+                {modalMode === 'edit' && (
+                    <>
+                        <ProFormText
+                            name="ipv4"
+                            label="IPV4地址"
+                            placeholder="IPV4地址由系统自动上报"
+                            disabled
+                        />
+                        <ProFormText
+                            name="ipv6"
+                            label="IPV6地址"
+                            placeholder="IPV6地址由系统自动上报"
+                            disabled
+                        />
+                    </>
+                )}
+                <ProFormSelect
+                    name="country"
+                    label="国家"
+                    placeholder="请选择国家"
+                    showSearch
+                    request={async () => getCountryOptions()}
                 />
                 <ProFormText
                     name="group"
@@ -265,56 +434,33 @@ const Servers: React.FC = () => {
                     label="下载流量 (MB)"
                     placeholder="请输入下载流量"
                 />
-                <ProFormSelect
-                    name="status"
-                    label="状态"
-                    placeholder="请选择状态"
-                    options={[
-                        { label: '在线', value: 'online' },
-                        { label: '离线', value: 'offline' },
-                    ]}
-                />
+                {modalMode === 'edit' && (
+                    <ProFormSelect
+                        name="status"
+                        label="状态"
+                        placeholder="请选择状态"
+                        options={[
+                            { label: '在线', value: 'online' },
+                            { label: '离线', value: 'offline' },
+                            { label: '等待安装', value: 'pending_install' },
+                            { label: '未知', value: 'unknown' },
+                        ]}
+                    />
+                )}
+                {modalMode === 'create' && (
+                    <div style={{ background: '#f5f5f5', padding: '12px', borderRadius: '4px', marginBottom: '16px' }}>
+                        <p style={{ margin: 0, color: '#666' }}>
+                            注意：新建服务器时状态默认为"等待安装"，IPV4和IPV6地址将在服务器安装后自动上报
+                        </p>
+                    </div>
+                )}
             </ModalForm>
-
-            <QueryFilter
-                defaultCollapsed
-                split
-                defaultColsNumber={3}
-                onFinish={async (values) => {
-                    console.log(values);
-                    message.success('查询成功');
-                }}
-            >
-                <ProFormText name="name" label="服务器名称" colProps={{ span: 8 }} />
-                <ProFormSegmented
-                    name="status"
-                    label="状态"
-                    colProps={{ span: 8 }}
-                    valueEnum={{
-                        all: '全部',
-                        online: '在线',
-                        offline: '离线',
-                    }}
-                />
-                <ProFormSelect
-                    name="region"
-                    label="区域"
-                    colProps={{ span: 8 }}
-                    request={async () => [
-                        { label: '全部', value: 'all' },
-                        { label: '亚洲', value: 'asia' },
-                        { label: '欧洲', value: 'europe' },
-                        { label: '美洲', value: 'america' },
-                    ]}
-                    placeholder="请选择区域"
-                />
-            </QueryFilter>
 
             <ProTable<ServerItem>
                 rowKey="id"
                 headerTitle="服务器列表"
                 scroll={{ x: 960 }}
-                loading={false}
+                actionRef={actionRef}
                 toolBarRender={() => [
                     <Button
                         key="button"
@@ -326,8 +472,37 @@ const Servers: React.FC = () => {
                     </Button>
                 ]}
                 columns={columns}
-                dataSource={dataSource}
-                search={false}
+                request={async (params) => {
+                    try {
+                        const serverParams: ServerListParams = {
+                            current: params.current,
+                            pageSize: params.pageSize,
+                            name: params.name,
+                            status: params.status,
+                            country: params.country,
+                            group: params.group
+                        };
+                        
+                        const result = await ServerService.getServers(serverParams);
+                        
+                        // 更新当前服务器数据，用于动态生成筛选选项
+                        setCurrentServers(result.data);
+                        
+                        return {
+                            data: result.data,
+                            success: result.success,
+                            total: result.total,
+                        };
+                    } catch (error) {
+                        console.error('获取服务器列表失败:', error);
+                        message.error(error instanceof Error ? error.message : '获取服务器列表失败');
+                        return {
+                            data: [],
+                            success: false,
+                            total: 0,
+                        };
+                    }
+                }}
                 pagination={{
                     pageSize: 10,
                     showSizeChanger: true,

@@ -15,8 +15,8 @@ const mockServers: ServerItem[] = [
     name: '北京服务器-01',
     ipv4: '123.45.67.89',
     ipv6: '2001:db8::1',
-    region: '北京',
-    group: '华北',
+    country: 'China',
+    group: '主要服务器',
     registerTime: '2024-01-01T00:00:00Z',
     uploadTraffic: 1250.8,
     downloadTraffic: 2467.3,
@@ -24,10 +24,10 @@ const mockServers: ServerItem[] = [
   },
   {
     id: '2',
-    name: '上海服务器-01',
+    name: '洛杉矶服务器-01',
     ipv4: '234.56.78.90',
-    region: '上海',
-    group: '华东',
+    country: 'United States',
+    group: '主要服务器',
     registerTime: '2024-01-02T00:00:00Z',
     uploadTraffic: 856.4,
     downloadTraffic: 1923.7,
@@ -35,18 +35,39 @@ const mockServers: ServerItem[] = [
   },
   {
     id: '3',
-    name: '广州服务器-01',
+    name: '东京服务器-01',
     ipv4: '345.67.89.01',
-    region: '广州',
-    group: '华南',
+    country: 'Japan',
+    group: '备用服务器',
     registerTime: '2024-01-03T00:00:00Z',
     uploadTraffic: 425.6,
     downloadTraffic: 789.2,
     status: ServerStatus.SERVER_STATUS_OFFLINE
+  },
+  {
+    id: '4',
+    name: '法兰克福服务器-01',
+    country: 'Germany',
+    group: '测试服务器',
+    registerTime: '2024-01-04T00:00:00Z',
+    uploadTraffic: 0,
+    downloadTraffic: 0,
+    status: ServerStatus.SERVER_STATUS_PENDING_INSTALL
+  },
+  {
+    id: '5',
+    name: '新加坡服务器-01',
+    ipv4: '456.78.90.12',
+    country: 'Singapore',
+    group: '备用服务器',
+    registerTime: '2024-01-05T00:00:00Z',
+    uploadTraffic: 125.5,
+    downloadTraffic: 234.8,
+    status: ServerStatus.SERVER_STATUS_UNKNOWN
   }
 ];
 
-let nextId = 4;
+let nextId = 6;
 
 export const serverHandlers = [
   // 获取服务器列表
@@ -56,7 +77,7 @@ export const serverHandlers = [
     const pageSize = parseInt(url.searchParams.get('pageSize') || '10');
     const name = url.searchParams.get('name');
     const status = url.searchParams.get('status');
-    const region = url.searchParams.get('region');
+    const country = url.searchParams.get('country');
 
     let filteredServers = mockServers;
 
@@ -73,9 +94,9 @@ export const serverHandlers = [
       filteredServers = filteredServers.filter(server => server.status === statusValue);
     }
 
-    // 按地区筛选
-    if (region) {
-      filteredServers = filteredServers.filter(server => server.region === region);
+    // 按国家筛选
+    if (country) {
+      filteredServers = filteredServers.filter(server => server.country === country);
     }
 
     // 分页
@@ -93,40 +114,26 @@ export const serverHandlers = [
   http.post('/api/v1/servers', async ({ request }) => {
     const body = await request.json() as CreateServerRequest;
 
-    // 验证必填字段
-    if (!body.name || !body.ipv4 || !body.region || !body.group || !body.registerTime) {
+    // 验证必填字段 - 只有服务器名称是必填的
+    if (!body.name) {
       return HttpResponse.json({
         base: { 
           success: false, 
-          message: '缺少必填字段',
+          message: '服务器名称为必填项',
           errorCode: 'INVALID_INPUT'
         }
       }, { status: 400 });
     }
 
-    // 检查IP地址冲突
-    const existingServer = mockServers.find(server => server.ipv4 === body.ipv4);
-    if (existingServer) {
-      return HttpResponse.json({
-        base: { 
-          success: false, 
-          message: 'IP地址已被使用',
-          errorCode: 'IP_CONFLICT'
-        }
-      }, { status: 409 });
-    }
-
     const newServer: ServerItem = {
       id: (nextId++).toString(),
       name: body.name,
-      ipv4: body.ipv4,
-      ipv6: body.ipv6,
-      region: body.region,
+      country: body.country,
       group: body.group,
-      registerTime: body.registerTime,
+      registerTime: body.registerTime || new Date().toISOString(),
       uploadTraffic: body.uploadTraffic || 0,
       downloadTraffic: body.downloadTraffic || 0,
-      status: body.status || ServerStatus.SERVER_STATUS_ONLINE
+      status: ServerStatus.SERVER_STATUS_PENDING_INSTALL // 新建时状态固定为待安装
     };
 
     mockServers.push(newServer);
