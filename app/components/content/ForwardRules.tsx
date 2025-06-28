@@ -2,11 +2,12 @@ import React, { useState, FC, useRef } from 'react';
 import { Button, Tag, Popconfirm, Badge, Space, Tooltip, Modal, Form, Card, Row, Col, Typography, Divider } from 'antd';
 import { message } from '@/utils/message';
 import {
-    EditableProTable,
+    ProTable,
     ProColumns,
     ProFormSelect,
     ProFormText,
     QueryFilter,
+    ModalForm,
 } from '@ant-design/pro-components';
 import { 
     PlusOutlined, 
@@ -287,12 +288,12 @@ const DraggableServerItem: FC<DraggableServerItemProps> = ({ server, index, move
 };
 
 const ForwardRules: React.FC = () => {
-    const [editableKeys, setEditableKeys] = useState<React.Key[]>([]);
     const [dataSource, setDataSource] = useState<ForwardRuleItem[]>(defaultData);
-    const [position, setPosition] = useState<'top' | 'bottom' | 'hidden'>('bottom');
     
-    // 新增状态用于控制ModelForm对话框
-    const [modelFormVisible, setModelFormVisible] = useState(false);
+    // 统一的Modal状态管理
+    const [modalVisible, setModalVisible] = useState(false);
+    const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+    const [currentRecord, setCurrentRecord] = useState<ForwardRuleItem | null>(null);
     const [selectedPath, setSelectedPath] = useState<ServerItem[]>([]);
     const [exitServer, setExitServer] = useState<ServerItem | null>(null);
     const [form] = Form.useForm();
@@ -342,6 +343,29 @@ const ForwardRules: React.FC = () => {
         message.success(`已删除规则: ${record.ruleId}`);
     };
 
+    // 打开新增弹窗
+    const openCreateModal = () => {
+        setModalMode('create');
+        setCurrentRecord(null);
+        setSelectedPath([]);
+        setExitServer(null);
+        setModalVisible(true);
+    };
+
+    // 打开编辑弹窗
+    const openEditModal = (record: ForwardRuleItem) => {
+        setModalMode('edit');
+        setCurrentRecord(record);
+        
+        // 根据现有规则数据恢复路径配置
+        // 这里可以根据record.viaNodes来恢复selectedPath
+        // 和根据record.exitConfig来恢复exitServer
+        setSelectedPath([]); // 可以根据viaNodes恢复
+        setExitServer(null); // 可以根据exitConfig恢复
+        
+        setModalVisible(true);
+    };
+
     // 处理服务器选择
     const handleServerSelect = (server: ServerItem) => {
         if (server.type === 'NORMAL') {
@@ -373,22 +397,44 @@ const ForwardRules: React.FC = () => {
         // 处理提交逻辑
         const viaNodes = selectedPath.map(server => server.name);
         
-        // 创建新规则
-        const newRule: ForwardRuleItem = {
-            id: (Math.random() * 1000000).toFixed(0),
-            ruleId: `rule${Date.now().toString().substr(-6)}`,
-            entryType: 'HTTP',
-            entryConfig: '0.0.0.0:8080', // 默认配置
-            trafficUsed: 0,
-            exitType: 'PROXY', // 固定使用代理类型
-            exitConfig: exitServer.ip, // 使用出口服务器的IP
-            status: 'PAUSED',
-            viaNodes: viaNodes,
-        };
+        if (modalMode === 'create') {
+            // 创建新规则
+            const newRule: ForwardRuleItem = {
+                id: (Math.random() * 1000000).toFixed(0),
+                ruleId: `rule${Date.now().toString().substr(-6)}`,
+                entryType: 'HTTP',
+                entryConfig: '0.0.0.0:8080', // 默认配置
+                trafficUsed: 0,
+                exitType: 'PROXY', // 固定使用代理类型
+                exitConfig: exitServer.ip, // 使用出口服务器的IP
+                status: 'PAUSED',
+                viaNodes: viaNodes,
+            };
+            
+            setDataSource([...dataSource, newRule]);
+            message.success('创建规则成功');
+        } else {
+            // 编辑现有规则
+            if (!currentRecord) {
+                message.error('无法找到要编辑的规则');
+                return;
+            }
+            
+            const updatedRule: ForwardRuleItem = {
+                ...currentRecord,
+                exitType: 'PROXY',
+                exitConfig: exitServer.ip,
+                viaNodes: viaNodes,
+            };
+            
+            const updatedDataSource = dataSource.map(item => 
+                item.id === currentRecord.id ? updatedRule : item
+            );
+            setDataSource(updatedDataSource);
+            message.success('更新规则成功');
+        }
         
-        setDataSource([...dataSource, newRule]);
-        message.success('创建规则成功');
-        setModelFormVisible(false);
+        setModalVisible(false);
         resetPathConfig();
     };
     
@@ -765,7 +811,7 @@ const ForwardRules: React.FC = () => {
                         </a>
                     </Tooltip>
                     <Tooltip key="edit" title="编辑">
-                        <a onClick={() => setEditableKeys([record.id])}>
+                        <a onClick={() => openEditModal(record)}>
                             <Tag icon={<EditOutlined />} color="blue">编辑</Tag>
                         </a>
                     </Tooltip>
@@ -789,6 +835,8 @@ const ForwardRules: React.FC = () => {
 
     return (
         <div>
+
+
             <QueryFilter
                 defaultCollapsed
                 split
@@ -819,96 +867,46 @@ const ForwardRules: React.FC = () => {
                 />
             </QueryFilter>
 
-            <EditableProTable<ForwardRuleItem>
+            <ProTable<ForwardRuleItem>
                 rowKey="id"
                 headerTitle="转发规则列表"
-                maxLength={20}
                 scroll={{ x: 'max-content' }}
-                recordCreatorProps={
-                    position !== 'hidden'
-                        ? {
-                              position: position,
-                              record: () => ({ 
-                                id: (Math.random() * 1000000).toFixed(0), 
-                                ruleId: `rule${Date.now().toString().substr(-6)}`, 
-                                entryType: 'HTTP',
-                                entryConfig: '',
-                                trafficUsed: 0,
-                                exitType: 'DIRECT',
-                                exitConfig: '',
-                                status: 'PAUSED',
-                                viaNodes: []
-                              }),
-                              creatorButtonText: '新建规则',
-                              onClick: () => {
-                                  // 点击新建按钮时打开ModelForm对话框而不是直接添加表格行
-                                  setModelFormVisible(true);
-                                  return false; // 阻止默认行为
-                              },
-                          }
-                        : false
-                }
                 loading={false}
-                toolBarRender={() => {
-                    const NewButton = () => (
-                        <Button
-                            key="button"
-                            icon={<PlusOutlined />}
-                            onClick={() => {
-                                setPosition('bottom');
-                                setModelFormVisible(true);
-                            }}
-                            type="primary"
-                        >
-                            新建规则
-                        </Button>
-                    );
-                    return [<NewButton key="new" />];
-                }}
+                toolBarRender={() => [
+                    <Button
+                        key="button"
+                        icon={<PlusOutlined />}
+                        onClick={openCreateModal}
+                        type="primary"
+                    >
+                        新建规则
+                    </Button>
+                ]}
                 columns={columns}
-                request={async () => ({
-                    data: defaultData,
-                    total: 3,
-                    success: true,
-                })}
-                value={dataSource}
-                onChange={(value) => {
-                    setDataSource([...value]);
-                }}
-                editable={{
-                    type: 'multiple',
-                    editableKeys,
-                    onSave: async (rowKey, data, row) => {
-                        console.log(rowKey, data, row);
-                        message.success('保存成功');
-                    },
-                    onChange: setEditableKeys,
-                    actionRender: (row, config, defaultDoms) => {
-                        const SaveButton = () => (
-                            <span style={{ marginRight: 8 }}>{defaultDoms.save}</span>
-                        );
-                        const CancelButton = () => defaultDoms.cancel;
-                        return [<SaveButton key="save" />, <CancelButton key="cancel" />];
-                    },
-                }}
-                defaultSize="small"
+                dataSource={dataSource}
+                size="small"
                 search={false}
                 options={false}
                 tableAlertRender={false}
+                pagination={{
+                    pageSize: 10,
+                    showSizeChanger: true,
+                    showQuickJumper: true,
+                }}
             />
 
             {/* 服务器配置ModelForm对话框 */}
             <Modal
-                title="配置转发规则路径"
-                open={modelFormVisible}
+                title={modalMode === 'create' ? '配置转发规则路径' : '编辑转发规则路径'}
+                open={modalVisible}
                 width={900}
                 destroyOnHidden={true}
                 onCancel={() => {
-                    setModelFormVisible(false);
+                    setModalVisible(false);
                     resetPathConfig();
                 }}
                 onOk={handleSubmit}
-                okText="创建规则"
+                okText={modalMode === 'create' ? '创建规则' : '更新规则'}
                 cancelText="取消"
             >
                 <Form form={form} layout="vertical">
