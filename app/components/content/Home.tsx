@@ -117,7 +117,7 @@ const HomeContent: React.FC = () => {
                 position: 'relative',
                 overflow: 'hidden'
               }}
-              bodyStyle={{ padding: '20px' }}
+              styles={{ body: { padding: '20px' } }}
             >
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: stat.gradient }}></div>
               <Statistic
@@ -200,7 +200,7 @@ const HomeContent: React.FC = () => {
                       textAlign: 'center',
                       cursor: 'pointer'
                     }}
-                    bodyStyle={{ padding: '16px' }}
+                    styles={{ body: { padding: '16px' } }}
                   >
                                          <div style={{ fontSize: 24, color: '#1890ff', marginBottom: 8 }}>
                        {action.icon}

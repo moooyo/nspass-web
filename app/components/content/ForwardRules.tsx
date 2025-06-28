@@ -964,7 +964,7 @@ const ForwardRules: React.FC = () => {
                 title={modalMode === 'create' ? '配置转发规则路径' : '编辑转发规则路径'}
                 open={modalVisible}
                 width={900}
-                destroyOnClose={false}
+                destroyOnHidden={false}
                 onCancel={() => {
                     setModalVisible(false);
                     resetPathConfig();

@@ -47,7 +47,7 @@ const UserInfo: React.FC = () => {
           <Card 
             className="modern-card hover-lift"
             style={{ textAlign: 'center' }}
-            bodyStyle={{ padding: '32px 24px' }}
+            styles={{ body: { padding: '32px 24px' } }}
           >
             <Avatar 
               size={120} 
@@ -157,7 +157,7 @@ const UserInfo: React.FC = () => {
                     borderRadius: '16px',
                     textAlign: 'center'
                   }}
-                  bodyStyle={{ padding: '20px 16px' }}
+                  styles={{ body: { padding: '20px 16px' } }}
                 >
                   <div style={{ 
                     fontSize: 24, 

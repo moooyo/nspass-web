@@ -321,7 +321,7 @@ const Users: React.FC = () => {
                     ruleLimit: 10
                 }}
                 modalProps={{
-                    destroyOnClose: true,
+                    destroyOnHidden: true,
                 }}
             >
                 <ProFormText

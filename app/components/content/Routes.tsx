@@ -27,7 +27,6 @@ import {
 } from '@ant-design/icons';
 
 const { Title } = Typography;
-const { Panel } = Collapse;
 
 // 协议选项 - 只支持shadowsocks和snell
 const protocolOptions = [
@@ -448,40 +447,42 @@ const Routes: React.FC = () => {
                 <Collapse 
                     defaultActiveKey={[]}
                     style={{ backgroundColor: 'transparent' }}
-                >
-                    <Panel 
-                        header={<Title level={4} style={{ margin: 0 }}>系统生成线路 ({systemDataSource.length}条)</Title>}
-                        key="1"
-                        style={{ padding: 0 }}
-                    >
-                        <div style={{ paddingTop: '16px' }}>
-                            <EditableProTable<RouteItem>
-                                rowKey="id"
-                                maxLength={50}
-                                scroll={{ x: 'max-content' }}
-                                recordCreatorProps={false}
-                                loading={loading}
-                                search={false}
-                                options={false}
+                    items={[
+                        {
+                            key: '1',
+                            label: <Title level={4} style={{ margin: 0 }}>系统生成线路 ({systemDataSource.length}条)</Title>,
+                            style: { padding: 0 },
+                            children: (
+                                <div style={{ paddingTop: '16px' }}>
+                                    <EditableProTable<RouteItem>
+                                        rowKey="id"
+                                        maxLength={50}
+                                        scroll={{ x: 'max-content' }}
+                                        recordCreatorProps={false}
+                                        loading={loading}
+                                        search={false}
+                                        options={false}
 
-                                columns={generateColumns(false)}
-                                request={async () => ({
-                                    data: systemDataSource,
-                                    total: systemDataSource.length,
-                                    success: true,
-                                })}
-                                value={systemDataSource}
-                                editable={{
-                                    type: 'multiple',
-                                    editableKeys: [],
-                                    onSave: async () => false,
-                                    onChange: () => {},
-                                    actionRender: () => [],
-                                }}
-                            />
-                        </div>
-                    </Panel>
-                </Collapse>
+                                        columns={generateColumns(false)}
+                                        request={async () => ({
+                                            data: systemDataSource,
+                                            total: systemDataSource.length,
+                                            success: true,
+                                        })}
+                                        value={systemDataSource}
+                                        editable={{
+                                            type: 'multiple',
+                                            editableKeys: [],
+                                            onSave: async () => false,
+                                            onChange: () => {},
+                                            actionRender: () => [],
+                                        }}
+                                    />
+                                </div>
+                            )
+                        }
+                    ]}
+                />
             </Card>
 
             {/* 创建线路的模态表单 */}

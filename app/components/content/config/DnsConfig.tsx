@@ -295,7 +295,7 @@ const DnsConfig: React.FC = () => {
                 onOpenChange={setCreateModalVisible}
                 onFinish={handleCreateConfig}
                 modalProps={{
-                    destroyOnClose: true,
+                    destroyOnHidden: true,
                 }}
             >
                 <ProFormText

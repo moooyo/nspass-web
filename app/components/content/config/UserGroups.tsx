@@ -154,7 +154,7 @@ const UserGroups: React.FC = () => {
                 onFinish={handleModalSubmit}
                 initialValues={modalMode === 'edit' ? currentRecord || {} : {}}
                 modalProps={{
-                    destroyOnClose: true,
+                    destroyOnHidden: true,
                 }}
             >
                 <ProFormText

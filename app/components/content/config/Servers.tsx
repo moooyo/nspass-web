@@ -220,7 +220,7 @@ const Servers: React.FC = () => {
                     status: 'offline'
                 }}
                 modalProps={{
-                    destroyOnClose: true,
+                    destroyOnHidden: true,
                 }}
             >
                 <ProFormText
