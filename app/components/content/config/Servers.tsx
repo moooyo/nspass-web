@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo, useCallback } from 'react';
-import { Button, Tag, message } from 'antd';
+import { Button, Tag } from 'antd';
 import {
     ProTable,
     ProColumns,
@@ -14,6 +14,7 @@ import {
 } from '@ant-design/pro-components';
 import { PlusOutlined, EditOutlined, DownloadOutlined, DeleteOutlined } from '@ant-design/icons';
 import ReactCountryFlag from 'react-country-flag';
+import { message } from '@/utils/message';
 import { 
   ServerService, 
   statusToString,
