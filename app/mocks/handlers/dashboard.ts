@@ -12,12 +12,12 @@ import type {
   LogSummary,
   TrafficByRegion,
   SystemHealth
-} from '@/types/generated/api/dashboard/dashboard';
+} from '@/types/generated/api/dashboard/dashboard_service';
 import {
   ComponentStatus,
   HealthStatus,
   AlertType
-} from '@/types/generated/api/dashboard/dashboard';
+} from '@/types/generated/api/dashboard/dashboard_service';
 
 // 模拟响应数据
 const mockSystemOverview: SystemOverview = {

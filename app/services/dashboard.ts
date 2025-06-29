@@ -32,7 +32,7 @@ import type {
   RefreshDashboardResponse,
   TimePeriod,
   LogLevel
-} from '@/types/generated/api/dashboard/dashboard';
+} from '@/types/generated/api/dashboard/dashboard_service';
 import type { ApiResponse as CommonApiResponse } from '@/types/generated/common';
 
 // 将httpClient的ApiResponse转换为proto响应格式的辅助函数
@@ -251,10 +251,10 @@ export type {
   GetUserTrafficStatsRequest,
   GetTopRulesRequest,
   GetLogSummaryRequest
-} from '@/types/generated/api/dashboard/dashboard';
+} from '@/types/generated/api/dashboard/dashboard_service';
 
 // 单独导出枚举作为值
 export {
   TimePeriod,
   LogLevel
-} from '@/types/generated/api/dashboard/dashboard'; 
+} from '@/types/generated/api/dashboard/dashboard_service'; 

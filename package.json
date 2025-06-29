@@ -3,14 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "npm run clean && next dev",
-    "build": "next build",
+    "dev": "npm run clean && npm run proto:clean && npm run proto:generate && next dev",
+    "build": "npm run proto:clean && npm run proto:generate && next build",
     "start": "next start",
     "lint": "next lint",
     "clean": "rm -rf .next && rm -rf node_modules/.cache && npm cache clean --force",
     "clean:all": "npm run clean && rm -rf node_modules && npm install",
-    "proto:generate": "protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./app/types/generated --ts_proto_opt=stringEnums=true,snakeToCamel=true,useOptionals=all,onlyTypes=true --proto_path=./proto $(find proto -name '*.proto')",
-    "proto:watch": "chokidar \"proto/**/*.proto\" -c \"npm run proto:generate\""
+    "proto:clean": "rm -rf ./app/types/generated",
+    "proto:generate": "mkdir -p ./app/types/generated && protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./app/types/generated --ts_proto_opt=stringEnums=true,snakeToCamel=true,useOptionals=all,onlyTypes=true --proto_path=./proto $(find proto -name '*.proto')",
+    "proto:watch": "chokidar \"proto/**/*.proto\" -c \"npm run proto:generate\"",
+    "proto:dev": "npm run proto:clean && npm run proto:generate && npm run proto:watch"
   },
   "dependencies": {
     "@ant-design/charts": "^2.3.0",
