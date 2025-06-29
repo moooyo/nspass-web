@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button, Badge, Tag, Popconfirm, Select, Modal } from 'antd';
 import { message } from '@/utils/message';
 import {
@@ -189,121 +189,98 @@ const Users: React.FC = () => {
         }
     };
 
-    const columns: ProColumns<UserConfigItem>[] = [
+    // 使用 useMemo 缓存表格列配置，避免每次渲染重新创建
+    const columns: ProColumns<UserConfigItem>[] = useMemo(() => [
         {
             title: '用户ID',
             dataIndex: 'userId',
-            width: '10%',
+            width: '15%',
         },
         {
             title: '用户名',
             dataIndex: 'username',
-            width: '10%',
+            width: '15%',
         },
         {
             title: '用户组',
             dataIndex: 'userGroup',
-            width: '10%',
-            valueEnum: {
-                admin: { text: '管理员组' },
-                user: { text: '普通用户组' },
-                guest: { text: '访客组' },
-            },
+            width: '12%',
         },
         {
             title: '过期时间',
             dataIndex: 'expireTime',
             valueType: 'date',
-            width: '12%',
-            sorter: (a, b) => new Date(a.expireTime).getTime() - new Date(b.expireTime).getTime(),
+            width: '15%',
         },
         {
-            title: '流量限制 (MB)',
+            title: '流量限制',
             dataIndex: 'trafficLimit',
-            width: '10%',
+            width: '12%',
+            render: (value) => value ? `${value} MB` : '无限制',
         },
         {
-            title: '流量重置方式',
+            title: '流量重置',
             dataIndex: 'trafficResetType',
-            width: '10%',
-            valueEnum: trafficResetTypes,
-        },
-        {
-            title: '规则数量限制',
-            dataIndex: 'ruleLimit',
-            width: '10%',
+            width: '12%',
+            valueEnum: {
+                'monthly': { text: '每月重置' },
+                'weekly': { text: '每周重置' },
+                'never': { text: '不重置' },
+            },
         },
         {
             title: '状态',
             dataIndex: 'banned',
-            width: '8%',
-            render: (_, record) => (
-                <div style={{ display: 'inline-flex', alignItems: 'center' }}>
-                    <Badge 
-                        status={record.banned ? 'error' : 'success'} 
-                        text={record.banned ? '已封禁' : '正常'} 
-                    />
-                </div>
+            width: '10%',
+            render: (banned) => (
+                <Badge 
+                    status={banned ? 'error' : 'success'} 
+                    text={banned ? '已封禁' : '正常'} 
+                />
             ),
-            valueEnum: {
-                true: { text: '已封禁', status: 'Error' },
-                false: { text: '正常', status: 'Success' },
-            },
         },
         {
             title: '操作',
             valueType: 'option',
             width: '25%',
-            render: (_, record) => (
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <Button
-                        key="edit"
-                        type="link"
-                        size="small"
-                        icon={<EditOutlined />}
-                        onClick={() => openEditModal(record)}
-                    >
-                        编辑
-                    </Button>
-                    <Popconfirm
-                        key="ban"
-                        title={record.banned ? '确定要解除封禁该用户吗？' : '确定要封禁该用户吗？'}
-                        onConfirm={() => toggleBanUser(record)}
-                        okText="确定"
-                        cancelText="取消"
-                    >
-                        <a>
-                            <Tag color={record.banned ? 'green' : 'red'}>
-                                {record.banned ? '解除封禁' : '封禁'}
-                            </Tag>
-                        </a>
-                    </Popconfirm>
-                    <Popconfirm
-                        key="resetTraffic"
-                        title="确定要重置该用户的流量吗？"
-                        onConfirm={() => resetUserTraffic(record)}
-                        okText="确定"
-                        cancelText="取消"
-                    >
-                        <a>
-                            <Tag color="blue">重置流量</Tag>
-                        </a>
-                    </Popconfirm>
-                    <Popconfirm
-                        key="invite"
-                        title="确定要发送邀请注册链接吗？"
-                        onConfirm={() => inviteUser(record)}
-                        okText="确定"
-                        cancelText="取消"
-                    >
-                        <a>
-                            <Tag color="orange">邀请注册</Tag>
-                        </a>
-                    </Popconfirm>
-                </div>
-            ),
+            render: (_, record) => [
+                <Button
+                    key="edit"
+                    type="link"
+                    size="small"
+                    icon={<EditOutlined />}
+                    onClick={() => openEditModal(record)}
+                >
+                    编辑
+                </Button>,
+                <Button
+                    key="ban"
+                    type="link"
+                    size="small"
+                    danger={!record.banned}
+                    onClick={() => toggleBanUser(record)}
+                >
+                    {record.banned ? '解封' : '封禁'}
+                </Button>,
+                <Button
+                    key="reset"
+                    type="link"
+                    size="small"
+                    onClick={() => resetUserTraffic(record)}
+                >
+                    重置流量
+                </Button>,
+                <Button
+                    key="invite"
+                    type="link"
+                    size="small"
+                    onClick={() => inviteUser(record)}
+                >
+                    邀请注册
+                </Button>,
+            ],
         },
-    ];
+    ], [openEditModal, toggleBanUser, resetUserTraffic, inviteUser]);
 
     return (
         <div>

@@ -1,30 +1,45 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ProCard, StatisticCard } from '@ant-design/pro-components';
 import { Space, Typography, Progress } from 'antd';
 import { Column } from '@ant-design/charts';
 
 const { Title } = Typography;
 
-// 模拟数据
-const mockData = {
-  userCount: 2547,
-  serverCount: 128,
-  ruleCount: 356,
-  monthlyTraffic: 1024, // GB
-  trafficTrend: Array.from({ length: 30 }, (_, i) => ({
-    date: `2023-12-${i + 1}`,
-    traffic: Math.floor(Math.random() * 50) + 10,
-  })),
-  trafficByUser: [
-    { user: '张三', value: 38 },
-    { user: '李四', value: 25 },
-    { user: '王五', value: 15 },
-    { user: '赵六', value: 12 },
-    { user: '其他用户', value: 10 },
-  ],
-};
-
 const Dashboard: React.FC = () => {
+  // 使用 useMemo 缓存模拟数据，避免每次渲染重新生成
+  const mockData = useMemo(() => ({
+    userCount: 2547,
+    serverCount: 128,
+    ruleCount: 356,
+    monthlyTraffic: 1024, // GB
+    trafficTrend: Array.from({ length: 30 }, (_, i) => ({
+      date: `2023-12-${i + 1}`,
+      traffic: Math.floor(Math.random() * 50) + 10,
+    })),
+    trafficByUser: [
+      { user: '张三', value: 38 },
+      { user: '李四', value: 25 },
+      { user: '王五', value: 15 },
+      { user: '赵六', value: 12 },
+      { user: '其他用户', value: 10 },
+    ],
+  }), []); // 空依赖数组，只在组件挂载时生成一次
+
+  // 缓存图表配置，避免重复创建
+  const chartConfig = useMemo(() => ({
+    data: mockData.trafficTrend,
+    xField: "date",
+    yField: "traffic",
+    meta: {
+      traffic: {
+        alias: '流量(GB)',
+      },
+      date: {
+        alias: '日期',
+      },
+    },
+  }), [mockData.trafficTrend]);
+
   return (
     <div className="dashboard-container">
       <Title level={2}>系统仪表盘</Title>
@@ -65,19 +80,7 @@ const Dashboard: React.FC = () => {
         {/* 流量趋势和用户占比 */}
         <ProCard gutter={16} split="vertical">
           <ProCard title="最近30天流量消耗趋势" colSpan={16}>
-            <Column
-              data={mockData.trafficTrend}
-              xField="date"
-              yField="traffic"
-              meta={{
-                traffic: {
-                  alias: '流量(GB)',
-                },
-                date: {
-                  alias: '日期',
-                },
-              }}
-            />
+            <Column {...chartConfig} />
           </ProCard>
           
           <ProCard title="流量消耗占比">
@@ -99,4 +102,4 @@ const Dashboard: React.FC = () => {
   );
 };
 
-export default Dashboard; 
+export default React.memo(Dashboard); 

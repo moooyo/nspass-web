@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Tag } from 'antd';
 import LeafletComponents from './LeafletComponents';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
+// 修复 Leaflet 图标类型
 interface IconDefault extends L.Icon.Default {
   _getIconUrl?: string;
 }
@@ -57,19 +58,27 @@ const LeafletWrapper: React.FC<WorldMapProps> = ({
     }
   }, []);
 
-  // 调试信息
-  useEffect(() => {
-    console.log('LeafletWrapper 挂载');
-    console.log('LeafletComponents:', LeafletComponents);
-    console.log('已选路径:', selectedPath);
-    console.log('出口服务器:', exitServer);
-    console.log('服务器样本:', sampleServers);
-    
-    return () => {
-      console.log('LeafletWrapper 卸载');
-    };
-  }, [selectedPath, sampleServers, exitServer]);
-  
+  // 使用 useMemo 缓存服务器过滤逻辑，避免每次渲染重新计算
+  const serversToShow = useMemo(() => {
+    return sampleServers.filter(server => 
+      server.type === 'NORMAL' || (exitServer && server.id === exitServer.id)
+    );
+  }, [sampleServers, exitServer]);
+
+  // 使用 useMemo 缓存路径点计算
+  const pathPoints = useMemo(() => {
+    const points = [...selectedPath];
+    if (exitServer) {
+      points.push(exitServer);
+    }
+    return points;
+  }, [selectedPath, exitServer]);
+
+  // 使用 useMemo 缓存边界服务器
+  const boundServers = useMemo(() => {
+    return pathPoints.length > 0 ? pathPoints : serversToShow;
+  }, [pathPoints, serversToShow]);
+
   const MapComponent = LeafletComponents.MapContainer;
   const TileLayerComponent = LeafletComponents.TileLayer;
   const FitBoundsComponent = LeafletComponents.FitBounds;
@@ -84,20 +93,6 @@ const LeafletWrapper: React.FC<WorldMapProps> = ({
       Leaflet地图组件加载失败
     </div>;
   }
-
-  // 获取所有要显示的服务器（普通服务器+已选择的出口服务器）
-  const serversToShow = sampleServers.filter(server => 
-    server.type === 'NORMAL' || (exitServer && server.id === exitServer.id)
-  );
-
-  // 计算路径点，包括中继服务器和出口服务器
-  const pathPoints = [...selectedPath];
-  if (exitServer) {
-    pathPoints.push(exitServer);
-  }
-
-  // 对于地图的适配边界，优先使用路径点，如果没有路径，则使用所有显示的服务器
-  const boundServers = pathPoints.length > 0 ? pathPoints : serversToShow;
 
   return (
     <div style={{ height: '100%', minHeight: 500 }}>
@@ -184,4 +179,4 @@ const LeafletWrapper: React.FC<WorldMapProps> = ({
   );
 };
 
-export default LeafletWrapper; 
+export default React.memo(LeafletWrapper); 

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo, useCallback } from 'react';
 import { Button, Tag, message } from 'antd';
 import {
     ProTable,
@@ -126,9 +126,14 @@ const Servers: React.FC = () => {
         )] as string[];
     };
 
-    // 为搜索筛选生成国家valueEnum
-    const getCountryValueEnum = () => {
-        const countries = getAvailableCountries();
+    // 使用 useMemo 缓存国家valueEnum
+    const countryValueEnum = useMemo(() => {
+        const countries = [...new Set(
+            currentServers
+                .map(server => server.country)
+                .filter(Boolean) // 过滤掉空值
+        )] as string[];
+        
         const valueEnum: Record<string, { text: string; status: string }> = {
             all: { text: '全部', status: 'Default' }
         };
@@ -138,20 +143,16 @@ const Servers: React.FC = () => {
         });
         
         return valueEnum;
-    };
+    }, [currentServers]);
 
-    // 获取当前服务器中存在的服务器组（去重）
-    const getAvailableGroups = () => {
-        return [...new Set(
+    // 使用 useMemo 缓存服务器组valueEnum
+    const groupValueEnum = useMemo(() => {
+        const groups = [...new Set(
             currentServers
                 .map(server => server.group)
                 .filter(Boolean) // 过滤掉空值
         )] as string[];
-    };
-
-    // 为搜索筛选生成服务器组valueEnum
-    const getGroupValueEnum = () => {
-        const groups = getAvailableGroups();
+        
         const valueEnum: Record<string, { text: string; status: string }> = {
             all: { text: '全部', status: 'Default' }
         };
@@ -161,21 +162,21 @@ const Servers: React.FC = () => {
         });
         
         return valueEnum;
-    };
+    }, [currentServers]);
 
-    // 打开新增弹窗
-    const openCreateModal = () => {
+    // 使用 useCallback 缓存函数引用
+    const openCreateModal = useCallback(() => {
         setModalMode('create');
         setCurrentRecord(null);
         setModalVisible(true);
-    };
+    }, []);
 
     // 打开编辑弹窗
-    const openEditModal = (record: ServerItem) => {
+    const openEditModal = useCallback((record: ServerItem) => {
         setModalMode('edit');
         setCurrentRecord(record);
         setModalVisible(true);
-    };
+    }, []);
 
     // 统一处理表单提交
     const handleModalSubmit = async (values: any) => {
@@ -200,7 +201,7 @@ const Servers: React.FC = () => {
                     status: values.status // 保持字符串格式，服务层会转换
                 };
                 
-                await ServerService.updateServer(currentRecord.id, updateData);
+                await ServerService.updateServer(currentRecord.id!, updateData);
                 message.success('服务器更新成功');
             }
 
@@ -216,30 +217,31 @@ const Servers: React.FC = () => {
     };
 
     // 删除服务器
-    const deleteServer = async (record: ServerItem) => {
+    const deleteServer = useCallback(async (record: ServerItem) => {
         try {
-            await ServerService.deleteServer(record.id);
+            await ServerService.deleteServer(record.id!);
             message.success('删除成功');
             actionRef.current?.reload();
         } catch (error) {
             console.error('删除失败:', error);
             message.error(error instanceof Error ? error.message : '删除失败');
         }
-    };
+    }, []);
 
     // 处理安装
-    const handleInstall = async (record: ServerItem) => {
+    const handleInstall = useCallback(async (record: ServerItem) => {
         try {
-            await ServerService.installServer(record.id);
+            await ServerService.installServer(record.id!);
             message.success('安装成功');
             actionRef.current?.reload();
         } catch (error) {
             console.error('安装失败:', error);
             message.error(error instanceof Error ? error.message : '安装失败');
         }
-    };
+    }, []);
 
-    const columns: ProColumns<ServerItem>[] = [
+    // 使用 useMemo 缓存表格列配置，避免每次渲染重新创建
+    const columns: ProColumns<ServerItem>[] = useMemo(() => [
         {
             title: '服务器名称',
             dataIndex: 'name',
@@ -261,7 +263,7 @@ const Servers: React.FC = () => {
             title: '国家',
             dataIndex: 'country',
             width: '10%',
-            valueEnum: getCountryValueEnum(),
+            valueEnum: countryValueEnum,
             render: (_, record) => (
                 <span>
                     {getFlagByCountryName(record.country)} {record.country}
@@ -272,7 +274,7 @@ const Servers: React.FC = () => {
             title: '服务器组',
             dataIndex: 'group',
             width: '10%',
-            valueEnum: getGroupValueEnum(),
+            valueEnum: groupValueEnum,
         },
         {
             title: '注册时间',
@@ -307,7 +309,7 @@ const Servers: React.FC = () => {
                 unknown: { text: '未知', status: 'Warning' },
             },
             render: (_, record) => {
-                const statusText = statusToString(record.status);
+                const statusText = statusToString(record.status!);
                 const statusConfig = {
                     online: { color: 'green', text: '在线' },
                     offline: { color: 'red', text: '离线' },
@@ -337,7 +339,7 @@ const Servers: React.FC = () => {
                     >
                         编辑
                     </Button>
-                    {statusToString(record.status) === 'pending_install' && (
+                    {statusToString(record.status!) === 'pending_install' && (
                         <Button
                             key="install"
                             type="link"
@@ -362,7 +364,7 @@ const Servers: React.FC = () => {
                 </div>
             ),
         },
-    ];
+    ], [currentServers, openEditModal, handleInstall, deleteServer]);
 
     return (
         <div>
@@ -375,7 +377,7 @@ const Servers: React.FC = () => {
                 onFinish={handleModalSubmit}
                 initialValues={modalMode === 'edit' && currentRecord ? {
                     ...currentRecord,
-                    status: statusToString(currentRecord.status)
+                    status: statusToString(currentRecord.status!)
                 } : {
                     uploadTraffic: 0,
                     downloadTraffic: 0,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button, Modal } from 'antd';
 import { message } from '@/utils/message';
 import {
@@ -99,7 +99,8 @@ const UserGroups: React.FC = () => {
         message.success('删除成功');
     };
 
-    const columns: ProColumns<UserGroupItem>[] = [
+    // 使用 useMemo 缓存表格列配置，避免每次渲染重新创建
+    const columns: ProColumns<UserGroupItem>[] = useMemo(() => [
         {
             title: '用户组ID',
             dataIndex: 'groupId',
@@ -141,7 +142,7 @@ const UserGroups: React.FC = () => {
                 </Button>,
             ],
         },
-    ];
+    ], [openEditModal, deleteUserGroup]);
 
     return (
         <div>

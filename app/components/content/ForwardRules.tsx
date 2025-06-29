@@ -704,7 +704,8 @@ const ForwardRules: React.FC = () => {
         );
     };
 
-    const columns: ProColumns<ForwardRuleItem>[] = [
+    // 使用 useMemo 缓存表格列配置，避免每次渲染重新创建
+    const columns: ProColumns<ForwardRuleItem>[] = useMemo(() => [
         {
             title: '规则ID',
             dataIndex: 'ruleId',
@@ -892,7 +893,7 @@ const ForwardRules: React.FC = () => {
                 </div>
             ),
         },
-    ];
+    ], [toggleRuleStatus, diagnoseRule, copyRule, openEditModal, deleteRule]); // 只依赖函数
 
     return (
         <div>

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Button, Badge, Tag, Popconfirm, Select, Modal } from 'antd';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Button, Badge, Tag, Popconfirm, Select, Modal, Typography } from 'antd';
 import { message } from '@/utils/message';
 import {
     EditableProTable,
@@ -19,15 +19,12 @@ import {
     DnsConfigListParams 
 } from '../../../services/dnsConfig';
 
+const { Title, Text } = Typography;
+
 // DNS提供商枚举
 const dnsProviders = {
     CLOUDFLARE: { text: 'Cloudflare', value: 'CLOUDFLARE' },
 };
-
-// DNS提供商选项
-const dnsProviderOptions = [
-    { label: 'Cloudflare', value: 'CLOUDFLARE' },
-];
 
 const DnsConfig: React.FC = () => {
     const [editableKeys, setEditableKeys] = useState<React.Key[]>([]);
@@ -72,119 +69,123 @@ const DnsConfig: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [pagination.current, pagination.pageSize]);
 
     // 初始化加载数据
     useEffect(() => {
         loadDnsConfigs();
+    }, []);
+
+    // 优化：缓存删除操作函数
+    const handleDelete = useCallback(async (id: React.Key) => {
+        try {
+            const response = await dnsConfigService.deleteDnsConfig(id as number);
+            if (response.success) {
+                message.success('删除成功');
+                loadDnsConfigs();
+            } else {
+                message.error(response.message || '删除失败');
+            }
+        } catch (error) {
+            console.error('删除失败:', error);
+            message.error('删除失败');
+        }
     }, [loadDnsConfigs]);
 
-    const columns: ProColumns<DnsConfigItem>[] = [
+    // 优化：缓存查看JSON操作函数
+    const viewJsonConfig = useCallback((record: DnsConfigItem) => {
+        const jsonConfig = JSON.stringify(record, null, 2);
+        setCurrentJsonData(jsonConfig);
+        setViewJsonModalVisible(true);
+    }, []);
+
+    // 使用 useMemo 缓存DNS Provider选项
+    const dnsProviderOptions = useMemo(() => [
+        { label: 'Cloudflare', value: 'CLOUDFLARE' },
+        { label: 'Aliyun', value: 'ALIYUN' },
+        { label: 'Tencent Cloud', value: 'TENCENT' },
+        { label: 'Amazon Route 53', value: 'ROUTE53' },
+        { label: 'Google Cloud DNS', value: 'GOOGLE' },
+    ], []);
+
+    // 使用 useMemo 缓存表格列配置，避免每次渲染重新创建
+    const columns: ProColumns<DnsConfigItem>[] = useMemo(() => [
+        {
+            title: 'ID',
+            dataIndex: 'id',
+            width: '8%',
+            editable: false,
+        },
         {
             title: '配置名',
             dataIndex: 'configName',
-            formItemProps: {
-                rules: [{ required: true, message: '配置名为必填项' }],
-            },
-            width: '18%',
+            width: '20%',
+            editable: false,
         },
         {
             title: 'DNS Provider',
             dataIndex: 'provider',
-            width: '12%',
+            width: '15%',
             valueType: 'select',
-            valueEnum: dnsProviders,
-            formItemProps: {
-                rules: [{ required: true, message: 'DNS Provider为必填项' }],
+            valueEnum: {
+                CLOUDFLARE: { text: 'Cloudflare' },
+                ALIYUN: { text: 'Aliyun' },
+                TENCENT: { text: 'Tencent Cloud' },
+                ROUTE53: { text: 'Amazon Route 53' },
+                GOOGLE: { text: 'Google Cloud DNS' },
             },
-            renderFormItem: () => (
-                <Select options={dnsProviderOptions} placeholder="请选择DNS Provider" />
-            ),
+            editable: false,
         },
         {
-            title: 'Domain',
+            title: '域名',
             dataIndex: 'domain',
-            formItemProps: {
-                rules: [{ required: true, message: 'Domain为必填项' }],
-            },
-            width: '18%',
-        },
-        {
-            title: '配置参数',
-            dataIndex: 'configParams',
-            valueType: 'textarea',
-            formItemProps: {
-                rules: [{ required: true, message: '配置参数为必填项' }],
-            },
-            width: '30%',
-            ellipsis: true,
-            render: (_, record) => {
-                let displayJson = '';
-                try {
-                    if (!record.configParams) {
-                        displayJson = '{}';
-                    } else {
-                        const parsed = JSON.parse(record.configParams);
-                        displayJson = JSON.stringify(parsed);
-                    }
-                } catch {
-                    displayJson = record.configParams || '{}';
-                }
-                
-                return (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span 
-                            style={{ 
-                                flex: 1, 
-                                overflow: 'hidden', 
-                                textOverflow: 'ellipsis',
-                                fontFamily: 'monospace',
-                                fontSize: '12px'
-                            }}
-                            title={displayJson}
-                        >
-                            {displayJson.length > 50 ? `${displayJson.substring(0, 50)}...` : displayJson}
-                        </span>
-                        <Button
-                            type="text"
-                            size="small"
-                            icon={<EyeOutlined />}
-                            onClick={() => viewJsonConfig(record)}
-                            title="查看完整JSON"
-                        />
-                    </div>
-                );
-            },
+            width: '20%',
+            editable: false,
         },
         {
             title: '创建时间',
             dataIndex: 'createdAt',
+            width: '15%',
             valueType: 'dateTime',
-            width: '12%',
             editable: false,
-            sorter: (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
         },
         {
             title: '操作',
             valueType: 'option',
-            width: '10%',
-            render: (_, record) => (
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                    <Popconfirm
-                        key="test"
-                        title="确定要测试该DNS配置吗？"
-                        onConfirm={() => testDnsConfig(record)}
-                        okText="确定"
-                        cancelText="取消"
-                    >
-                        <a>
-                            <Tag color="blue">测试连接</Tag>
-                        </a>
-                    </Popconfirm>
-                </div>
-            ),
+            width: '22%',
+            render: (_, record) => [
+                <Button
+                    key="viewJson"
+                    type="link"
+                    size="small"
+                    icon={<EyeOutlined />}
+                    onClick={() => viewJsonConfig(record)}
+                >
+                    查看JSON
+                </Button>,
+            ],
         },
-    ];
+    ], [viewJsonConfig]);
+
+    // 优化：缓存表单提交函数
+    const handleCreateSubmit = useCallback(async (values: CreateDnsConfigData) => {
+        try {
+            const response = await dnsConfigService.createDnsConfig(values);
+            if (response.success) {
+                message.success('创建DNS配置成功');
+                setCreateModalVisible(false);
+                loadDnsConfigs();
+                return true;
+            } else {
+                message.error(response.message || '创建DNS配置失败');
+                return false;
+            }
+        } catch (error) {
+            console.error('创建DNS配置失败:', error);
+            message.error('创建DNS配置失败');
+            return false;
+        }
+    }, [loadDnsConfigs]);
 
     // 测试DNS配置
     const testDnsConfig = async (record: DnsConfigItem) => {
@@ -199,23 +200,6 @@ const DnsConfig: React.FC = () => {
             console.error('DNS配置测试失败:', error);
             message.error('DNS配置测试失败');
         }
-    };
-
-    // 查看JSON配置
-    const viewJsonConfig = (record: DnsConfigItem) => {
-        let jsonData = '';
-        try {
-            if (record.configParams) {
-                const parsed = JSON.parse(record.configParams);
-                jsonData = JSON.stringify(parsed, null, 2);
-            } else {
-                jsonData = '{}';
-            }
-        } catch {
-            jsonData = record.configParams || '{}';
-        }
-        setCurrentJsonData(jsonData);
-        setViewJsonModalVisible(true);
     };
 
     // 处理新增配置
