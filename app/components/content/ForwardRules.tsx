@@ -1018,4 +1018,4 @@ const ForwardRules: React.FC = () => {
     );
 };
 
-export default ForwardRules; 
+export default React.memo(ForwardRules); 

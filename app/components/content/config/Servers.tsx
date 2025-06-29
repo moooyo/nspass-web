@@ -513,4 +513,4 @@ const Servers: React.FC = () => {
     );
 };
 
-export default Servers; 
+export default React.memo(Servers); 

@@ -442,4 +442,4 @@ const Users: React.FC = () => {
     );
 };
 
-export default Users; 
+export default React.memo(Users); 

@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { EditOutlined, HomeOutlined, MenuFoldOutlined, MenuUnfoldOutlined, UnorderedListOutlined, UserOutlined, ApiOutlined, LogoutOutlined, DownOutlined, SunOutlined, MoonOutlined, DashboardOutlined, SettingOutlined, TeamOutlined, UsergroupAddOutlined, CloudServerOutlined, CloudOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
@@ -8,18 +8,18 @@ import { message } from '@/utils/message';
 import { useAuth } from '@/components/hooks/useAuth';
 import { useTheme } from '@/components/hooks/useTheme';
 
-// 导入内容组件
-import HomeContent from './components/content/Home';
-import UserInfo from './components/content/UserInfo';
-import ForwardRules from './components/content/ForwardRules';
-import Egress from './components/content/Egress';
-import Routes from './components/content/Routes';
-import Dashboard from './components/content/config/Dashboard';
-import Website from './components/content/config/Website';
-import Users from './components/content/config/Users';
-import UserGroups from './components/content/config/UserGroups';
-import Servers from './components/content/config/Servers';
-import DnsConfig from './components/content/config/DnsConfig';
+// 使用 React.lazy 懒加载组件
+const HomeContent = React.lazy(() => import('./components/content/Home'));
+const UserInfo = React.lazy(() => import('./components/content/UserInfo'));
+const ForwardRules = React.lazy(() => import('./components/content/ForwardRules'));
+const Egress = React.lazy(() => import('./components/content/Egress'));
+const Routes = React.lazy(() => import('./components/content/Routes'));
+const Dashboard = React.lazy(() => import('./components/content/config/Dashboard'));
+const Website = React.lazy(() => import('./components/content/config/Website'));
+const Users = React.lazy(() => import('./components/content/config/Users'));
+const UserGroups = React.lazy(() => import('./components/content/config/UserGroups'));
+const Servers = React.lazy(() => import('./components/content/config/Servers'));
+const DnsConfig = React.lazy(() => import('./components/content/config/DnsConfig'));
 
 const { Header, Sider, Content, Footer } = Layout;
 const { Text } = Typography;
@@ -68,6 +68,9 @@ export default function Home() {
   const { theme: currentTheme, toggleTheme } = useTheme();
   
   const [selectedKey, setSelectedKey] = useState<string>('home');
+  
+  // 缓存已渲染的组件
+  const [renderedTabs, setRenderedTabs] = useState<Set<string>>(new Set(['home']));
 
   // URL hash与菜单key的映射关系
   const hashToKeyMap: Record<string, string> = {
@@ -150,6 +153,8 @@ export default function Home() {
   useEffect(() => {
     const initialTab = getInitialTabFromHash();
     setSelectedKey(initialTab);
+    // 确保初始tab被添加到渲染缓存中
+    setRenderedTabs(prev => new Set([...prev, initialTab]));
     
     // 如果URL中没有hash，设置默认hash
     if (typeof window !== 'undefined' && !window.location.hash) {
@@ -164,6 +169,8 @@ export default function Home() {
     const handleHashChange = () => {
       const newTab = getInitialTabFromHash();
       setSelectedKey(newTab);
+      // 确保新tab被添加到渲染缓存中
+      setRenderedTabs(prev => new Set([...prev, newTab]));
     };
 
     window.addEventListener('hashchange', handleHashChange);
@@ -207,6 +214,8 @@ export default function Home() {
 
   const handleMenuSelect = ({ key }: { key: string }) => {
     setSelectedKey(key);
+    // 将新选中的tab添加到已渲染集合中
+    setRenderedTabs(prev => new Set([...prev, key]));
     // 更新URL hash，使用简化的hash名称
     if (typeof window !== 'undefined') {
       const hash = keyToHashMap[key] || key;
@@ -236,8 +245,9 @@ export default function Home() {
     },
   ];
 
-  const renderContent = () => {
-    switch (selectedKey) {
+  // 获取组件的函数
+  const getComponent = (key: string) => {
+    switch (key) {
       case 'home':
         return <HomeContent />;
       case 'user':
@@ -263,6 +273,49 @@ export default function Home() {
       default:
         return <HomeContent />;
     }
+  };
+
+  // 使用 useMemo 缓存已渲染的组件
+  const cachedComponents = useMemo(() => {
+    const components: Record<string, React.ReactNode> = {};
+    renderedTabs.forEach(tabKey => {
+      components[tabKey] = (
+        <div
+          key={tabKey}
+          style={{
+            display: selectedKey === tabKey ? 'block' : 'none',
+            width: '100%',
+            height: '100%'
+          }}
+        >
+          <Suspense fallback={
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              height: '300px',
+              flexDirection: 'column',
+              gap: '16px'
+            }}>
+              <Spin size="large" />
+              <Text type="secondary">正在加载组件...</Text>
+            </div>
+          }>
+            {getComponent(tabKey)}
+          </Suspense>
+        </div>
+      );
+    });
+    return components;
+  }, [renderedTabs, selectedKey]);
+
+  // 渲染内容 - 只显示当前选中的tab，但保持其他已渲染tab的状态
+  const renderContent = () => {
+    return (
+      <div style={{ width: '100%', height: '100%' }}>
+        {Object.entries(cachedComponents).map(([tabKey, component]) => component)}
+      </div>
+    );
   };
 
   const [collapsed, setCollapsed] = useState(false);
