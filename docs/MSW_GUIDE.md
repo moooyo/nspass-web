@@ -27,11 +27,11 @@ MSW (Mock Service Worker) 是一个现代化的API模拟工具，它通过Servic
 ## 🏗️ 项目结构
 
 ```
-src/
-├── mocks/
-│   ├── handlers.ts        # API处理器定义
-│   └── browser.ts         # 浏览器端MSW配置
 app/
+├── mocks/
+│   ├── handlers/          # API处理器定义
+│   ├── data/             # 模拟数据
+│   └── browser.ts        # 浏览器端MSW配置
 ├── components/
 │   └── MSWProvider.tsx    # MSW提供者组件
 ├── services/
@@ -157,11 +157,11 @@ http.post('https://api.example.com/auth/login', async ({ request }) => {
 
 ```typescript
 // 运行时开启MSW
-import { startMSW } from '../src/mocks/browser';
+import { startMSW } from '../app/mocks/browser';
 await startMSW();
 
 // 运行时关闭MSW
-import { stopMSW } from '../src/mocks/browser';
+import { stopMSW } from '../app/mocks/browser';
 stopMSW();
 ```
 
@@ -220,7 +220,7 @@ NEXT_PUBLIC_API_URL=https://real-api.yourcompany.com
 ```typescript
 // 在生产构建时，MSW不会被包含
 if (process.env.NODE_ENV === 'development') {
-  const { startMSW } = await import('../src/mocks/browser');
+  const { startMSW } = await import('../app/mocks/browser');
   await startMSW();
 }
 ```

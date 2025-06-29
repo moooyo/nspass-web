@@ -359,7 +359,7 @@ npm run build
 ├── proto/                      # protobuf定义文件
 │   ├── egress.proto
 │   └── common.proto
-└── examples/                   # 使用示例
+
 ```
 
 ## 🎯 核心优势
