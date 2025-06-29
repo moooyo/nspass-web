@@ -154,19 +154,29 @@ export default function Home() {
 
   // 异步更新URL，避免阻塞UI
   const updateUrlAsync = useCallback((key: string) => {
-    // 清除之前的定时器
+    // 清除之前的定时器或idle回调
     if (urlUpdateTimeoutRef.current) {
-      clearTimeout(urlUpdateTimeoutRef.current);
+      if (typeof window !== 'undefined' && window.cancelIdleCallback) {
+        window.cancelIdleCallback(urlUpdateTimeoutRef.current as any);
+      } else {
+        clearTimeout(urlUpdateTimeoutRef.current);
+      }
     }
     
-    // 使用 requestIdleCallback 或 setTimeout 来延迟URL更新
-    urlUpdateTimeoutRef.current = setTimeout(() => {
+    // 使用 requestIdleCallback 优先，降级到 setTimeout
+    const updateFn = () => {
       if (typeof window !== 'undefined') {
         const hash = keyToHashMap[key] || key;
         const newUrl = `${window.location.pathname}${window.location.search}#${hash}`;
         window.history.replaceState(null, '', newUrl);
       }
-    }, 0);
+    };
+
+    if (typeof window !== 'undefined' && window.requestIdleCallback) {
+      urlUpdateTimeoutRef.current = window.requestIdleCallback(updateFn, { timeout: 100 }) as any;
+    } else {
+      urlUpdateTimeoutRef.current = setTimeout(updateFn, 16); // 约1帧的时间
+    }
   }, [keyToHashMap]);
 
   // 优化：减少初始化时的 useEffect
@@ -221,9 +231,16 @@ export default function Home() {
 
   // 优化：延迟URL更新的菜单选择处理
   const handleMenuSelect = useCallback(({ key }: { key: string }) => {
-    // 立即更新UI状态，获得即时反馈
-    setSelectedKey(key);
-    setRenderedTabs(prev => new Set([...prev, key]));
+    // 批量更新状态，减少重渲染次数
+    React.startTransition(() => {
+      setSelectedKey(key);
+      setRenderedTabs(prev => {
+        if (prev.has(key)) {
+          return prev; // 如果已存在，直接返回原对象避免重新创建
+        }
+        return new Set([...prev, key]);
+      });
+    });
     
     // 异步更新URL，避免阻塞
     updateUrlAsync(key);
@@ -250,84 +267,108 @@ export default function Home() {
     },
   ];
 
-  // 获取组件的函数
-  const getComponent = (key: string) => {
+  // 使用 useRef 来持久化组件实例，避免重新创建
+  const componentCacheRef = useRef<Record<string, React.ReactNode>>({});
+  
+  // 获取组件的函数 - 使用 useCallback 缓存
+  const getComponent = useCallback((key: string) => {
+    // 如果组件已经缓存，直接返回
+    if (componentCacheRef.current[key]) {
+      return componentCacheRef.current[key];
+    }
+    
+    // 创建带有Suspense包装的组件并缓存
+    let component: React.ReactNode;
     switch (key) {
       case 'home':
-        return <HomeContent />;
+        component = <HomeContent />;
+        break;
       case 'user':
-        return <UserInfo />;
+        component = <UserInfo />;
+        break;
       case 'forward_rules':
-        return <ForwardRules />;
+        component = <ForwardRules />;
+        break;
       case 'egress':
-        return <Egress />;
+        component = <Egress />;
+        break;
       case 'routes':
-        return <Routes />;
+        component = <Routes />;
+        break;
       case 'dashboard':
-        return <Dashboard />;
+        component = <Dashboard />;
+        break;
       case 'website':
-        return <Website />;
+        component = <Website />;
+        break;
       case 'users':
-        return <Users />;
+        component = <Users />;
+        break;
       case 'user_groups':
-        return <UserGroups />;
+        component = <UserGroups />;
+        break;
       case 'servers':
-        return <Servers />;
+        component = <Servers />;
+        break;
       case 'dns_config':
-        return <DnsConfig />;
+        component = <DnsConfig />;
+        break;
       default:
-        return <HomeContent />;
+        component = <HomeContent />;
     }
-  };
-
-  // 使用 useMemo 优化组件缓存，减少依赖
-  const cachedComponents = useMemo(() => {
-    const components: Record<string, React.ReactNode> = {};
-    renderedTabs.forEach(tabKey => {
-      components[tabKey] = (
-        <div
-          key={tabKey}
-          style={{
-            display: selectedKey === tabKey ? 'block' : 'none',
-            width: '100%',
-            height: '100%'
-          }}
-        >
-          <Suspense fallback={
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'center', 
-              alignItems: 'center', 
-              height: '300px',
-              flexDirection: 'column',
-              gap: '16px'
-            }}>
-              <Spin size="large" />
-              <Text type="secondary">正在加载组件...</Text>
-            </div>
-          }>
-            {getComponent(tabKey)}
-          </Suspense>
+    
+    // 包装在Suspense中并缓存
+    const wrappedComponent = (
+      <Suspense fallback={
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '300px',
+          flexDirection: 'column',
+          gap: '16px'
+        }}>
+          <Spin size="large" />
+          <Text type="secondary">正在加载组件...</Text>
         </div>
-      );
-    });
-    return components;
-  }, [renderedTabs]); // 移除 selectedKey 依赖，减少重新计算
+      }>
+        {component}
+      </Suspense>
+    );
+    
+    componentCacheRef.current[key] = wrappedComponent;
+    return wrappedComponent;
+  }, []);
 
-  // 优化：使用 useCallback 缓存渲染函数
+  // 优化：使用简单的渲染逻辑，减少复杂计算
   const renderContent = useCallback(() => {
     return (
       <div style={{ width: '100%', height: '100%' }}>
-        {Object.entries(cachedComponents).map(([tabKey, component]) => component)}
+        {Array.from(renderedTabs).map(tabKey => (
+          <div
+            key={tabKey}
+            style={{
+              display: selectedKey === tabKey ? 'block' : 'none',
+              width: '100%',
+              height: '100%'
+            }}
+          >
+            {getComponent(tabKey)}
+          </div>
+        ))}
       </div>
     );
-  }, [cachedComponents]);
+  }, [selectedKey, renderedTabs, getComponent]);
 
-  // 清理定时器
+  // 清理定时器和idle回调
   useEffect(() => {
     return () => {
       if (urlUpdateTimeoutRef.current) {
-        clearTimeout(urlUpdateTimeoutRef.current);
+        if (typeof window !== 'undefined' && window.cancelIdleCallback) {
+          window.cancelIdleCallback(urlUpdateTimeoutRef.current as any);
+        } else {
+          clearTimeout(urlUpdateTimeoutRef.current);
+        }
       }
     };
   }, []);
