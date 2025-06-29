@@ -12,12 +12,14 @@ import {
   userManagementHandlers,
   routeHandlers,
   miscHandlers,
-  dnsConfigHandlers
+  dnsConfigHandlers,
+  passkeyHandlers
 } from '@mock/handlers/index';
 
 // 合并所有handlers
 export const handlers = [
   ...authHandlers,           // 认证 (/api/v1/auth)
+  ...passkeyHandlers,        // Passkey认证 (/api/v1/auth/passkey, /api/v1/user/passkeys)
   ...dashboardHandlers,      // 仪表盘 (/api/v1/dashboard)
   ...rulesHandlers,          // 规则管理 (/api/v1/rules)
   ...routeHandlers,          // 线路管理 (/api/routes)

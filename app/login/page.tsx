@@ -10,6 +10,7 @@ import {
   WindowsOutlined,
   DownOutlined,
   UpOutlined,
+  SafetyOutlined,
 } from '@ant-design/icons';
 import {
   LoginForm,
@@ -23,6 +24,8 @@ import { useRouter } from 'next/navigation';
 import { OAuth2Service, OAuth2Factory } from '@/utils/oauth2';
 import { authService } from '@/services/auth';
 import { useAuth } from '@/components/hooks/useAuth';
+import { passkeyService } from '@/services/passkey';
+import { PasskeyUtils } from '@/utils/passkey';
 
 const { Text } = Typography;
 
@@ -34,6 +37,7 @@ const LoginPage = () => {
   const { isAuthenticated, isLoading, login: authLogin } = useAuth();
   const [loginType, setLoginType] = useState<LoginType>('account');
   const [showAllOAuth, setShowAllOAuth] = useState(false);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
 
   // 如果已登录，重定向到主页
   useEffect(() => {
@@ -78,6 +82,81 @@ const LoginPage = () => {
       const errorMessage = error instanceof Error ? error.message : '登录失败，请重试';
       message.error(errorMessage);
       console.error('登录错误:', error);
+    }
+  };
+
+    // Passkey登录处理
+  const handlePasskeyLogin = async () => {
+    if (!PasskeyUtils.isWebAuthnSupported()) {
+      message.error('您的浏览器不支持Passkey认证');
+      return;
+    }
+
+    setPasskeyLoading(true);
+    try {
+      const result = await passkeyService.completeAuthentication();
+      
+      if (result.base?.success && result.data) {
+        const loginData = result.data;
+        
+        // 保存认证信息到本地存储
+        authService.saveAuthData({
+          token: loginData.token || 'mock-passkey-token',
+          refreshToken: loginData.refreshToken || 'mock-refresh-token',
+          expiresIn: loginData.expiresIn || 3600,
+          user: {
+            id: loginData.id?.toString() || 'passkey-user',
+            username: loginData.name || 'passkey-user',
+            email: loginData.email || 'passkey@nspass.com',
+            avatar: '',
+            createdAt: new Date().toISOString(),
+            lastLoginAt: new Date().toISOString()
+          }
+        });
+        
+        // 使用 useAuth hook 更新登录状态
+        const user = {
+          id: loginData.id?.toString() || 'passkey-user',
+          name: loginData.name || 'passkey-user',
+          email: loginData.email || 'passkey@nspass.com',
+          role: loginData.role || 'user',
+          provider: 'passkey'
+        };
+        authLogin(user, 'passkey');
+        
+        message.success(`Passkey登录成功！使用设备: ${loginData.credentialName}`);
+        router.push('/');
+      } else {
+        message.error(result.base?.message || 'Passkey登录失败');
+      }
+    } catch (error) {
+      console.error('Passkey登录错误:', error);
+      
+      // 处理特定的WebAuthn错误
+      if (error instanceof Error && 'type' in error) {
+        const errorType = (error as Error & { type: string }).type;
+        switch (errorType) {
+          case 'user_cancelled':
+            message.error('Passkey认证被取消');
+            break;
+          case 'not_supported':
+            message.error('此设备不支持Passkey认证');
+            break;
+          case 'security':
+            message.error('Passkey认证安全错误');
+            break;
+          case 'network':
+            message.error('网络连接错误，请检查网络');
+            break;
+          default:
+            message.error(error.message || 'Passkey登录失败，请重试');
+        }
+      } else {
+        const errorMessage = error instanceof Error ? error.message : 'Passkey登录失败，请重试';
+        message.error(errorMessage);
+      }
+    } finally {
+      setPasskeyLoading(false);
     }
   };
 
@@ -343,6 +422,30 @@ const LoginPage = () => {
             </Divider>
 
             <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+              {/* Passkey登录按钮 */}
+              <Button
+                type="primary"
+                size="large"
+                icon={<SafetyOutlined />}
+                onClick={handlePasskeyLogin}
+                loading={passkeyLoading}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'linear-gradient(135deg, #722ed1 0%, #531dab 100%)',
+                  borderColor: '#722ed1',
+                  borderRadius: '8px',
+                  height: '44px',
+                  fontSize: '15px',
+                  fontWeight: '500',
+                  marginBottom: '8px'
+                }}
+              >
+                使用Passkey登录
+              </Button>
+
               {/* 主要的GitHub登录按钮 */}
               <Button
                 type="primary"
@@ -441,8 +544,11 @@ const LoginPage = () => {
                 <div><strong>管理员:</strong> admin / admin123</div>
                 <div><strong>普通用户:</strong> user / user123</div>
                 <div><strong>演示账号:</strong> demo / demo123</div>
-                <div style={{ marginTop: '4px', fontSize: '11px', opacity: 0.8 }}>
+                <div style={{ marginTop: '6px', fontSize: '11px', opacity: 0.8 }}>
                   支持用户名或邮箱登录 (如: admin@nspass.com)
+                </div>
+                <div style={{ marginTop: '6px', fontSize: '11px', opacity: 0.8, borderTop: `1px solid ${token.colorBorder}`, paddingTop: '6px' }}>
+                  <strong>🛡️ Passkey登录:</strong> 支持指纹、Face ID、PIN码等生物识别或设备认证
                 </div>
               </div>
             </div>
