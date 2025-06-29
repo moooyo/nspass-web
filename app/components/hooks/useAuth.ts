@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { OAuth2User } from '@/utils/oauth2';
 import { authService } from '@/services/auth';
 
@@ -29,99 +29,158 @@ export const useAuth = (): UseAuthReturn => {
     loginMethod: null,
   });
 
-  // 从localStorage加载用户信息
+  // 使用ref来缓存存储操作，避免频繁访问localStorage
+  const saveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const isInitializedRef = useRef(false);
+
+  // 异步保存到localStorage，避免阻塞UI
+  const saveToStorageAsync = useCallback((user: User | null, method: string | null) => {
+    // 清除之前的定时器
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // 延迟保存，避免频繁写入
+    saveTimeoutRef.current = setTimeout(() => {
+      try {
+        if (user && method) {
+          localStorage.setItem('user', JSON.stringify(user));
+          localStorage.setItem('login_method', method);
+        } else {
+          localStorage.removeItem('user');
+          localStorage.removeItem('login_method');
+        }
+      } catch (error) {
+        console.error('保存用户信息失败:', error);
+      }
+    }, 50); // 50ms延迟，足够小以保持响应性，但避免过度频繁的写入
+  }, []);
+
+  // 从localStorage加载用户信息 - 优化为异步
   const loadUserFromStorage = useCallback(() => {
-    try {
-      const userStr = localStorage.getItem('user');
-      const loginMethod = localStorage.getItem('login_method');
-      
-      if (userStr) {
-        const user = JSON.parse(userStr) as User;
-        setState({
-          user,
-          isAuthenticated: true,
-          isLoading: false,
-          loginMethod,
-        });
-      } else {
+    // 使用requestIdleCallback或setTimeout来异步加载，避免阻塞初始渲染
+    const loadAsync = () => {
+      try {
+        const userStr = localStorage.getItem('user');
+        const loginMethod = localStorage.getItem('login_method');
+        
+        if (userStr) {
+          const user = JSON.parse(userStr) as User;
+          setState({
+            user,
+            isAuthenticated: true,
+            isLoading: false,
+            loginMethod,
+          });
+        } else {
+          setState(prev => ({
+            ...prev,
+            isLoading: false,
+          }));
+        }
+      } catch (error) {
+        console.error('加载用户信息失败:', error);
         setState(prev => ({
           ...prev,
           isLoading: false,
         }));
+      } finally {
+        isInitializedRef.current = true;
       }
-    } catch (error) {
-      console.error('加载用户信息失败:', error);
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-      }));
+    };
+
+    // 避免重复初始化
+    if (isInitializedRef.current) {
+      return;
+    }
+
+    // 使用 requestIdleCallback 在浏览器空闲时执行，如果不支持则使用setTimeout
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      requestIdleCallback(loadAsync, { timeout: 100 });
+    } else {
+      setTimeout(loadAsync, 0);
     }
   }, []);
 
-  // 登录
+  // 登录 - 优化存储操作
   const login = useCallback((user: User, method: string) => {
-    try {
-      localStorage.setItem('user', JSON.stringify(user));
-      localStorage.setItem('login_method', method);
-      
-      setState({
-        user,
-        isAuthenticated: true,
-        isLoading: false,
-        loginMethod: method,
-      });
-    } catch (error) {
-      console.error('保存用户信息失败:', error);
-    }
-  }, []);
+    // 立即更新UI状态
+    setState({
+      user,
+      isAuthenticated: true,
+      isLoading: false,
+      loginMethod: method,
+    });
 
-  // 退出登录
+    // 异步保存到localStorage
+    saveToStorageAsync(user, method);
+  }, [saveToStorageAsync]);
+
+  // 退出登录 - 优化清理操作
   const logout = useCallback(async () => {
     try {
-      // 调用 authService 进行完整清理
-      await authService.logout();
-      
+      // 立即更新UI状态
       setState({
         user: null,
         isAuthenticated: false,
         isLoading: false,
         loginMethod: null,
       });
+
+      // 异步清理localStorage
+      saveToStorageAsync(null, null);
+
+      // 调用 authService 进行完整清理（异步）
+      await authService.logout();
     } catch (error) {
       console.error('退出登录失败:', error);
-      // 即使出错也要清理本地状态
-      setState({
-        user: null,
-        isAuthenticated: false,
-        isLoading: false,
-        loginMethod: null,
-      });
+      // UI状态已经更新，不需要再次设置
     }
-  }, []);
+  }, [saveToStorageAsync]);
 
   // 刷新用户信息
   const refreshUser = useCallback(() => {
+    isInitializedRef.current = false;
     loadUserFromStorage();
-  }, [loadUserFromStorage]);
+  }, []);
 
   // 组件挂载时加载用户信息
   useEffect(() => {
     loadUserFromStorage();
   }, [loadUserFromStorage]);
 
-  // 监听localStorage变化（多标签页同步）
+  // 监听localStorage变化（多标签页同步） - 优化为throttled
   useEffect(() => {
+    let throttleTimeout: NodeJS.Timeout | undefined;
+
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'user' || e.key === 'login_method') {
-        loadUserFromStorage();
+        // 节流处理，避免频繁触发
+        if (throttleTimeout) {
+          clearTimeout(throttleTimeout);
+        }
+        
+        throttleTimeout = setTimeout(() => {
+          isInitializedRef.current = false;
+          loadUserFromStorage();
+        }, 100);
       }
     };
 
-    window.addEventListener('storage', handleStorageChange);
+    // 使用 passive 监听器提高性能
+    const options = { passive: true };
+    window.addEventListener('storage', handleStorageChange, options);
+    
     return () => {
       window.removeEventListener('storage', handleStorageChange);
+      if (throttleTimeout) {
+        clearTimeout(throttleTimeout);
+      }
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
     };
-  }, [loadUserFromStorage]);
+  }, []); // 移除 loadUserFromStorage 依赖
 
   return {
     ...state,

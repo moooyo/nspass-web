@@ -354,7 +354,7 @@ const ForwardRules: React.FC = () => {
         setExitServer(null);
         setModalVisible(true);
         // 标记地图已渲染，确保缓存
-        setMapRendered(true);
+        mapRenderedRef.current = true;
     };
 
     // 打开编辑弹窗
@@ -370,7 +370,7 @@ const ForwardRules: React.FC = () => {
         
         setModalVisible(true);
         // 标记地图已渲染，确保缓存
-        setMapRendered(true);
+        mapRenderedRef.current = true;
     };
 
     // 处理服务器选择 - 使用useCallback缓存
@@ -384,59 +384,56 @@ const ForwardRules: React.FC = () => {
         }
     }, []);
     
-    // 使用简单的状态控制地图是否已经渲染
-    const [mapRendered, setMapRendered] = useState(false);
-    // 窗口尺寸状态，用于比较是否真正改变
-    const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
-    // 地图刷新版本，只在窗口尺寸改变时递增
-    const [mapVersion, setMapVersion] = useState(0);
+    // 优化：使用ref来存储地图状态，避免不必要的重新渲染
+    const mapRenderedRef = useRef(false);
+    const resizeTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+    const windowSizeRef = useRef({ width: 0, height: 0 });
     
-    // 确保地图只在Modal第一次打开时渲染，之后一直保持
-    const shouldRenderMap = modalVisible || mapRendered;
+    // 优化：延迟加载地图，只在真正需要时渲染
+    const shouldRenderMap = modalVisible && mapRenderedRef.current;
     
-        // 监听窗口大小变化
+    // 优化：使用throttled的窗口大小监听，减少性能开销
     useEffect(() => {
-        let resizeTimeout: NodeJS.Timeout;
-        
         const handleResize = () => {
-            const newSize = {
-                width: window.innerWidth,
-                height: window.innerHeight
-            };
-            
-            // 检查窗口尺寸是否真正改变
-            const sizeChanged = windowSize.width !== newSize.width || windowSize.height !== newSize.height;
-            
-            setWindowSize(newSize);
-            
-            // 清除之前的定时器，避免频繁调整
-            if (resizeTimeout) {
-                clearTimeout(resizeTimeout);
+            // 清除之前的定时器
+            if (resizeTimeoutRef.current) {
+                clearTimeout(resizeTimeoutRef.current);
             }
             
-            // 只有在窗口尺寸真正改变且地图已渲染时才重新渲染地图
-            if (sizeChanged && mapRendered) {
-                resizeTimeout = setTimeout(() => {
-                    setMapVersion(prev => prev + 1);
-                }, 300); // 延迟重新渲染，避免频繁操作
-            }
+            // 使用throttling，避免频繁的resize处理
+            resizeTimeoutRef.current = setTimeout(() => {
+                const newSize = {
+                    width: window.innerWidth,
+                    height: window.innerHeight
+                };
+                
+                // 只有在尺寸真正改变且改变幅度较大时才更新
+                const threshold = 50; // 50px的变化阈值
+                const sizeChanged = 
+                    Math.abs(windowSizeRef.current.width - newSize.width) > threshold ||
+                    Math.abs(windowSizeRef.current.height - newSize.height) > threshold;
+                
+                if (sizeChanged) {
+                    windowSizeRef.current = newSize;
+                    // 只有在地图已渲染时才触发重新渲染
+                    if (mapRenderedRef.current && modalVisible) {
+                        // 这里可以添加地图重新计算的逻辑
+                        console.log('地图需要重新计算尺寸');
+                    }
+                }
+            }, 300); // 300ms的debounce
         };
         
-        // 初始化窗口尺寸
-        if (typeof window !== 'undefined') {
-            handleResize();
-            window.addEventListener('resize', handleResize);
-        }
+        // 使用 passive 监听器提高性能
+        window.addEventListener('resize', handleResize, { passive: true } as AddEventListenerOptions);
         
         return () => {
-            if (typeof window !== 'undefined') {
-                window.removeEventListener('resize', handleResize);
-            }
-            if (resizeTimeout) {
-                clearTimeout(resizeTimeout);
+            window.removeEventListener('resize', handleResize);
+            if (resizeTimeoutRef.current) {
+                clearTimeout(resizeTimeoutRef.current);
             }
         };
-    }, [windowSize.width, windowSize.height, mapRendered]);
+    }, [modalVisible]); // 只依赖modalVisible
     
     // 当Modal打开时不需要特殊处理，因为地图会保持缓存
     
@@ -982,7 +979,7 @@ const ForwardRules: React.FC = () => {
                         {shouldRenderMap ? (
                             typeof window !== 'undefined' && (
                                 <DynamicLeafletWrapper 
-                                    key={`map-version-${mapVersion}`}
+                                    key="map-instance"
                                     selectedPath={selectedPath}
                                     sampleServers={sampleServers}
                                     exitServer={exitServer}

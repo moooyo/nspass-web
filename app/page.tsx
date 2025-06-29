@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect, Suspense, useMemo } from 'react';
+import React, { useState, useEffect, Suspense, useMemo, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { EditOutlined, HomeOutlined, MenuFoldOutlined, MenuUnfoldOutlined, UnorderedListOutlined, UserOutlined, ApiOutlined, LogoutOutlined, DownOutlined, SunOutlined, MoonOutlined, DashboardOutlined, SettingOutlined, TeamOutlined, UsergroupAddOutlined, CloudServerOutlined, CloudOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
@@ -71,9 +71,12 @@ export default function Home() {
   
   // 缓存已渲染的组件
   const [renderedTabs, setRenderedTabs] = useState<Set<string>>(new Set(['home']));
+  
+  // 使用 useRef 来存储 URL 更新的定时器，避免频繁的同步操作
+  const urlUpdateTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
-  // URL hash与菜单key的映射关系
-  const hashToKeyMap: Record<string, string> = {
+  // 使用 useMemo 缓存映射对象，避免重新创建导致无限循环
+  const hashToKeyMap = useMemo<Record<string, string>>(() => ({
     // 主菜单简化映射
     'home': 'home',
     'user': 'user', 
@@ -92,9 +95,9 @@ export default function Home() {
     'servers': 'servers',
     'dns': 'dns_config',
     'dns_config': 'dns_config',
-  };
+  }), []);
 
-  const keyToHashMap: Record<string, string> = {
+  const keyToHashMap = useMemo<Record<string, string>>(() => ({
     'home': 'home',
     'user': 'user',
     'forward_rules': 'rules',
@@ -106,10 +109,10 @@ export default function Home() {
     'user_groups': 'groups',
     'servers': 'servers',
     'dns_config': 'dns',
-  };
+  }), []);
 
   // 页面标题映射
-  const keyToTitleMap: Record<string, string> = {
+  const keyToTitleMap = useMemo<Record<string, string>>(() => ({
     'home': 'NSPass - 首页',
     'user': 'NSPass - 用户信息',
     'forward_rules': 'NSPass - 转发规则',
@@ -121,10 +124,10 @@ export default function Home() {
     'user_groups': 'NSPass - 用户组管理',
     'servers': 'NSPass - 服务器管理',
     'dns_config': 'NSPass - DNS配置',
-  };
+  }), []);
 
   // 页面显示名称映射
-  const keyToDisplayNameMap: Record<string, string> = {
+  const keyToDisplayNameMap = useMemo<Record<string, string>>(() => ({
     'home': '首页',
     'user': '用户信息',
     'forward_rules': '转发规则',
@@ -136,10 +139,10 @@ export default function Home() {
     'user_groups': '用户组管理',
     'servers': '服务器管理',
     'dns_config': 'DNS配置',
-  };
+  }), []);
 
   // 从URL hash获取初始tab
-  const getInitialTabFromHash = () => {
+  const getInitialTabFromHash = useCallback(() => {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash.substring(1); // 移除 # 号
       if (hash && hashToKeyMap[hash]) {
@@ -147,61 +150,67 @@ export default function Home() {
       }
     }
     return 'home';
-  };
+  }, [hashToKeyMap]);
 
-  // 初始化时根据URL hash设置selectedKey
+  // 异步更新URL，避免阻塞UI
+  const updateUrlAsync = useCallback((key: string) => {
+    // 清除之前的定时器
+    if (urlUpdateTimeoutRef.current) {
+      clearTimeout(urlUpdateTimeoutRef.current);
+    }
+    
+    // 使用 requestIdleCallback 或 setTimeout 来延迟URL更新
+    urlUpdateTimeoutRef.current = setTimeout(() => {
+      if (typeof window !== 'undefined') {
+        const hash = keyToHashMap[key] || key;
+        const newUrl = `${window.location.pathname}${window.location.search}#${hash}`;
+        window.history.replaceState(null, '', newUrl);
+      }
+    }, 0);
+  }, [keyToHashMap]);
+
+  // 优化：减少初始化时的 useEffect
   useEffect(() => {
     const initialTab = getInitialTabFromHash();
     setSelectedKey(initialTab);
-    // 确保初始tab被添加到渲染缓存中
     setRenderedTabs(prev => new Set([...prev, initialTab]));
     
-    // 如果URL中没有hash，设置默认hash
+    // 异步更新URL
     if (typeof window !== 'undefined' && !window.location.hash) {
-      const hash = keyToHashMap[initialTab] || initialTab;
-      const newUrl = `${window.location.pathname}${window.location.search}#${hash}`;
-      window.history.replaceState(null, '', newUrl);
+      updateUrlAsync(initialTab);
     }
-  }, []);
+  }, [getInitialTabFromHash, updateUrlAsync]);
 
-  // 监听hash变化（浏览器前进后退）
+  // 监听hash变化（浏览器前进后退） - 优化为单一useEffect
   useEffect(() => {
     const handleHashChange = () => {
       const newTab = getInitialTabFromHash();
       setSelectedKey(newTab);
-      // 确保新tab被添加到渲染缓存中
       setRenderedTabs(prev => new Set([...prev, newTab]));
     };
 
-    window.addEventListener('hashchange', handleHashChange);
+    // 使用 passive 监听器提高性能
+    const options = { passive: true };
+    window.addEventListener('hashchange', handleHashChange, options);
     return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
+  }, [getInitialTabFromHash]);
 
-  // 更新页面标题
+  // 合并页面标题和开发提示到单一useEffect
   useEffect(() => {
     if (typeof document !== 'undefined') {
       document.title = keyToTitleMap[selectedKey] || 'NSPass';
     }
-  }, [selectedKey]);
 
-  // 在开发环境下显示导航提示
-  useEffect(() => {
-    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+    // 只在开发环境且首次加载时显示导航提示
+    if (typeof window !== 'undefined' && 
+        process.env.NODE_ENV === 'development' && 
+        selectedKey === 'home') {
       console.log('🔗 NSPass URL导航提示:');
-      console.log('您可以直接通过URL访问以下页面:');
-      console.log('• 首页: #home');
-      console.log('• 用户信息: #user');
-      console.log('• 转发规则: #rules');
-      console.log('• 出口配置: #egress');
-      console.log('• 查看线路: #routes');
-      console.log('• 仪表盘: #config');
-      console.log('• 网站配置: #website');
-      console.log('• 用户管理: #users');
-      console.log('• 用户组管理: #groups');
-      console.log('• 服务器管理: #servers');
-      console.log('• DNS配置: #dns');
+      Object.entries(keyToHashMap).forEach(([key, hash]) => {
+        console.log(`• ${keyToDisplayNameMap[key]}: #${hash}`);
+      });
     }
-  }, []);
+  }, [selectedKey]);
 
   // 检查登录状态
   useEffect(() => {
@@ -210,19 +219,15 @@ export default function Home() {
     }
   }, [isLoading, isAuthenticated, router]);
 
-  // 由于现在都是一级菜单，不再需要复杂的openKeys逻辑
-
-  const handleMenuSelect = ({ key }: { key: string }) => {
+  // 优化：延迟URL更新的菜单选择处理
+  const handleMenuSelect = useCallback(({ key }: { key: string }) => {
+    // 立即更新UI状态，获得即时反馈
     setSelectedKey(key);
-    // 将新选中的tab添加到已渲染集合中
     setRenderedTabs(prev => new Set([...prev, key]));
-    // 更新URL hash，使用简化的hash名称
-    if (typeof window !== 'undefined') {
-      const hash = keyToHashMap[key] || key;
-      const newUrl = `${window.location.pathname}${window.location.search}#${hash}`;
-      window.history.pushState(null, '', newUrl);
-    }
-  };
+    
+    // 异步更新URL，避免阻塞
+    updateUrlAsync(key);
+  }, [updateUrlAsync]);
 
   const handleLogout = async () => {
     try {
@@ -275,7 +280,7 @@ export default function Home() {
     }
   };
 
-  // 使用 useMemo 缓存已渲染的组件
+  // 使用 useMemo 优化组件缓存，减少依赖
   const cachedComponents = useMemo(() => {
     const components: Record<string, React.ReactNode> = {};
     renderedTabs.forEach(tabKey => {
@@ -307,16 +312,25 @@ export default function Home() {
       );
     });
     return components;
-  }, [renderedTabs, selectedKey]);
+  }, [renderedTabs]); // 移除 selectedKey 依赖，减少重新计算
 
-  // 渲染内容 - 只显示当前选中的tab，但保持其他已渲染tab的状态
-  const renderContent = () => {
+  // 优化：使用 useCallback 缓存渲染函数
+  const renderContent = useCallback(() => {
     return (
       <div style={{ width: '100%', height: '100%' }}>
         {Object.entries(cachedComponents).map(([tabKey, component]) => component)}
       </div>
     );
-  };
+  }, [cachedComponents]);
+
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      if (urlUpdateTimeoutRef.current) {
+        clearTimeout(urlUpdateTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const [collapsed, setCollapsed] = useState(false);
   const {
