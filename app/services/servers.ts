@@ -1,18 +1,19 @@
 import type {
-  ServerItem,
-  ServerStatus
+  ServerItem
 } from '@/types/generated/api/servers/server_management';
+import { ServerStatus } from '@/types/generated/api/servers/server_management';
+import { httpClient, ApiResponse } from '@/utils/http-client';
 
 // 状态映射函数
 export const statusToString = (status: ServerStatus): string => {
   switch (status) {
-    case 1: // SERVER_STATUS_ONLINE
+    case ServerStatus.SERVER_STATUS_ONLINE:
       return 'online';
-    case 2: // SERVER_STATUS_OFFLINE
+    case ServerStatus.SERVER_STATUS_OFFLINE:
       return 'offline';
-    case 3: // SERVER_STATUS_PENDING_INSTALL
+    case ServerStatus.SERVER_STATUS_PENDING_INSTALL:
       return 'pending_install';
-    case 4: // SERVER_STATUS_UNKNOWN
+    case ServerStatus.SERVER_STATUS_UNKNOWN:
       return 'unknown';
     default:
       return 'unknown';
@@ -22,15 +23,15 @@ export const statusToString = (status: ServerStatus): string => {
 export const stringToStatus = (status: string): ServerStatus => {
   switch (status) {
     case 'online':
-      return 1; // SERVER_STATUS_ONLINE
+      return ServerStatus.SERVER_STATUS_ONLINE;
     case 'offline':
-      return 2; // SERVER_STATUS_OFFLINE
+      return ServerStatus.SERVER_STATUS_OFFLINE;
     case 'pending_install':
-      return 3; // SERVER_STATUS_PENDING_INSTALL
+      return ServerStatus.SERVER_STATUS_PENDING_INSTALL;
     case 'unknown':
-      return 4; // SERVER_STATUS_UNKNOWN
+      return ServerStatus.SERVER_STATUS_UNKNOWN;
     default:
-      return 4; // SERVER_STATUS_UNKNOWN
+      return ServerStatus.SERVER_STATUS_UNKNOWN;
   }
 };
 
@@ -69,7 +70,7 @@ export interface UpdateServerParams {
 
 // 服务器 API 服务
 export class ServerService {
-  private static readonly BASE_URL = '/api/v1/servers';
+  private static readonly endpoint = '/v1/servers';
 
   /**
    * 获取服务器列表
@@ -79,29 +80,28 @@ export class ServerService {
     success: boolean;
     total: number;
   }> {
-    const url = new URL(this.BASE_URL, window.location.origin);
+    const queryParams: Record<string, string> = {};
     
-    if (params.current) url.searchParams.set('page', params.current.toString());
-    if (params.pageSize) url.searchParams.set('pageSize', params.pageSize.toString());
-    if (params.name) url.searchParams.set('name', params.name);
+    if (params.current) queryParams.page = params.current.toString();
+    if (params.pageSize) queryParams.pageSize = params.pageSize.toString();
+    if (params.name) queryParams.name = params.name;
     if (params.status && params.status !== 'all') {
-      url.searchParams.set('status', stringToStatus(params.status).toString());
+      queryParams.status = stringToStatus(params.status).toString();
     }
     if (params.country && params.country !== 'all') {
-      url.searchParams.set('country', params.country);
+      queryParams.country = params.country;
     }
 
-    const response = await fetch(url.toString());
-    const result = await response.json();
+    const response = await httpClient.get<ServerItem[]>(this.endpoint, queryParams);
 
-    if (!result.base?.success) {
-      throw new Error(result.base?.message || '获取服务器列表失败');
+    if (!response.success) {
+      throw new Error(response.message || '获取服务器列表失败');
     }
 
     return {
-      data: result.data || [],
+      data: response.data || [],
       success: true,
-      total: result.data?.length || 0
+      total: response.data?.length || 0
     };
   }
 
@@ -109,21 +109,13 @@ export class ServerService {
    * 创建服务器
    */
   static async createServer(data: CreateServerParams): Promise<ServerItem> {
-    const response = await fetch(this.BASE_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
+    const response = await httpClient.post<ServerItem>(this.endpoint, data);
 
-    const result = await response.json();
-
-    if (!result.base?.success) {
-      throw new Error(result.base?.message || '创建服务器失败');
+    if (!response.success) {
+      throw new Error(response.message || '创建服务器失败');
     }
 
-    return result.data;
+    return response.data!;
   }
 
   /**
@@ -137,35 +129,23 @@ export class ServerService {
       updateData.status = stringToStatus(updateData.status).toString();
     }
 
-    const response = await fetch(`${this.BASE_URL}/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(updateData),
-    });
+    const response = await httpClient.put<ServerItem>(`${this.endpoint}/${id}`, updateData);
 
-    const result = await response.json();
-
-    if (!result.base?.success) {
-      throw new Error(result.base?.message || '更新服务器失败');
+    if (!response.success) {
+      throw new Error(response.message || '更新服务器失败');
     }
 
-    return result.data;
+    return response.data!;
   }
 
   /**
    * 删除服务器
    */
   static async deleteServer(id: string): Promise<void> {
-    const response = await fetch(`${this.BASE_URL}/${id}`, {
-      method: 'DELETE',
-    });
+    const response = await httpClient.delete<void>(`${this.endpoint}/${id}`);
 
-    const result = await response.json();
-
-    if (!result.base?.success) {
-      throw new Error(result.base?.message || '删除服务器失败');
+    if (!response.success) {
+      throw new Error(response.message || '删除服务器失败');
     }
   }
 

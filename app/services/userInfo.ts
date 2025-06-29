@@ -3,29 +3,43 @@ import { httpClient, ApiResponse } from '@/utils/http-client';
 import type {
   UserInfo,
   UpdateUserInfoRequest,
+  GetCurrentUserInfoResponse,
+  UpdateCurrentUserInfoResponse
+} from '@/types/generated/api/users/user_profile';
+import type {
   ChangePasswordRequest,
+  ChangePasswordResponse
+} from '@/types/generated/api/users/user_password';
+import type {
   TrafficStats,
+  GetTrafficStatsResponse,
+  ResetTrafficResponse
+} from '@/types/generated/api/users/user_traffic';
+import type {
   LoginHistoryItem,
+  GetLoginHistoryRequest,
+  GetLoginHistoryResponse
+} from '@/types/generated/api/users/user_login_history';
+import type {
   ActivityLogItem,
+  GetActivityLogsRequest,
+  GetActivityLogsResponse
+} from '@/types/generated/api/users/user_activity';
+import type {
   TwoFactorAuthData,
   VerifyTwoFactorAuthData,
-  GetLoginHistoryRequest,
-  GetActivityLogsRequest,
   ToggleTwoFactorAuthRequest,
   VerifyTwoFactorAuthRequest,
-  DeleteAccountRequest,
-  GetCurrentUserInfoResponse,
-  UpdateCurrentUserInfoResponse,
-  ChangePasswordResponse,
-  UploadAvatarResponse,
-  GetTrafficStatsResponse,
-  GetLoginHistoryResponse,
-  GetActivityLogsResponse,
-  ResetTrafficResponse,
   ToggleTwoFactorAuthResponse,
-  VerifyTwoFactorAuthResponse,
+  VerifyTwoFactorAuthResponse
+} from '@/types/generated/api/users/user_two_factor';
+import type {
+  UploadAvatarResponse
+} from '@/types/generated/api/users/user_avatar';
+import type {
+  DeleteAccountRequest,
   DeleteAccountResponse
-} from '@/types/generated/api/users/user_info';
+} from '@/types/generated/api/users/user_account';
 import type { ApiResponse as CommonApiResponse } from '@/types/generated/common';
 
 // 将httpClient的ApiResponse转换为proto响应格式的辅助函数
@@ -74,17 +88,9 @@ class UserInfoService {
     const formData = new FormData();
     formData.append('avatar', file);
     
-    // 使用原生 fetch 处理文件上传
-    const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.example.com'}${this.endpoint}/avatar`, {
-      method: 'POST',
-      body: formData,
-      headers: {
-        // 不设置 Content-Type，让浏览器自动设置 multipart/form-data
-      },
-    });
-    
-    const jsonResponse = await uploadResponse.json();
-    return toProtoResponse(jsonResponse);
+    // 使用httpClient处理文件上传
+    const response = await httpClient.post<UploadAvatarResponse['data']>(`${this.endpoint}/avatar`, formData);
+    return toProtoResponse(response);
   }
 
   /**
@@ -161,11 +167,21 @@ export default UserInfoService;
 // 导出常用类型
 export type {
   UserInfo,
-  UpdateUserInfoRequest,
-  ChangePasswordRequest,
-  TrafficStats,
-  LoginHistoryItem,
-  ActivityLogItem,
+  UpdateUserInfoRequest
+} from '@/types/generated/api/users/user_profile';
+export type {
+  ChangePasswordRequest
+} from '@/types/generated/api/users/user_password';
+export type {
+  TrafficStats
+} from '@/types/generated/api/users/user_traffic';
+export type {
+  LoginHistoryItem
+} from '@/types/generated/api/users/user_login_history';
+export type {
+  ActivityLogItem
+} from '@/types/generated/api/users/user_activity';
+export type {
   TwoFactorAuthData,
   VerifyTwoFactorAuthData
-} from '@/types/generated/api/users/user_info'; 
+} from '@/types/generated/api/users/user_two_factor'; 

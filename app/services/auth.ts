@@ -1,4 +1,5 @@
 // 认证相关的API服务
+import { httpClient, ApiResponse } from '@/utils/http-client';
 
 export interface LoginRequest {
   username: string;
@@ -46,30 +47,31 @@ export interface RegisterResponse {
 }
 
 class AuthService {
-  private baseUrl = '/api/v1/auth';
+  private endpoint = '/v1/auth';
 
   /**
    * 用户登录
    */
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     try {
-      const response = await fetch(`${this.baseUrl}/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(credentials),
-      });
-
-      const data = await response.json();
+      const response = await httpClient.post<LoginResponse['data']>(`${this.endpoint}/login`, credentials);
       
-      if (!response.ok) {
-        throw new Error(data.base?.message || '登录失败');
-      }
-
-      return data;
+      return {
+        base: {
+          success: response.success,
+          message: response.message || (response.success ? '登录成功' : '登录失败'),
+          errorCode: response.success ? undefined : 'LOGIN_FAILED'
+        },
+        data: response.data
+      };
     } catch (error) {
-      throw error instanceof Error ? error : new Error('网络请求失败');
+      return {
+        base: {
+          success: false,
+          message: error instanceof Error ? error.message : '网络请求失败',
+          errorCode: 'NETWORK_ERROR'
+        }
+      };
     }
   }
 
@@ -78,23 +80,24 @@ class AuthService {
    */
   async register(userData: RegisterRequest): Promise<RegisterResponse> {
     try {
-      const response = await fetch(`${this.baseUrl}/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
-
-      const data = await response.json();
+      const response = await httpClient.post<RegisterResponse['data']>(`${this.endpoint}/register`, userData);
       
-      if (!response.ok) {
-        throw new Error(data.base?.message || '注册失败');
-      }
-
-      return data;
+      return {
+        base: {
+          success: response.success,
+          message: response.message || (response.success ? '注册成功' : '注册失败'),
+          errorCode: response.success ? undefined : 'REGISTER_FAILED'
+        },
+        data: response.data
+      };
     } catch (error) {
-      throw error instanceof Error ? error : new Error('网络请求失败');
+      return {
+        base: {
+          success: false,
+          message: error instanceof Error ? error.message : '网络请求失败',
+          errorCode: 'NETWORK_ERROR'
+        }
+      };
     }
   }
 

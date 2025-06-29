@@ -1,5 +1,26 @@
 // HTTP客户端配置
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+// 支持构建时传入或环境变量，默认为 http://localhost:8080
+const getApiBaseUrl = (): string => {
+  // 1. 优先使用构建时传入的环境变量
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL;
+  }
+  
+  // 2. 兼容旧的环境变量名
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  
+  // 3. 如果是开发环境且没有设置环境变量，使用相对路径以支持mock
+  if (process.env.NODE_ENV === 'development') {
+    return '/api';
+  }
+  
+  // 4. 生产环境默认值
+  return 'http://localhost:8080';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
@@ -91,13 +112,28 @@ class HttpClient {
     const config: RequestInit = {
       method,
       headers: {
-        'Content-Type': 'application/json',
         ...headers,
       },
     };
 
     if (body && method !== 'GET') {
-      config.body = JSON.stringify(body);
+      // 如果是FormData，不设置Content-Type，让浏览器自动设置
+      if (body instanceof FormData) {
+        config.body = body;
+      } else {
+        // 对于JSON数据，设置Content-Type并序列化
+        config.headers = {
+          'Content-Type': 'application/json',
+          ...config.headers,
+        };
+        config.body = JSON.stringify(body);
+      }
+    } else if (method !== 'GET') {
+      // 对于非GET请求但没有body的情况，仍然设置JSON Content-Type
+      config.headers = {
+        'Content-Type': 'application/json',
+        ...config.headers,
+      };
     }
 
     try {

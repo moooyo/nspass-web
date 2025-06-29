@@ -1,4 +1,5 @@
 import React from 'react';
+import { httpClient, ApiResponse as HttpClientApiResponse } from '@/utils/http-client';
 
 // DNS提供商类型
 export type DnsProvider = 'CLOUDFLARE';
@@ -54,25 +55,19 @@ export const dnsConfigService = {
   // 获取DNS配置列表
   async getDnsConfigs(params?: DnsConfigListParams): Promise<ApiResponse<DnsConfigItem[]>> {
     try {
-      const queryParams = new URLSearchParams();
-      if (params?.page) queryParams.append('page', params.page.toString());
-      if (params?.pageSize) queryParams.append('pageSize', params.pageSize.toString());
-      if (params?.configName) queryParams.append('configName', params.configName);
-      if (params?.provider) queryParams.append('provider', params.provider);
+      const queryParams: Record<string, string> = {};
+      if (params?.page) queryParams.page = params.page.toString();
+      if (params?.pageSize) queryParams.pageSize = params.pageSize.toString();
+      if (params?.configName) queryParams.configName = params.configName;
+      if (params?.provider) queryParams.provider = params.provider;
 
-      const response = await fetch(`/api/v1/dns/configs?${queryParams.toString()}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      const response = await httpClient.get<DnsConfigItem[]>('/v1/dns/configs', queryParams);
+      
+      return {
+        success: response.success,
+        data: response.data,
+        message: response.message
+      };
     } catch (error) {
       console.error('获取DNS配置列表失败:', error);
       return { success: false, message: '获取DNS配置列表失败' };
@@ -82,20 +77,13 @@ export const dnsConfigService = {
   // 创建DNS配置
   async createDnsConfig(data: CreateDnsConfigData): Promise<ApiResponse<DnsConfigItem>> {
     try {
-      const response = await fetch('/api/v1/dns/configs', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      return result;
+      const response = await httpClient.post<DnsConfigItem>('/v1/dns/configs', data);
+      
+      return {
+        success: response.success,
+        data: response.data,
+        message: response.message
+      };
     } catch (error) {
       console.error('创建DNS配置失败:', error);
       return { success: false, message: '创建DNS配置失败' };
@@ -105,20 +93,13 @@ export const dnsConfigService = {
   // 更新DNS配置
   async updateDnsConfig(id: React.Key, data: UpdateDnsConfigData): Promise<ApiResponse<DnsConfigItem>> {
     try {
-      const response = await fetch(`/api/v1/dns/configs/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      return result;
+      const response = await httpClient.put<DnsConfigItem>(`/v1/dns/configs/${id}`, data);
+      
+      return {
+        success: response.success,
+        data: response.data,
+        message: response.message
+      };
     } catch (error) {
       console.error('更新DNS配置失败:', error);
       return { success: false, message: '更新DNS配置失败' };
@@ -128,19 +109,13 @@ export const dnsConfigService = {
   // 删除DNS配置
   async deleteDnsConfig(id: React.Key): Promise<ApiResponse<boolean>> {
     try {
-      const response = await fetch(`/api/v1/dns/configs/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      return result;
+      const response = await httpClient.delete<boolean>(`/v1/dns/configs/${id}`);
+      
+      return {
+        success: response.success,
+        data: response.data,
+        message: response.message
+      };
     } catch (error) {
       console.error('删除DNS配置失败:', error);
       return { success: false, message: '删除DNS配置失败' };
@@ -150,19 +125,13 @@ export const dnsConfigService = {
   // 测试DNS配置
   async testDnsConfig(id: React.Key): Promise<ApiResponse<boolean>> {
     try {
-      const response = await fetch(`/api/v1/dns/configs/${id}/test`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      return result;
+      const response = await httpClient.post<boolean>(`/v1/dns/configs/${id}/test`);
+      
+      return {
+        success: response.success,
+        data: response.data,
+        message: response.message
+      };
     } catch (error) {
       console.error('测试DNS配置失败:', error);
       return { success: false, message: '测试DNS配置失败' };
