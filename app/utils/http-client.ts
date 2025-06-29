@@ -11,8 +11,13 @@ const getApiBaseUrl = (): string => {
     return process.env.NEXT_PUBLIC_API_URL;
   }
   
-  // 3. 如果是开发环境且没有设置环境变量，使用相对路径以支持mock
+  // 3. 开发环境下检查是否配置了真实后端地址
   if (process.env.NODE_ENV === 'development') {
+    // 如果设置了 NEXT_PUBLIC_REAL_API_URL，即使在开发环境也使用真实后端
+    if (process.env.NEXT_PUBLIC_REAL_API_URL) {
+      return process.env.NEXT_PUBLIC_REAL_API_URL;
+    }
+    // 否则使用相对路径以支持mock
     return '/api';
   }
   
@@ -52,6 +57,17 @@ class HttpClient {
 
   constructor(baseURL: string = API_BASE_URL) {
     this.baseURL = baseURL;
+  }
+
+  // 动态更新 baseURL
+  updateBaseURL(newBaseURL: string) {
+    this.baseURL = newBaseURL;
+    console.log(`HTTP客户端 baseURL 已更新为: ${newBaseURL}`);
+  }
+
+  // 获取当前 baseURL
+  getCurrentBaseURL(): string {
+    return this.baseURL;
   }
 
   private buildURL(endpoint: string, params?: Record<string, string>): string {

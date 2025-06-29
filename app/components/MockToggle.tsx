@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useContext, useEffect, useState, useCallback } from 'react';
-import { App } from 'antd';
 import { ApiOutlined } from '@ant-design/icons';
 import { MSWContext } from './MSWProvider';
+import { message } from '@/utils/message';
+import { httpClient } from '@/utils/http-client';
 
 // LocalStorage键名
 const MOCK_ENABLED_KEY = 'nspass-mock-enabled';
@@ -12,10 +13,18 @@ export const MockToggle: React.FC = () => {
   // 从Context获取Mock状态
   const { enabled: mockEnabled, setEnabled: setMockEnabled } = useContext(MSWContext);
   
-  // 消息API
-  const { message: messageApi } = App.useApp();
   // 是否正在加载中
   const [isLoading, setIsLoading] = useState(false);
+
+  // 初始化时同步 baseURL 与 Mock 状态
+  useEffect(() => {
+    if (mockEnabled) {
+      httpClient.updateBaseURL('/api');
+    } else {
+      const realApiUrl = process.env.NEXT_PUBLIC_REAL_API_URL || 'http://localhost:8080';
+      httpClient.updateBaseURL(realApiUrl);
+    }
+  }, [mockEnabled]);
 
   // 确保不会出现滚动条
   useEffect(() => {
@@ -49,17 +58,21 @@ export const MockToggle: React.FC = () => {
     try {
       const { startMSW } = await import('@mock/browser');
       const result = await startMSW();
+      
+      // 启动 Mock 时，确保使用相对路径
+      httpClient.updateBaseURL('/api');
+      
       console.log('🚀 Mock服务已启动');
-      messageApi.success('Mock服务已启动');
+      message.success('Mock服务已启动');
       setIsLoading(false);
       return Boolean(result);
     } catch (error) {
       console.error('启动Mock服务失败:', error);
-      messageApi.error('启动Mock服务失败');
+      message.error('启动Mock服务失败');
       setIsLoading(false);
       return false;
     }
-  }, [messageApi]);
+  }, []);
 
   // 停止Mock服务
   const stopMockService = useCallback(async () => {
@@ -67,17 +80,22 @@ export const MockToggle: React.FC = () => {
     try {
       const { stopMSW } = await import('@mock/browser');
       const result = stopMSW();
+      
+      // 停止 Mock 时，切换到真实的后端地址
+      const realApiUrl = process.env.NEXT_PUBLIC_REAL_API_URL || 'http://localhost:8080';
+      httpClient.updateBaseURL(realApiUrl);
+      
       console.log('⏹️ Mock服务已停止');
-      messageApi.success('Mock服务已停止');
+      message.success(`Mock服务已停止，API已切换到: ${realApiUrl}`);
       setIsLoading(false);
       return Boolean(result);
     } catch (error) {
       console.error('停止Mock服务失败:', error);
-      messageApi.error('停止Mock服务失败');
+      message.error('停止Mock服务失败');
       setIsLoading(false);
       return false;
     }
-  }, [messageApi]);
+  }, []);
 
   // 切换Mock状态
   const toggleMock = async (e: React.MouseEvent) => {
