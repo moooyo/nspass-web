@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Button } from 'antd';
+import { Button, Alert, Space } from 'antd';
 import { message } from '@/utils/message';
 import {
     ProTable,
@@ -8,7 +8,7 @@ import {
     QueryFilter,
     ModalForm,
 } from '@ant-design/pro-components';
-import { PlusOutlined, EditOutlined, ReloadOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, ReloadOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { 
     userGroupsService, 
     UserGroupItem, 
@@ -67,16 +67,12 @@ const UserGroups: React.FC = () => {
 
     // 打开新增弹窗
     const openCreateModal = useCallback(() => {
-        setModalMode('create');
-        setCurrentRecord(null);
-        setModalVisible(true);
+        message.warning('当前版本不支持独立创建用户组，请通过用户管理来设置用户组');
     }, []);
 
     // 打开编辑弹窗
     const openEditModal = useCallback((record: UserGroupItem) => {
-        setModalMode('edit');
-        setCurrentRecord(record);
-        setModalVisible(true);
+        message.warning('当前版本不支持直接编辑用户组，请通过用户管理来修改用户的用户组属性');
     }, []);
 
     // 统一处理表单提交
@@ -116,19 +112,8 @@ const UserGroups: React.FC = () => {
 
     // 删除用户组
     const deleteUserGroup = useCallback(async (record: UserGroupItem) => {
-        try {
-            const response = await userGroupsService.deleteUserGroup(record.id);
-            if (response.success) {
-                message.success('删除成功');
-                loadUserGroups();
-            } else {
-                message.error(response.message || '删除失败');
-            }
-        } catch (error) {
-            console.error('删除失败:', error);
-            message.error('删除失败');
-        }
-    }, [loadUserGroups]);
+        message.warning('当前版本不支持删除用户组，用户组会根据用户设置自动管理');
+    }, []);
 
     // 使用 useMemo 缓存表格列配置，避免每次渲染重新创建
     const columns: ProColumns<UserGroupItem>[] = useMemo(() => [
@@ -161,11 +146,22 @@ const UserGroups: React.FC = () => {
             width: '15%',
             render: (_, record) => [
                 <Button
+                    key="view"
+                    type="link"
+                    size="small"
+                    icon={<InfoCircleOutlined />}
+                    onClick={() => message.info(`用户组 ${record.groupName} 当前有 ${record.userCount} 个用户`)}
+                >
+                    查看
+                </Button>,
+                <Button
                     key="edit"
                     type="link"
                     size="small"
                     icon={<EditOutlined />}
                     onClick={() => openEditModal(record)}
+                    disabled
+                    title="当前版本不支持直接编辑用户组"
                 >
                     编辑
                 </Button>,
@@ -175,6 +171,8 @@ const UserGroups: React.FC = () => {
                     size="small"
                     danger
                     onClick={() => deleteUserGroup(record)}
+                    disabled
+                    title="当前版本不支持删除用户组"
                 >
                     删除
                 </Button>,
@@ -184,6 +182,22 @@ const UserGroups: React.FC = () => {
 
     return (
         <div>
+            {/* 功能说明 */}
+            <Alert
+                message="用户组管理说明"
+                description={
+                    <div>
+                        <p>• 用户组数据从用户管理中自动统计生成</p>
+                        <p>• 要修改用户的用户组，请前往<strong>用户管理</strong>页面编辑具体用户</p>
+                        <p>• 当前版本不支持独立的用户组创建/编辑/删除操作</p>
+                        <p>• 用户组会根据用户设置自动更新统计信息</p>
+                    </div>
+                }
+                type="info"
+                showIcon
+                style={{ marginBottom: 16 }}
+            />
+
             {/* 统一的用户组Modal */}
             <ModalForm
                 title={modalMode === 'create' ? '新增用户组' : '编辑用户组'}
@@ -235,6 +249,8 @@ const UserGroups: React.FC = () => {
                         icon={<PlusOutlined />}
                         onClick={openCreateModal}
                         type="primary"
+                        disabled
+                        title="当前版本不支持独立创建用户组"
                     >
                         新建用户组
                     </Button>,
