@@ -1,7 +1,16 @@
 // 认证相关的API服务
-import { httpClient, ApiResponse } from '@/utils/http-client';
+import { httpClient } from '@/utils/http-client';
+import { LoginType } from '@/types/generated/api/users/user_auth';
+import type { LoginRequest as ProtoLoginRequest, LoginResponse as ProtoLoginResponse } from '@/types/generated/api/users/user_auth';
 
 export interface LoginRequest {
+  loginType?: LoginType;
+  identifier: string;
+  password: string;
+}
+
+// 为了保持向后兼容，添加一个简化的接口
+export interface LegacyLoginRequest {
   username: string;
   password: string;
 }
@@ -52,9 +61,24 @@ class AuthService {
   /**
    * 用户登录
    */
-  async login(credentials: LoginRequest): Promise<LoginResponse> {
+  async login(credentials: LoginRequest | LegacyLoginRequest): Promise<LoginResponse> {
     try {
-      const response = await httpClient.post<LoginResponse['data']>(`${this.endpoint}/login`, credentials);
+      let requestData: LoginRequest;
+      
+      // 检查是否是旧格式的请求
+      if ('username' in credentials) {
+        // 转换旧格式为新格式
+        const isEmail = credentials.username.includes('@');
+        requestData = {
+          loginType: isEmail ? LoginType.LOGIN_TYPE_EMAIL : LoginType.LOGIN_TYPE_USERNAME,
+          identifier: credentials.username,
+          password: credentials.password
+        };
+      } else {
+        requestData = credentials;
+      }
+
+      const response = await httpClient.post<LoginResponse['data']>(`${this.endpoint}/login`, requestData);
       
       return {
         base: {
