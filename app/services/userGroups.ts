@@ -37,7 +37,7 @@ export interface UserGroupListParams {
 export type UpdateUserGroupData = Partial<CreateUserGroupData>;
 
 class UserGroupsService {
-  private readonly endpoint = '/config/user-groups';
+  private readonly endpoint = '/v1/user-groups';
 
   /**
    * 获取用户组列表

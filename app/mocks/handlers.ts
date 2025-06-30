@@ -30,7 +30,7 @@ export const handlers = [
   ...websiteConfigHandlers,  // 网站配置 (/api/config/website)
   ...usersHandlers,          // 用户管理 (https://api.example.com/users)
   ...serverHandlers,         // 服务器管理 (https://api.example.com/servers)
-  ...userGroupHandlers,      // 用户组管理 (https://api.example.com/config/user-groups)
+  ...userGroupHandlers,      // 用户组管理 (/v1/user-groups)
   ...userInfoHandlers,       // 用户信息 (/v1/profile)
   ...dnsConfigHandlers,      // DNS配置管理 (/api/v1/dns/configs)
   ...miscHandlers,           // 其他杂项

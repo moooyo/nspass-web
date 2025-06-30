@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Button, Modal } from 'antd';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { Button } from 'antd';
 import { message } from '@/utils/message';
 import {
     ProTable,
@@ -7,100 +7,137 @@ import {
     ProFormText,
     QueryFilter,
     ModalForm,
-    ProFormDigit,
 } from '@ant-design/pro-components';
-import { PlusOutlined, EditOutlined } from '@ant-design/icons';
-
-type UserGroupItem = {
-    id: React.Key;
-    groupId: string;
-    groupName: string;
-    userCount: number;
-};
-
-const defaultData: UserGroupItem[] = [
-    {
-        id: 1,
-        groupId: 'admin',
-        groupName: '管理员组',
-        userCount: 3,
-    },
-    {
-        id: 2,
-        groupId: 'user',
-        groupName: '普通用户组',
-        userCount: 42,
-    },
-    {
-        id: 3,
-        groupId: 'guest',
-        groupName: '访客组',
-        userCount: 15,
-    },
-];
+import { PlusOutlined, EditOutlined, ReloadOutlined } from '@ant-design/icons';
+import { 
+    userGroupsService, 
+    UserGroupItem, 
+    CreateUserGroupData, 
+    UserGroupListParams 
+} from '../../../services/userGroups';
 
 const UserGroups: React.FC = () => {
-    const [dataSource, setDataSource] = useState<UserGroupItem[]>(defaultData);
+    const [dataSource, setDataSource] = useState<UserGroupItem[]>([]);
+    const [loading, setLoading] = useState<boolean>(false);
     const [modalVisible, setModalVisible] = useState<boolean>(false);
     const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
     const [currentRecord, setCurrentRecord] = useState<UserGroupItem | null>(null);
+    const [pagination, setPagination] = useState({
+        current: 1,
+        pageSize: 10,
+        total: 0,
+    });
+
+    // 加载用户组列表
+    const loadUserGroups = useCallback(async (params?: UserGroupListParams) => {
+        try {
+            setLoading(true);
+            const requestParams = {
+                page: params?.page || pagination.current,
+                pageSize: params?.pageSize || pagination.pageSize,
+                ...params,
+            };
+            
+            const response = await userGroupsService.getUserGroups(requestParams);
+            
+            if (response.success && response.data) {
+                setDataSource(response.data);
+                if (response.pagination) {
+                    setPagination({
+                        current: response.pagination.current,
+                        pageSize: response.pagination.pageSize,
+                        total: response.pagination.total,
+                    });
+                }
+            } else {
+                message.error(response.message || '加载用户组列表失败');
+            }
+        } catch (error) {
+            console.error('加载用户组列表失败:', error);
+            message.error('加载用户组列表失败');
+        } finally {
+            setLoading(false);
+        }
+    }, [pagination.current, pagination.pageSize]);
+
+    // 初始化加载数据
+    useEffect(() => {
+        loadUserGroups();
+    }, []);
 
     // 打开新增弹窗
-    const openCreateModal = () => {
+    const openCreateModal = useCallback(() => {
         setModalMode('create');
         setCurrentRecord(null);
         setModalVisible(true);
-    };
+    }, []);
 
     // 打开编辑弹窗
-    const openEditModal = (record: UserGroupItem) => {
+    const openEditModal = useCallback((record: UserGroupItem) => {
         setModalMode('edit');
         setCurrentRecord(record);
         setModalVisible(true);
-    };
+    }, []);
 
     // 统一处理表单提交
-    const handleModalSubmit = async (values: any) => {
+    const handleModalSubmit = useCallback(async (values: CreateUserGroupData) => {
         try {
             if (modalMode === 'create') {
-                const newGroup: UserGroupItem = {
-                    id: Date.now(),
-                    groupId: values.groupId,
-                    groupName: values.groupName,
-                    userCount: 0,
-                };
-                setDataSource([...dataSource, newGroup]);
-                message.success('用户组创建成功');
+                const response = await userGroupsService.createUserGroup(values);
+                if (response.success) {
+                    message.success('用户组创建成功');
+                    setModalVisible(false);
+                    loadUserGroups();
+                    return true;
+                } else {
+                    message.error(response.message || '用户组创建失败');
+                    return false;
+                }
             } else {
                 if (!currentRecord) return false;
                 
-                const updatedDataSource = dataSource.map(item => 
-                    item.id === currentRecord.id 
-                        ? { ...item, groupId: values.groupId, groupName: values.groupName }
-                        : item
-                );
-                setDataSource(updatedDataSource);
-                message.success('用户组更新成功');
+                const response = await userGroupsService.updateUserGroup(currentRecord.id, values);
+                if (response.success) {
+                    message.success('用户组更新成功');
+                    setModalVisible(false);
+                    loadUserGroups();
+                    return true;
+                } else {
+                    message.error(response.message || '用户组更新失败');
+                    return false;
+                }
             }
-
-            setModalVisible(false);
-            setCurrentRecord(null);
-            return true;
         } catch (error) {
             console.error('操作失败:', error);
             message.error('操作失败');
             return false;
         }
-    };
+    }, [modalMode, currentRecord, loadUserGroups]);
 
     // 删除用户组
-    const deleteUserGroup = (record: UserGroupItem) => {
-        setDataSource(dataSource.filter((item) => item.id !== record.id));
-        message.success('删除成功');
-    };
+    const deleteUserGroup = useCallback(async (record: UserGroupItem) => {
+        try {
+            const response = await userGroupsService.deleteUserGroup(record.id);
+            if (response.success) {
+                message.success('删除成功');
+                loadUserGroups();
+            } else {
+                message.error(response.message || '删除失败');
+            }
+        } catch (error) {
+            console.error('删除失败:', error);
+            message.error('删除失败');
+        }
+    }, [loadUserGroups]);
 
     // 使用 useMemo 缓存表格列配置，避免每次渲染重新创建
     const columns: ProColumns<UserGroupItem>[] = useMemo(() => [
+        {
+            title: 'ID',
+            dataIndex: 'id',
+            width: '10%',
+            search: false,
+        },
         {
             title: '用户组ID',
             dataIndex: 'groupId',
@@ -109,12 +146,13 @@ const UserGroups: React.FC = () => {
         {
             title: '用户组名称',
             dataIndex: 'groupName',
-            width: '40%',
+            width: '35%',
         },
         {
             title: '用户数量',
             dataIndex: 'userCount',
-            width: '20%',
+            width: '15%',
+            search: false,
             sorter: (a, b) => a.userCount - b.userCount,
         },
         {
@@ -163,6 +201,7 @@ const UserGroups: React.FC = () => {
                     label="用户组ID"
                     placeholder="请输入用户组ID"
                     rules={[{ required: true, message: '用户组ID为必填项' }]}
+                    disabled={modalMode === 'edit'} // 编辑时不允许修改groupId
                 />
                 <ProFormText
                     name="groupName"
@@ -177,7 +216,7 @@ const UserGroups: React.FC = () => {
                 split
                 defaultColsNumber={2}
                 onFinish={async (values) => {
-                    console.log(values);
+                    await loadUserGroups(values);
                     message.success('查询成功');
                 }}
             >
@@ -189,7 +228,7 @@ const UserGroups: React.FC = () => {
                 rowKey="id"
                 headerTitle="用户组列表"
                 scroll={{ x: 800 }}
-                loading={false}
+                loading={loading}
                 toolBarRender={() => [
                     <Button
                         key="button"
@@ -199,14 +238,31 @@ const UserGroups: React.FC = () => {
                     >
                         新建用户组
                     </Button>,
+                    <Button
+                        key="refresh"
+                        icon={<ReloadOutlined />}
+                        onClick={() => loadUserGroups()}
+                    >
+                        刷新
+                    </Button>,
                 ]}
                 columns={columns}
-                dataSource={dataSource}
+                request={async () => {
+                    return {
+                        data: dataSource,
+                        total: pagination.total,
+                        success: true,
+                    };
+                }}
                 search={false}
                 pagination={{
-                    pageSize: 10,
+                    ...pagination,
                     showSizeChanger: true,
                     showQuickJumper: true,
+                    showTotal: (total, range) => `第 ${range[0]}-${range[1]} 项，共 ${total} 项`,
+                    onChange: (page, pageSize) => {
+                        loadUserGroups({ page, pageSize });
+                    },
                 }}
             />
         </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Button, Badge, Tag, Popconfirm, Select, Modal, Typography } from 'antd';
+import { Button, Modal, Typography } from 'antd';
 import { message } from '@/utils/message';
 import {
     EditableProTable,
@@ -61,7 +61,7 @@ const DnsConfig: React.FC = () => {
                     });
                 }
             } else {
-                message.error('加载DNS配置失败');
+                message.error(response.message || '加载DNS配置失败');
             }
         } catch (error) {
             console.error('加载DNS配置失败:', error);
@@ -166,26 +166,6 @@ const DnsConfig: React.FC = () => {
             ],
         },
     ], [viewJsonConfig]);
-
-    // 优化：缓存表单提交函数
-    const handleCreateSubmit = useCallback(async (values: CreateDnsConfigData) => {
-        try {
-            const response = await dnsConfigService.createDnsConfig(values);
-            if (response.success) {
-                message.success('创建DNS配置成功');
-                setCreateModalVisible(false);
-                loadDnsConfigs();
-                return true;
-            } else {
-                message.error(response.message || '创建DNS配置失败');
-                return false;
-            }
-        } catch (error) {
-            console.error('创建DNS配置失败:', error);
-            message.error('创建DNS配置失败');
-            return false;
-        }
-    }, [loadDnsConfigs]);
 
     // 测试DNS配置
     const testDnsConfig = async (record: DnsConfigItem) => {

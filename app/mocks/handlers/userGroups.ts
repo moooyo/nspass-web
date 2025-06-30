@@ -6,7 +6,7 @@ import { mockUserGroups } from '@mock/data/userGroups';
 
 export const userGroupHandlers = [
   // 获取用户组列表
-  http.get('/config/user-groups', ({ request }) => {
+  http.get('/v1/user-groups', ({ request }) => {
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1');
     const pageSize = parseInt(url.searchParams.get('pageSize') || '10');
@@ -29,7 +29,7 @@ export const userGroupHandlers = [
   }),
   
   // 获取所有用户组（用于下拉选择）
-  http.get('/config/user-groups/all', () => {
+  http.get('/v1/user-groups/all', () => {
     const groupOptions = mockUserGroups.map(group => ({
       label: group.groupName,
       value: group.groupId
@@ -42,7 +42,7 @@ export const userGroupHandlers = [
   }),
   
   // 创建用户组
-  http.post('/config/user-groups', async ({ request }) => {
+  http.post('/v1/user-groups', async ({ request }) => {
     const groupData = await request.json() as UserGroupData;
     
     // 检查重复
@@ -69,7 +69,7 @@ export const userGroupHandlers = [
   }),
   
   // 更新用户组
-  http.put('/config/user-groups/:id', async ({ params, request }) => {
+  http.put('/v1/user-groups/:id', async ({ params, request }) => {
     const groupId = parseInt(params.id as string);
     const groupData = await request.json() as UserGroupData;
     const groupIndex = mockUserGroups.findIndex(g => g.id === groupId);
@@ -94,7 +94,7 @@ export const userGroupHandlers = [
   }),
   
   // 删除用户组
-  http.delete('/config/user-groups/:id', ({ params }) => {
+  http.delete('/v1/user-groups/:id', ({ params }) => {
     const groupId = parseInt(params.id as string);
     const groupIndex = mockUserGroups.findIndex(g => g.id === groupId);
     
@@ -114,7 +114,7 @@ export const userGroupHandlers = [
   }),
   
   // 批量更新用户组
-  http.put('/config/user-groups/batch', async ({ request }) => {
+  http.put('/v1/user-groups/batch', async ({ request }) => {
     const { ids, updateData } = await request.json() as BatchUpdateUserGroupData;
     
     let updatedCount = 0;

@@ -53,7 +53,7 @@ app/mocks/
 - 服务器重启
 - 区域管理
 
-### 用户组管理 (`https://api.example.com/config/user-groups`)
+### 用户组管理 (`/v1/user-groups`)
 - 用户组 CRUD 操作
 - 批量更新
 
