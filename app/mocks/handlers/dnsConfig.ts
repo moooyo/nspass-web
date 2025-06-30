@@ -23,7 +23,7 @@ export const dnsConfigHandlers = [
     
     if (configName) {
       filteredConfigs = filteredConfigs.filter(config => 
-        config.configName.toLowerCase().includes(configName.toLowerCase())
+        config.configName?.toLowerCase().includes(configName.toLowerCase())
       );
     }
     

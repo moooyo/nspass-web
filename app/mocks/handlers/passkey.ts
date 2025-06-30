@@ -27,7 +27,7 @@ export const passkeyHandlers = [
     const registrationOptions = generateMockRegistrationOptions();
 
     return HttpResponse.json({
-      base: {
+      result: {
         success: true,
         message: '成功获取注册选项',
       },
@@ -43,7 +43,7 @@ export const passkeyHandlers = [
       // 验证必要字段
       if (!body.credentialId || !body.publicKey || !body.attestationObject || !body.clientDataJSON) {
         return HttpResponse.json({
-          base: {
+          result: {
             success: false,
             message: '缺少必要的认证数据',
             errorCode: 'INVALID_REQUEST',
@@ -62,7 +62,7 @@ export const passkeyHandlers = [
       );
 
       return HttpResponse.json({
-        base: {
+        result: {
           success: true,
           message: 'Passkey注册成功',
         },
@@ -71,7 +71,7 @@ export const passkeyHandlers = [
 
     } catch (error) {
       return HttpResponse.json({
-        base: {
+        result: {
           success: false,
           message: passkeyErrorMessages.registrationFailed,
           errorCode: 'REGISTRATION_ERROR',
@@ -88,7 +88,7 @@ export const passkeyHandlers = [
     const authenticationOptions = generateMockAuthenticationOptions();
 
     return HttpResponse.json({
-      base: {
+      result: {
         success: true,
         message: '成功获取认证选项',
       },
@@ -104,7 +104,7 @@ export const passkeyHandlers = [
       // 验证必要字段
       if (!body.credentialId || !body.authenticatorData || !body.signature || !body.clientDataJSON) {
         return HttpResponse.json({
-          base: {
+          result: {
             success: false,
             message: '缺少必要的认证数据',
             errorCode: 'INVALID_REQUEST',
@@ -119,7 +119,7 @@ export const passkeyHandlers = [
 
       if (!credential) {
         return HttpResponse.json({
-          base: {
+          result: {
             success: false,
             message: passkeyErrorMessages.credentialNotFound,
             errorCode: 'CREDENTIAL_NOT_FOUND',
@@ -133,7 +133,7 @@ export const passkeyHandlers = [
       // 模拟小概率认证失败（5%失败率）
       if (Math.random() < 0.05) {
         return HttpResponse.json({
-          base: {
+          result: {
             success: false,
             message: passkeyErrorMessages.authenticationFailed,
             errorCode: 'AUTHENTICATION_FAILED',
@@ -154,7 +154,7 @@ export const passkeyHandlers = [
       }
 
       return HttpResponse.json({
-        base: {
+        result: {
           success: true,
           message: 'Passkey认证成功',
         },
@@ -163,7 +163,7 @@ export const passkeyHandlers = [
 
     } catch (error) {
       return HttpResponse.json({
-        base: {
+        result: {
           success: false,
           message: passkeyErrorMessages.authenticationFailed,
           errorCode: 'AUTHENTICATION_ERROR',
@@ -192,7 +192,7 @@ export const passkeyHandlers = [
     const paginatedCredentials = userCredentials.slice(startIndex, endIndex);
 
     return HttpResponse.json({
-      base: {
+      result: {
         success: true,
         message: '成功获取Passkey列表',
       },
@@ -214,7 +214,7 @@ export const passkeyHandlers = [
 
     if (!credentialId || typeof credentialId !== 'string') {
       return HttpResponse.json({
-        base: {
+        result: {
           success: false,
           message: '无效的凭据ID',
           errorCode: 'INVALID_CREDENTIAL_ID',
@@ -229,7 +229,7 @@ export const passkeyHandlers = [
 
     if (credentialIndex === -1) {
       return HttpResponse.json({
-        base: {
+        result: {
           success: false,
           message: passkeyErrorMessages.credentialNotFound,
           errorCode: 'CREDENTIAL_NOT_FOUND',
@@ -244,7 +244,7 @@ export const passkeyHandlers = [
     mockPasskeyCredentials.splice(credentialIndex, 1);
 
     return HttpResponse.json({
-      base: {
+      result: {
         success: true,
         message: 'Passkey凭据删除成功',
       },
@@ -257,7 +257,7 @@ export const passkeyHandlers = [
 
     if (!credentialId || typeof credentialId !== 'string') {
       return HttpResponse.json({
-        base: {
+        result: {
           success: false,
           message: '无效的凭据ID',
           errorCode: 'INVALID_CREDENTIAL_ID',
@@ -270,7 +270,7 @@ export const passkeyHandlers = [
       
       if (!body.newName || body.newName.trim().length === 0) {
         return HttpResponse.json({
-          base: {
+          result: {
             success: false,
             message: '凭据名称不能为空',
             errorCode: 'INVALID_NAME',
@@ -285,7 +285,7 @@ export const passkeyHandlers = [
 
       if (credentialIndex === -1) {
         return HttpResponse.json({
-          base: {
+          result: {
             success: false,
             message: passkeyErrorMessages.credentialNotFound,
             errorCode: 'CREDENTIAL_NOT_FOUND',
@@ -303,7 +303,7 @@ export const passkeyHandlers = [
       };
 
       return HttpResponse.json({
-        base: {
+        result: {
           success: true,
           message: 'Passkey凭据重命名成功',
         },
@@ -312,7 +312,7 @@ export const passkeyHandlers = [
 
     } catch (error) {
       return HttpResponse.json({
-        base: {
+        result: {
           success: false,
           message: '重命名失败',
           errorCode: 'RENAME_ERROR',

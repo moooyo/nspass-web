@@ -20,17 +20,17 @@ import type {
 } from '@/types/generated/api/servers/server_management';
 import type { ApiResponse as CommonApiResponse } from '@/types/generated/common';
 
-// 将httpClient的ApiResponse转换为proto响应格式的辅助函数
-function toProtoResponse<T>(response: ApiResponse<T>): { base: CommonApiResponse; data?: T } {
-  return {
-    base: {
-      success: response.success,
-      message: response.message,
-      errorCode: response.success ? undefined : 'API_ERROR'
-    },
-    data: response.data
-  };
-}
+// 注释掉不再使用的toProtoResponse函数
+// function toProtoResponse<T>(response: ApiResponse<T>): { base: CommonApiResponse; data?: T } {
+//   return {
+//     base: {
+//       success: response.success,
+//       message: response.message,
+//       errorCode: response.success ? undefined : 'API_ERROR'
+//     },
+//     data: response.data
+//   };
+// }
 
 class ServerManagementService {
   private readonly endpoint = '/v1/servers';
@@ -38,90 +38,59 @@ class ServerManagementService {
   /**
    * 获取服务器列表
    */
-  async getServers(request: GetServersRequest = {}): Promise<GetServersResponse> {
+  async getServers(request: GetServersRequest = {}): Promise<ApiResponse<ServerItem[]>> {
     const queryParams: Record<string, string> = {};
     
     if (request.page) queryParams.page = request.page.toString();
     if (request.pageSize) queryParams.pageSize = request.pageSize.toString();
     if (request.name) queryParams.name = request.name;
     if (request.status) queryParams.status = request.status.toString();
-    if (request.region) queryParams.region = request.region;
+    // if (request.region) queryParams.region = request.region; // region属性在类型定义中不存在
 
-    const response = await httpClient.get<ServerItem[]>(this.endpoint, queryParams);
-    return {
-      base: {
-        success: response.success,
-        message: response.message,
-        errorCode: response.success ? undefined : 'API_ERROR'
-      },
-      data: response.data || []
-    };
+    return httpClient.get<ServerItem[]>(this.endpoint, queryParams);
   }
 
   /**
    * 创建服务器
    */
-  async createServer(request: CreateServerRequest): Promise<CreateServerResponse> {
-    const response = await httpClient.post<ServerItem>(this.endpoint, request);
-    return toProtoResponse(response);
+  async createServer(request: CreateServerRequest): Promise<ApiResponse<ServerItem>> {
+    return httpClient.post<ServerItem>(this.endpoint, request);
   }
 
   /**
    * 获取服务器详情
    */
-  async getServerById(request: GetServerByIdRequest): Promise<GetServerByIdResponse> {
-    const response = await httpClient.get<ServerItem>(`${this.endpoint}/${request.id}`);
-    return toProtoResponse(response);
+  async getServerById(request: GetServerByIdRequest): Promise<ApiResponse<ServerItem>> {
+    return httpClient.get<ServerItem>(`${this.endpoint}/${request.id}`);
   }
 
   /**
    * 更新服务器
    */
-  async updateServer(request: UpdateServerByIdRequest): Promise<UpdateServerResponse> {
-    const response = await httpClient.put<ServerItem>(`${this.endpoint}/${request.id}`, request.data);
-    return toProtoResponse(response);
+  async updateServerById(request: UpdateServerByIdRequest): Promise<ApiResponse<ServerItem>> {
+    const { id, ...updateData } = request;
+    return httpClient.put<ServerItem>(`${this.endpoint}/${id}`, updateData);
   }
 
   /**
    * 删除服务器
    */
-  async deleteServer(request: DeleteServerRequest): Promise<DeleteServerResponse> {
-    const response = await httpClient.delete<void>(`${this.endpoint}/${request.id}`);
-    return {
-      base: {
-        success: response.success,
-        message: response.message,
-        errorCode: response.success ? undefined : 'API_ERROR'
-      }
-    };
+  async deleteServer(request: DeleteServerRequest): Promise<ApiResponse<void>> {
+    return httpClient.delete<void>(`${this.endpoint}/${request.id}`);
   }
 
   /**
    * 批量删除服务器
    */
-  async batchDeleteServers(request: BatchDeleteServersRequest): Promise<BatchDeleteServersResponse> {
-    const response = await httpClient.post<void>(`${this.endpoint}/batch-delete`, { ids: request.ids });
-    return {
-      base: {
-        success: response.success,
-        message: response.message,
-        errorCode: response.success ? undefined : 'API_ERROR'
-      }
-    };
+  async batchDeleteServers(request: BatchDeleteServersRequest): Promise<ApiResponse<void>> {
+    return httpClient.post<void>(`${this.endpoint}/batch-delete`, { ids: request.ids });
   }
 
   /**
    * 重启服务器
    */
-  async restartServer(request: RestartServerRequest): Promise<RestartServerResponse> {
-    const response = await httpClient.post<void>(`${this.endpoint}/${request.id}/restart`);
-    return {
-      base: {
-        success: response.success,
-        message: response.message,
-        errorCode: response.success ? undefined : 'API_ERROR'
-      }
-    };
+  async restartServer(request: RestartServerRequest): Promise<ApiResponse<void>> {
+    return httpClient.post<void>(`${this.endpoint}/${request.id}/restart`);
   }
 }
 

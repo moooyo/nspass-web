@@ -33,7 +33,7 @@ export const userManagementHandlers = [
   // 获取当前用户信息
   http.get('/api/v1/user/profile', () => {
     return HttpResponse.json({
-      base: { success: true, message: '获取用户信息成功' },
+      result: { success: true, message: '获取用户信息成功' },
       data: mockUserProfile
     });
   }),
@@ -44,7 +44,7 @@ export const userManagementHandlers = [
     Object.assign(mockUserProfile, body);
 
     return HttpResponse.json({
-      base: { success: true, message: '用户信息更新成功' },
+      result: { success: true, message: '用户信息更新成功' },
       data: mockUserProfile
     });
   }),
@@ -52,7 +52,7 @@ export const userManagementHandlers = [
   // 获取流量统计
   http.get('/api/v1/user/traffic', () => {
     return HttpResponse.json({
-      base: { success: true, message: '获取流量统计成功' },
+      result: { success: true, message: '获取流量统计成功' },
       data: mockTrafficStats
     });
   })

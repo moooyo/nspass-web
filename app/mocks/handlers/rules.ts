@@ -85,13 +85,13 @@ export const rulesHandlers = [
     // 按名称筛选
     if (name) {
       filteredRules = filteredRules.filter(rule => 
-        rule.name.toLowerCase().includes(name.toLowerCase())
+        rule.name?.toLowerCase().includes(name.toLowerCase())
       );
     }
 
     // 按状态筛选
     if (status) {
-      const statusValue = parseInt(status);
+      const statusValue = parseInt(status) as unknown as RuleStatus;
       filteredRules = filteredRules.filter(rule => rule.status === statusValue);
     }
 
@@ -101,11 +101,14 @@ export const rulesHandlers = [
     const paginatedRules = filteredRules.slice(start, end);
 
     return HttpResponse.json({
-      base: { success: true, message: '获取规则列表成功' },
+      result: { success: true, message: '获取规则列表成功' },
       data: paginatedRules,
-      total: filteredRules.length,
-      page,
-      pageSize
+      pagination: {
+        total: filteredRules.length,
+        page,
+        pageSize,
+        totalPages: Math.ceil(filteredRules.length / pageSize)
+      }
     });
   }),
 
@@ -116,7 +119,7 @@ export const rulesHandlers = [
     // 验证必填字段
     if (!body.name || !body.sourcePort || !body.targetAddress || !body.targetPort || !body.serverId) {
       return HttpResponse.json({
-        base: { 
+        result: { 
           success: false, 
           message: '缺少必填字段',
           errorCode: 'INVALID_INPUT'
@@ -128,7 +131,7 @@ export const rulesHandlers = [
     const existingRule = mockRules.find(rule => rule.sourcePort === body.sourcePort);
     if (existingRule) {
       return HttpResponse.json({
-        base: { 
+        result: { 
           success: false, 
           message: '源端口已被使用',
           errorCode: 'PORT_CONFLICT'
@@ -158,7 +161,7 @@ export const rulesHandlers = [
     mockRules.push(newRule);
 
     return HttpResponse.json({
-      base: { success: true, message: '规则创建成功' },
+      result: { success: true, message: '规则创建成功' },
       data: newRule
     });
   }),
@@ -170,7 +173,7 @@ export const rulesHandlers = [
 
     if (!rule) {
       return HttpResponse.json({
-        base: { 
+        result: { 
           success: false, 
           message: '规则不存在',
           errorCode: 'RULE_NOT_FOUND'
@@ -179,7 +182,7 @@ export const rulesHandlers = [
     }
 
     return HttpResponse.json({
-      base: { success: true, message: '获取规则成功' },
+      result: { success: true, message: '获取规则成功' },
       data: rule
     });
   }),
@@ -192,7 +195,7 @@ export const rulesHandlers = [
 
     if (ruleIndex === -1) {
       return HttpResponse.json({
-        base: { 
+        result: { 
           success: false, 
           message: '规则不存在',
           errorCode: 'RULE_NOT_FOUND'
@@ -208,7 +211,7 @@ export const rulesHandlers = [
     });
 
     return HttpResponse.json({
-      base: { success: true, message: '规则更新成功' },
+      result: { success: true, message: '规则更新成功' },
       data: rule
     });
   }),
@@ -220,7 +223,7 @@ export const rulesHandlers = [
 
     if (ruleIndex === -1) {
       return HttpResponse.json({
-        base: { 
+        result: { 
           success: false, 
           message: '规则不存在',
           errorCode: 'RULE_NOT_FOUND'
@@ -231,7 +234,7 @@ export const rulesHandlers = [
     mockRules.splice(ruleIndex, 1);
 
     return HttpResponse.json({
-      base: { success: true, message: '规则删除成功' }
+      result: { success: true, message: '规则删除成功' }
     });
   }),
 
@@ -249,7 +252,7 @@ export const rulesHandlers = [
     });
 
     return HttpResponse.json({
-      base: { success: true, message: `成功删除 ${deletedCount} 个规则` },
+      result: { success: true, message: `成功删除 ${deletedCount} 个规则` },
       deletedCount
     });
   }),
@@ -262,7 +265,7 @@ export const rulesHandlers = [
 
     if (!rule) {
       return HttpResponse.json({
-        base: { 
+        result: { 
           success: false, 
           message: '规则不存在',
           errorCode: 'RULE_NOT_FOUND'
@@ -274,7 +277,7 @@ export const rulesHandlers = [
     rule.updateTime = new Date().toISOString();
 
     return HttpResponse.json({
-      base: { success: true, message: `规则已${body.enabled ? '启用' : '禁用'}` },
+      result: { success: true, message: `规则已${body.enabled ? '启用' : '禁用'}` },
       data: rule
     });
   }),
@@ -286,7 +289,7 @@ export const rulesHandlers = [
 
     if (!rule) {
       return HttpResponse.json({
-        base: { 
+        result: { 
           success: false, 
           message: '规则不存在',
           errorCode: 'RULE_NOT_FOUND'
@@ -307,14 +310,14 @@ export const rulesHandlers = [
     const trafficStats: RuleTrafficStats = {
       ruleId: rule.id,
       ruleName: rule.name,
-      uploadTraffic: rule.uploadTraffic,
-      downloadTraffic: rule.downloadTraffic,
-      totalTraffic: rule.uploadTraffic + rule.downloadTraffic,
+      uploadTraffic: rule.uploadTraffic || 0,
+      downloadTraffic: rule.downloadTraffic || 0,
+      totalTraffic: (rule.uploadTraffic || 0) + (rule.downloadTraffic || 0),
       dailyStats
     };
 
     return HttpResponse.json({
-      base: { success: true, message: '获取流量统计成功' },
+      result: { success: true, message: '获取流量统计成功' },
       data: trafficStats
     });
   })

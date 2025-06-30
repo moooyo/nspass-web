@@ -1,15 +1,62 @@
 import { http, HttpResponse } from 'msw';
-import type {
-  UserProfile,
-  UpdateUserInfoRequest,
-  ChangePasswordRequest,
-  DeleteAccountRequest,
-  UploadAvatarData,
-  TrafficStats,
-  LoginHistoryItem,
-  ActivityLogItem,
-  ToggleTwoFactorAuthRequest
-} from '@/types/generated/api/users/user_management';
+
+// Local type definitions for mock
+interface UserProfile {
+  id: string;
+  username: string;
+  email: string;
+  avatar: string;
+  createdAt: string;
+  lastLoginAt: string;
+}
+
+interface UpdateUserInfoRequest {
+  username?: string;
+  email?: string;
+}
+
+interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+interface DeleteAccountRequest {
+  password: string;
+}
+
+interface UploadAvatarData {
+  avatar: string;
+}
+
+interface TrafficStats {
+  uploadTraffic: number;
+  downloadTraffic: number;
+  totalTraffic: number;
+  trafficLimit: number;
+  resetDate: string;
+}
+
+interface LoginHistoryItem {
+  id: string;
+  ip: string;
+  userAgent: string;
+  location: string;
+  loginTime: string;
+  success: boolean;
+}
+
+interface ActivityLogItem {
+  id: string;
+  action: string;
+  description: string;
+  ip: string;
+  timestamp: string;
+}
+
+interface ToggleTwoFactorAuthRequest {
+  enabled: boolean;
+  password: string;
+}
 
 // 模拟用户数据
 const mockUserProfile: UserProfile = {
@@ -84,7 +131,7 @@ export const userInfoHandlers = [
   // 获取当前用户信息
   http.get('/api/v1/user/profile', () => {
     return HttpResponse.json({
-      base: { success: true, message: '获取用户信息成功' },
+      result: { success: true, message: '获取用户信息成功' },
       data: mockUserProfile
     });
   }),
@@ -97,7 +144,7 @@ export const userInfoHandlers = [
     Object.assign(mockUserProfile, body);
 
     return HttpResponse.json({
-      base: { success: true, message: '用户信息更新成功' },
+      result: { success: true, message: '用户信息更新成功' },
       data: mockUserProfile
     });
   }),
@@ -109,7 +156,7 @@ export const userInfoHandlers = [
     // 模拟密码验证
     if (body.currentPassword !== 'oldpassword') {
       return HttpResponse.json({
-        base: { 
+        result: { 
           success: false, 
           message: '当前密码错误',
           errorCode: 'INVALID_PASSWORD'
@@ -118,7 +165,7 @@ export const userInfoHandlers = [
     }
 
     return HttpResponse.json({
-      base: { success: true, message: '密码修改成功' }
+      result: { success: true, message: '密码修改成功' }
     });
   }),
 
@@ -129,7 +176,7 @@ export const userInfoHandlers = [
     // 模拟密码验证
     if (body.password !== 'password123') {
       return HttpResponse.json({
-        base: { 
+        result: { 
           success: false, 
           message: '密码错误',
           errorCode: 'INVALID_PASSWORD'
@@ -138,7 +185,7 @@ export const userInfoHandlers = [
     }
 
     return HttpResponse.json({
-      base: { success: true, message: '账户删除成功' }
+      result: { success: true, message: '账户删除成功' }
     });
   }),
 
@@ -148,7 +195,7 @@ export const userInfoHandlers = [
 
     if (!body.avatar) {
       return HttpResponse.json({
-        base: { 
+        result: { 
           success: false, 
           message: '头像数据不能为空',
           errorCode: 'INVALID_INPUT'
@@ -160,7 +207,7 @@ export const userInfoHandlers = [
     mockUserProfile.avatar = avatarUrl;
 
     return HttpResponse.json({
-      base: { success: true, message: '头像上传成功' },
+      result: { success: true, message: '头像上传成功' },
       data: { avatarUrl }
     });
   }),
@@ -168,7 +215,7 @@ export const userInfoHandlers = [
   // 获取流量统计
   http.get('/api/v1/user/traffic', () => {
     return HttpResponse.json({
-      base: { success: true, message: '获取流量统计成功' },
+      result: { success: true, message: '获取流量统计成功' },
       data: mockTrafficStats
     });
   }),
@@ -181,7 +228,7 @@ export const userInfoHandlers = [
     mockTrafficStats.resetDate = new Date().toISOString();
 
     return HttpResponse.json({
-      base: { success: true, message: '流量重置成功' }
+      result: { success: true, message: '流量重置成功' }
     });
   }),
 
@@ -196,9 +243,14 @@ export const userInfoHandlers = [
     const paginatedHistory = mockLoginHistory.slice(start, end);
 
     return HttpResponse.json({
-      base: { success: true, message: '获取登录历史成功' },
+      result: { success: true, message: '获取登录历史成功' },
       data: paginatedHistory,
-      total: mockLoginHistory.length
+      pagination: {
+        total: mockLoginHistory.length,
+        page,
+        pageSize,
+        totalPages: Math.ceil(mockLoginHistory.length / pageSize)
+      }
     });
   }),
 
@@ -213,9 +265,14 @@ export const userInfoHandlers = [
     const paginatedLogs = mockActivityLogs.slice(start, end);
 
     return HttpResponse.json({
-      base: { success: true, message: '获取活动日志成功' },
+      result: { success: true, message: '获取活动日志成功' },
       data: paginatedLogs,
-      total: mockActivityLogs.length
+      pagination: {
+        total: mockActivityLogs.length,
+        page,
+        pageSize,
+        totalPages: Math.ceil(mockActivityLogs.length / pageSize)
+      }
     });
   }),
 
@@ -226,7 +283,7 @@ export const userInfoHandlers = [
     // 模拟密码验证
     if (body.password !== 'password123') {
       return HttpResponse.json({
-        base: { 
+        result: { 
           success: false, 
           message: '密码错误',
           errorCode: 'INVALID_PASSWORD'
@@ -244,7 +301,7 @@ export const userInfoHandlers = [
     }
 
     return HttpResponse.json({
-      base: { success: true, message: `二步验证已${body.enabled ? '启用' : '禁用'}` },
+      result: { success: true, message: `二步验证已${body.enabled ? '启用' : '禁用'}` },
       data: responseData
     });
   })

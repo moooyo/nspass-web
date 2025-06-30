@@ -42,121 +42,110 @@ import type {
 } from '@/types/generated/api/users/user_account';
 import type { ApiResponse as CommonApiResponse } from '@/types/generated/common';
 
-// 将httpClient的ApiResponse转换为proto响应格式的辅助函数
-function toProtoResponse<T>(response: ApiResponse<T>): { base?: CommonApiResponse; data?: T } {
-  return {
-    base: {
-      success: response.success,
-      message: response.message,
-      errorCode: response.success ? undefined : 'API_ERROR'
-    },
-    data: response.data
-  };
-}
+// 注释掉不再使用的toProtoResponse函数
+// function toProtoResponse<T>(response: ApiResponse<T>): { base?: CommonApiResponse; data?: T } {
+//   return {
+//     base: {
+//       success: response.success,
+//       message: response.message,
+//       errorCode: response.success ? undefined : 'API_ERROR'
+//     },
+//     data: response.data
+//   };
+// }
 
 class UserInfoService {
-  private readonly endpoint = '/v1/users';
+  private readonly endpoint = '/v1/user';
 
   /**
    * 获取当前用户信息
    */
-  async getCurrentUserInfo(): Promise<GetCurrentUserInfoResponse> {
-    const response = await httpClient.get<UserInfo>(this.endpoint);
-    return toProtoResponse(response);
+  async getCurrentUserInfo(): Promise<ApiResponse<UserInfo>> {
+    return httpClient.get<UserInfo>(`${this.endpoint}/profile`);
   }
 
   /**
    * 更新当前用户信息
    */
-  async updateCurrentUserInfo(userData: UpdateUserInfoRequest): Promise<UpdateCurrentUserInfoResponse> {
-    const response = await httpClient.put<UserInfo>(this.endpoint, userData);
-    return toProtoResponse(response);
+  async updateCurrentUserInfo(request: UpdateUserInfoRequest): Promise<ApiResponse<UserInfo>> {
+    return httpClient.put<UserInfo>(`${this.endpoint}/profile`, request);
   }
 
   /**
-   * 修改用户密码
+   * 修改密码
    */
-  async changePassword(passwordData: ChangePasswordRequest): Promise<ChangePasswordResponse> {
-    const response = await httpClient.put<void>(`${this.endpoint}/password`, passwordData);
-    return toProtoResponse(response);
+  async changePassword(request: ChangePasswordRequest): Promise<ApiResponse<void>> {
+    return httpClient.post<void>(`${this.endpoint}/password`, request);
+  }
+
+  /**
+   * 删除账户
+   */
+  async deleteAccount(request: DeleteAccountRequest): Promise<ApiResponse<void>> {
+    return httpClient.post<void>(`${this.endpoint}/account/delete`, request);
   }
 
   /**
    * 上传用户头像
    */
-  async uploadAvatar(file: File): Promise<UploadAvatarResponse> {
+  async uploadAvatar(file: File): Promise<ApiResponse<UploadAvatarResponse['data']>> {
     const formData = new FormData();
     formData.append('avatar', file);
     
     // 使用httpClient处理文件上传
-    const response = await httpClient.post<UploadAvatarResponse['data']>(`${this.endpoint}/avatar`, formData);
-    return toProtoResponse(response);
+    return httpClient.post<UploadAvatarResponse['data']>(`${this.endpoint}/avatar`, formData);
   }
 
   /**
-   * 获取用户流量使用统计
+   * 获取流量统计
    */
-  async getTrafficStats(): Promise<GetTrafficStatsResponse> {
-    const response = await httpClient.get<TrafficStats>(`${this.endpoint}/traffic-stats`);
-    return toProtoResponse(response);
+  async getTrafficStats(): Promise<ApiResponse<TrafficStats>> {
+    return httpClient.get<TrafficStats>(`${this.endpoint}/traffic`);
+  }
+
+  /**
+   * 重置流量
+   */
+  async resetTraffic(): Promise<ApiResponse<void>> {
+    return httpClient.post<void>(`${this.endpoint}/traffic/reset`);
   }
 
   /**
    * 获取用户登录历史
    */
-  async getLoginHistory(params: GetLoginHistoryRequest = {}): Promise<GetLoginHistoryResponse> {
+  async getLoginHistory(params: GetLoginHistoryRequest = {}): Promise<ApiResponse<LoginHistoryItem[]>> {
     const queryParams: Record<string, string> = {};
     
     if (params.page) queryParams.page = params.page.toString();
     if (params.pageSize) queryParams.pageSize = params.pageSize.toString();
 
-    const response = await httpClient.get<LoginHistoryItem[]>(`${this.endpoint}/login-history`, queryParams);
-    return toProtoResponse(response);
+    return httpClient.get<LoginHistoryItem[]>(`${this.endpoint}/login-history`, queryParams);
   }
 
   /**
-   * 获取用户活动日志
+   * 获取活动日志
    */
-  async getActivityLogs(params: GetActivityLogsRequest = {}): Promise<GetActivityLogsResponse> {
+  async getActivityLogs(params: GetActivityLogsRequest = {}): Promise<ApiResponse<ActivityLogItem[]>> {
     const queryParams: Record<string, string> = {};
     
     if (params.page) queryParams.page = params.page.toString();
     if (params.pageSize) queryParams.pageSize = params.pageSize.toString();
 
-    const response = await httpClient.get<ActivityLogItem[]>(`${this.endpoint}/activity-logs`, queryParams);
-    return toProtoResponse(response);
-  }
-
-  /**
-   * 重置用户流量
-   */
-  async resetTraffic(): Promise<ResetTrafficResponse> {
-    const response = await httpClient.post<void>(`${this.endpoint}/reset-traffic`);
-    return toProtoResponse(response);
+    return httpClient.get<ActivityLogItem[]>(`${this.endpoint}/activity`, queryParams);
   }
 
   /**
    * 启用/禁用二步验证
    */
-  async toggleTwoFactorAuth(params: ToggleTwoFactorAuthRequest): Promise<ToggleTwoFactorAuthResponse> {
-    const response = await httpClient.put<TwoFactorAuthData>(`${this.endpoint}/2fa`, params);
-    return toProtoResponse(response);
+  async toggleTwoFactorAuth(params: ToggleTwoFactorAuthRequest): Promise<ApiResponse<TwoFactorAuthData>> {
+    return httpClient.put<TwoFactorAuthData>(`${this.endpoint}/2fa`, params);
   }
 
   /**
    * 验证二步验证码
    */
-  async verifyTwoFactorAuth(params: VerifyTwoFactorAuthRequest): Promise<VerifyTwoFactorAuthResponse> {
-    const response = await httpClient.post<VerifyTwoFactorAuthData>(`${this.endpoint}/2fa/verify`, params);
-    return toProtoResponse(response);
-  }
-
-  /**
-   * 注销账户
-   */
-  async deleteAccount(params: DeleteAccountRequest): Promise<DeleteAccountResponse> {
-    const response = await httpClient.post<void>(`${this.endpoint}/delete-account`, params);
-    return toProtoResponse(response);
+  async verifyTwoFactorAuth(params: VerifyTwoFactorAuthRequest): Promise<ApiResponse<VerifyTwoFactorAuthData>> {
+    return httpClient.post<VerifyTwoFactorAuthData>(`${this.endpoint}/2fa/verify`, params);
   }
 }
 

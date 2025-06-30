@@ -35,17 +35,7 @@ import type {
 } from '@/types/generated/api/dashboard/dashboard_service';
 import type { ApiResponse as CommonApiResponse } from '@/types/generated/common';
 
-// 将httpClient的ApiResponse转换为proto响应格式的辅助函数
-function toProtoResponse<T>(response: ApiResponse<T>): { base: CommonApiResponse; data?: T } {
-  return {
-    base: {
-      success: response.success,
-      message: response.message,
-      errorCode: response.success ? undefined : 'API_ERROR'
-    },
-    data: response.data
-  };
-}
+
 
 class DashboardService {
   private readonly endpoint = '/v1/dashboard';
@@ -53,179 +43,111 @@ class DashboardService {
   /**
    * 获取系统概览数据
    */
-  async getSystemOverview(): Promise<GetSystemOverviewResponse> {
-    const response = await httpClient.get<SystemOverview>(`${this.endpoint}/overview`);
-    return toProtoResponse(response);
+  async getSystemOverview(): Promise<ApiResponse<SystemOverview>> {
+    return httpClient.get<SystemOverview>(`${this.endpoint}/overview`);
   }
 
   /**
    * 获取系统健康状态
    */
-  async getSystemHealth(): Promise<GetSystemHealthResponse> {
-    const response = await httpClient.get<SystemHealth>(`${this.endpoint}/health`);
-    return toProtoResponse(response);
+  async getSystemHealth(): Promise<ApiResponse<SystemHealth>> {
+    return httpClient.get<SystemHealth>(`${this.endpoint}/health`);
   }
 
   /**
    * 获取流量趋势数据
    */
-  async getTrafficTrend(params: GetTrafficTrendRequest = {}): Promise<GetTrafficTrendResponse> {
+  async getTrafficTrend(params: GetTrafficTrendRequest = {}): Promise<ApiResponse<TrafficTrendItem[]>> {
     const queryParams: Record<string, string> = {};
     
     if (params.days) queryParams.days = params.days.toString();
     if (params.startDate) queryParams.startDate = params.startDate;
     if (params.endDate) queryParams.endDate = params.endDate;
 
-    const response = await httpClient.get<TrafficTrendItem[]>(`${this.endpoint}/traffic-trend`, queryParams);
-    return {
-      base: {
-        success: response.success,
-        message: response.message,
-        errorCode: response.success ? undefined : 'API_ERROR'
-      },
-      data: response.data || []
-    };
+    return httpClient.get<TrafficTrendItem[]>(`${this.endpoint}/traffic-trend`, queryParams);
   }
 
   /**
    * 获取地理流量分布
    */
-  async getTrafficByRegion(): Promise<GetTrafficByRegionResponse> {
-    const response = await httpClient.get<TrafficByRegion[]>(`${this.endpoint}/traffic-by-region`);
-    return {
-      base: {
-        success: response.success,
-        message: response.message,
-        errorCode: response.success ? undefined : 'API_ERROR'
-      },
-      data: response.data || []
-    };
+  async getTrafficByRegion(): Promise<ApiResponse<TrafficByRegion[]>> {
+    return httpClient.get<TrafficByRegion[]>(`${this.endpoint}/traffic-by-region`);
   }
 
   /**
    * 获取实时流量数据
    */
-  async getRealTimeTraffic(): Promise<GetRealTimeTrafficResponse> {
-    const response = await httpClient.get<RealTimeTraffic[]>(`${this.endpoint}/real-time-traffic`);
-    return {
-      base: {
-        success: response.success,
-        message: response.message,
-        errorCode: response.success ? undefined : 'API_ERROR'
-      },
-      data: response.data || []
-    };
+  async getRealTimeTraffic(): Promise<ApiResponse<RealTimeTraffic[]>> {
+    return httpClient.get<RealTimeTraffic[]>(`${this.endpoint}/real-time-traffic`);
   }
 
   /**
    * 获取系统性能数据
    */
-  async getSystemPerformance(): Promise<GetSystemPerformanceResponse> {
-    const response = await httpClient.get<SystemPerformance>(`${this.endpoint}/performance`);
-    return toProtoResponse(response);
+  async getSystemPerformance(): Promise<ApiResponse<SystemPerformance>> {
+    return httpClient.get<SystemPerformance>(`${this.endpoint}/performance`);
   }
 
   /**
    * 获取系统告警信息
    */
-  async getSystemAlerts(): Promise<GetSystemAlertsResponse> {
-    const response = await httpClient.get<SystemAlert[]>(`${this.endpoint}/alerts`);
-    return {
-      base: {
-        success: response.success,
-        message: response.message,
-        errorCode: response.success ? undefined : 'API_ERROR'
-      },
-      data: response.data || []
-    };
+  async getSystemAlerts(): Promise<ApiResponse<SystemAlert[]>> {
+    return httpClient.get<SystemAlert[]>(`${this.endpoint}/alerts`);
   }
 
   /**
    * 获取热门规则排行
    */
-  async getTopRules(params: GetTopRulesRequest): Promise<GetTopRulesResponse> {
+  async getTopRules(params: GetTopRulesRequest): Promise<ApiResponse<TopRule[]>> {
     const queryParams: Record<string, string> = {};
     if (params.limit) queryParams.limit = params.limit.toString();
 
-    const response = await httpClient.get<TopRule[]>(`${this.endpoint}/top-rules`, queryParams);
-    return {
-      base: {
-        success: response.success,
-        message: response.message,
-        errorCode: response.success ? undefined : 'API_ERROR'
-      },
-      data: response.data || []
-    };
+    return httpClient.get<TopRule[]>(`${this.endpoint}/top-rules`, queryParams);
   }
 
   /**
    * 获取规则状态统计
    */
-  async getRuleStatus(): Promise<GetRuleStatusStatsResponse> {
-    const response = await httpClient.get<RuleStatusStats>(`${this.endpoint}/rule-status`);
-    return toProtoResponse(response);
+  async getRuleStatus(): Promise<ApiResponse<RuleStatusStats>> {
+    return httpClient.get<RuleStatusStats>(`${this.endpoint}/rule-status`);
   }
 
   /**
    * 获取服务器状态统计
    */
-  async getServerStatus(): Promise<GetServerStatusStatsResponse> {
-    const response = await httpClient.get<ServerStatusItem[]>(`${this.endpoint}/server-status`);
-    return {
-      base: {
-        success: response.success,
-        message: response.message,
-        errorCode: response.success ? undefined : 'API_ERROR'
-      },
-      data: response.data || []
-    };
+  async getServerStatus(): Promise<ApiResponse<ServerStatusItem[]>> {
+    return httpClient.get<ServerStatusItem[]>(`${this.endpoint}/server-status`);
   }
 
   /**
    * 获取用户流量统计
    */
-  async getUserTrafficStats(params: GetUserTrafficStatsRequest = {}): Promise<GetUserTrafficStatsResponse> {
+  async getUserTrafficStats(params: GetUserTrafficStatsRequest = {}): Promise<ApiResponse<UserTrafficItem[]>> {
     const queryParams: Record<string, string> = {};
     
     if (params.limit) queryParams.limit = params.limit.toString();
     if (params.period) queryParams.period = params.period.toString();
 
-    const response = await httpClient.get<UserTrafficItem[]>(`${this.endpoint}/user-traffic-stats`, queryParams);
-    return {
-      base: {
-        success: response.success,
-        message: response.message,
-        errorCode: response.success ? undefined : 'API_ERROR'
-      },
-      data: response.data || []
-    };
+    return httpClient.get<UserTrafficItem[]>(`${this.endpoint}/user-traffic-stats`, queryParams);
   }
 
   /**
    * 获取系统日志摘要
    */
-  async getLogSummary(params: GetLogSummaryRequest = {}): Promise<GetLogSummaryResponse> {
+  async getLogSummary(params: GetLogSummaryRequest = {}): Promise<ApiResponse<LogSummary>> {
     const queryParams: Record<string, string> = {};
     
     if (params.hours) queryParams.hours = params.hours.toString();
     if (params.level) queryParams.level = params.level.toString();
 
-    const response = await httpClient.get<LogSummary>(`${this.endpoint}/log-summary`, queryParams);
-    return toProtoResponse(response);
+    return httpClient.get<LogSummary>(`${this.endpoint}/log-summary`, queryParams);
   }
 
   /**
    * 刷新仪表盘缓存
    */
-  async refreshDashboard(): Promise<RefreshDashboardResponse> {
-    const response = await httpClient.post<void>(`${this.endpoint}/refresh`);
-    return {
-      base: {
-        success: response.success,
-        message: response.message,
-        errorCode: response.success ? undefined : 'API_ERROR'
-      }
-    };
+  async refreshDashboard(): Promise<ApiResponse<void>> {
+    return httpClient.post<void>(`${this.endpoint}/refresh`);
   }
 }
 

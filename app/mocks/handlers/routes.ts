@@ -39,14 +39,14 @@ export const routeHandlers = [
     // 按线路ID筛选
     if (routeId) {
       filteredRoutes = filteredRoutes.filter(route => 
-        route.routeId.toLowerCase().includes(routeId.toLowerCase())
+        route.routeId?.toLowerCase().includes(routeId.toLowerCase())
       );
     }
 
     // 按线路名筛选
     if (routeName) {
       filteredRoutes = filteredRoutes.filter(route => 
-        route.routeName.toLowerCase().includes(routeName.toLowerCase())
+        route.routeName?.toLowerCase().includes(routeName.toLowerCase())
       );
     }
 

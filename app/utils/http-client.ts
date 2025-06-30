@@ -172,12 +172,22 @@ class HttpClient {
         try {
           const errorData = await response.json();
           
-          // API统一返回proto格式
-          return {
-            success: errorData.base?.success ?? false,
-            message: errorData.base?.message || `请求失败，状态码: ${response.status}`,
-            data: errorData.data as T,
-          };
+          // 兼容两种错误响应格式
+          if (errorData.result && errorData.result.success !== undefined) {
+            // 新格式错误处理
+            return {
+              success: errorData.result.success ?? false,
+              message: errorData.result.message || `请求失败，状态码: ${response.status}`,
+              data: errorData.data as T,
+            };
+          } else {
+            // 旧格式错误处理
+            return {
+              success: errorData.base?.success ?? false,
+              message: errorData.base?.message || `请求失败，状态码: ${response.status}`,
+              data: errorData.data as T,
+            };
+          }
         } catch (parseError) {
           // 如果无法解析JSON，返回基本错误
           return {
@@ -189,12 +199,30 @@ class HttpClient {
       
       const data = await response.json();
       
-      // API统一返回proto格式：{base: {success, message, errorCode}, data: ...}
-      return {
-        success: data.base?.success ?? false,
-        message: data.base?.message,
-        data: data.data
-      };
+      // 兼容两种API响应格式
+      // 1. 新格式：{result: {success, message}, routes: [...], pagination: {...}}
+      // 2. 旧格式：{base: {success, message}, data: ...}
+      if (data.result && data.result.success !== undefined) {
+        // 新格式处理
+        return {
+          success: data.result.success ?? false,
+          message: data.result.message,
+          data: data.routes || data.data,
+          pagination: data.pagination ? {
+            current: data.pagination.page,
+            pageSize: data.pagination.pageSize,
+            total: data.pagination.total,
+            totalPages: data.pagination.totalPages
+          } : undefined
+        };
+      } else {
+        // 旧格式处理
+        return {
+          success: data.base?.success ?? false,
+          message: data.base?.message,
+          data: data.data
+        };
+      }
     } catch (error) {
       console.error('API request failed:', error);
       

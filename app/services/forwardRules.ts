@@ -85,25 +85,13 @@ export interface ForwardRuleListParams {
 // 更新转发规则数据类型
 export type UpdateForwardRuleData = Partial<Omit<ForwardRuleItem, 'id'>>;
 
-// 将httpClient的ApiResponse转换为proto响应格式的辅助函数
-function toProtoResponse<T>(response: ApiResponse<T>): { base: CommonApiResponse; data?: T } {
-  return {
-    base: {
-      success: response.success,
-      message: response.message,
-      errorCode: response.success ? undefined : 'API_ERROR'
-    },
-    data: response.data
-  };
-}
-
 class ForwardRulesService {
   private readonly endpoint = '/v1/rules';
 
   /**
    * 获取转发规则列表
    */
-  async getRules(params: GetRulesRequest = {}): Promise<GetRulesResponse> {
+  async getRules(params: GetRulesRequest = {}): Promise<ApiResponse<{data: ForwardRule[], total: number, page: number, pageSize: number}>> {
     const queryParams: Record<string, string> = {};
     
     if (params.page) queryParams.page = params.page.toString();
@@ -111,97 +99,65 @@ class ForwardRulesService {
     if (params.name) queryParams.name = params.name;
     if (params.status) queryParams.status = params.status.toString();
 
-    const response = await httpClient.get<{
+    return httpClient.get<{
       data: ForwardRule[];
       total: number;
       page: number;
       pageSize: number;
     }>(this.endpoint, queryParams);
-    
-    return {
-      base: {
-        success: response.success,
-        message: response.message,
-        errorCode: response.success ? undefined : 'API_ERROR'
-      },
-      data: response.data?.data || [],
-      total: response.data?.total || 0,
-      page: response.data?.page || 1,
-      pageSize: response.data?.pageSize || 10
-    };
   }
 
   /**
    * 创建新转发规则
    */
-  async createRule(ruleData: CreateRuleRequest): Promise<CreateRuleResponse> {
-    const response = await httpClient.post<ForwardRule>(this.endpoint, ruleData);
-    return toProtoResponse(response);
+  async createRule(ruleData: CreateRuleRequest): Promise<ApiResponse<ForwardRule>> {
+    return httpClient.post<ForwardRule>(this.endpoint, ruleData);
   }
 
   /**
    * 获取转发规则详情
    */
-  async getRule(request: GetRuleRequest): Promise<GetRuleResponse> {
-    const response = await httpClient.get<ForwardRule>(`${this.endpoint}/${request.id}`);
-    return toProtoResponse(response);
+  async getRule(request: GetRuleRequest): Promise<ApiResponse<ForwardRule>> {
+    return httpClient.get<ForwardRule>(`${this.endpoint}/${request.id}`);
   }
 
   /**
    * 更新转发规则信息
    */
-  async updateRule(request: UpdateRuleRequest): Promise<UpdateRuleResponse> {
+  async updateRule(request: UpdateRuleRequest): Promise<ApiResponse<ForwardRule>> {
     const { id, ...updateData } = request;
-    const response = await httpClient.put<ForwardRule>(`${this.endpoint}/${id}`, updateData);
-    return toProtoResponse(response);
+    return httpClient.put<ForwardRule>(`${this.endpoint}/${id}`, updateData);
   }
 
   /**
    * 删除转发规则
    */
-  async deleteRule(request: DeleteRuleRequest): Promise<DeleteRuleResponse> {
-    const response = await httpClient.delete<void>(`${this.endpoint}/${request.id}`);
-    return {
-      base: {
-        success: response.success,
-        message: response.message,
-        errorCode: response.success ? undefined : 'API_ERROR'
-      }
-    };
+  async deleteRule(request: DeleteRuleRequest): Promise<ApiResponse<void>> {
+    return httpClient.delete<void>(`${this.endpoint}/${request.id}`);
   }
 
   /**
    * 批量删除转发规则
    */
-  async batchDeleteRules(request: BatchDeleteRulesRequest): Promise<BatchDeleteRulesResponse> {
-    const response = await httpClient.post<{ deletedCount: number }>(`${this.endpoint}/batch-delete`, { ids: request.ids });
-    return {
-      base: {
-        success: response.success,
-        message: response.message,
-        errorCode: response.success ? undefined : 'API_ERROR'
-      },
-      deletedCount: response.data?.deletedCount || 0
-    };
+  async batchDeleteRules(request: BatchDeleteRulesRequest): Promise<ApiResponse<{ deletedCount: number }>> {
+    return httpClient.post<{ deletedCount: number }>(`${this.endpoint}/batch-delete`, { ids: request.ids });
   }
 
   /**
    * 启用/禁用转发规则
    */
-  async toggleRule(request: ToggleRuleRequest): Promise<ToggleRuleResponse> {
-    const response = await httpClient.post<ForwardRule>(`${this.endpoint}/${request.id}/toggle`, { enabled: request.enabled });
-    return toProtoResponse(response);
+  async toggleRule(request: ToggleRuleRequest): Promise<ApiResponse<ForwardRule>> {
+    return httpClient.post<ForwardRule>(`${this.endpoint}/${request.id}/toggle`, { enabled: request.enabled });
   }
 
   /**
    * 获取规则流量统计
    */
-  async getRuleTrafficStats(request: GetRuleTrafficStatsRequest): Promise<GetRuleTrafficStatsResponse> {
+  async getRuleTrafficStats(request: GetRuleTrafficStatsRequest): Promise<ApiResponse<RuleTrafficStats>> {
     const queryParams: Record<string, string> = {};
     if (request.days) queryParams.days = request.days.toString();
 
-    const response = await httpClient.get<RuleTrafficStats>(`${this.endpoint}/${request.id}/traffic-stats`, queryParams);
-    return toProtoResponse(response);
+    return httpClient.get<RuleTrafficStats>(`${this.endpoint}/${request.id}/traffic-stats`, queryParams);
   }
 
   /**
