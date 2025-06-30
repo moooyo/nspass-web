@@ -74,7 +74,7 @@ const DnsConfig: React.FC = () => {
     // 初始化加载数据
     useEffect(() => {
         loadDnsConfigs();
-    }, []);
+    }, [loadDnsConfigs]);
 
     // 优化：缓存删除操作函数
     const handleDelete = useCallback(async (id: React.Key) => {
@@ -183,7 +183,7 @@ const DnsConfig: React.FC = () => {
     };
 
     // 处理新增配置
-    const handleCreateConfig = async (values: any) => {
+    const handleCreateConfig = async (values: CreateDnsConfigData & { email?: string; zoneId?: string; apiToken?: string }) => {
         try {
             let configParams = '';
             

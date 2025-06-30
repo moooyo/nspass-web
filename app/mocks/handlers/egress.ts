@@ -1,41 +1,42 @@
 import { http, HttpResponse } from 'msw';
-import type { EgressItem } from '@/services/egress';
+import type { EgressItem } from '@/types/generated/model/egressItem';
+import { EgressMode, ForwardType } from '@/types/generated/model/egress';
 
 // 模拟出口配置数据
 const mockEgressData: EgressItem[] = [
     {
-        id: 1,
+        id: '1',
         egressId: 'egress001',
         serverId: 'server01',
-        egressMode: 'direct',
+        egressMode: EgressMode.EGRESS_MODE_DIRECT,
         egressConfig: '目的地址: 203.0.113.1',
         targetAddress: '203.0.113.1',
     },
     {
-        id: 2,
+        id: '2',
         egressId: 'egress002',
         serverId: 'server01',
-        egressMode: 'iptables',
+        egressMode: EgressMode.EGRESS_MODE_IPTABLES,
         egressConfig: 'TCP转发至 192.168.1.1:8080',
-        forwardType: 'tcp',
+        forwardType: ForwardType.FORWARD_TYPE_TCP,
         destAddress: '192.168.1.1',
         destPort: '8080',
     },
     {
-        id: 3,
+        id: '3',
         egressId: 'egress003',
         serverId: 'server02',
-        egressMode: 'iptables',
+        egressMode: EgressMode.EGRESS_MODE_IPTABLES,
         egressConfig: '全部转发至 10.0.0.1:443',
-        forwardType: 'all',
+        forwardType: ForwardType.FORWARD_TYPE_ALL,
         destAddress: '10.0.0.1',
         destPort: '443',
     },
     {
-        id: 4,
+        id: '4',
         egressId: 'egress004',
         serverId: 'server03',
-        egressMode: 'ss2022',
+        egressMode: EgressMode.EGRESS_MODE_SS2022,
         egressConfig: 'Shadowsocks-2022，支持UDP',
         password: 'password123',
         supportUdp: true,
@@ -58,7 +59,7 @@ export const egressHandlers = [
 
         // 应用筛选条件
         if (egressId) {
-            filteredData = filteredData.filter(item => item.egressId.includes(egressId));
+            filteredData = filteredData.filter(item => item.egressId?.includes(egressId));
         }
         if (serverId) {
             filteredData = filteredData.filter(item => item.serverId === serverId);
@@ -90,7 +91,7 @@ export const egressHandlers = [
         
         const newEgress: EgressItem = {
             ...data,
-            id: nextId++,
+            id: (nextId++).toString(),
             egressId: data.egressId || `egress${Date.now().toString().substr(-6)}`,
         };
         
@@ -106,7 +107,7 @@ export const egressHandlers = [
     // 获取单个出口配置
     http.get('/v1/egress/:id', ({ params }) => {
         const id = params.id as string;
-        const egress = mockEgressData.find(item => item.id.toString() === id);
+        const egress = mockEgressData.find(item => item.id === id);
 
         if (!egress) {
             return HttpResponse.json({
@@ -128,7 +129,7 @@ export const egressHandlers = [
         const id = params.id as string;
         const updateData = await request.json() as Partial<EgressItem>;
         
-        const index = mockEgressData.findIndex(item => item.id.toString() === id);
+        const index = mockEgressData.findIndex(item => item.id === id);
         if (index === -1) {
             return HttpResponse.json({
                 success: false,
@@ -149,7 +150,7 @@ export const egressHandlers = [
     // 删除出口配置
     http.delete('/v1/egress/:id', ({ params }) => {
         const id = params.id as string;
-        const index = mockEgressData.findIndex(item => item.id.toString() === id);
+        const index = mockEgressData.findIndex(item => item.id === id);
         
         if (index === -1) {
             return HttpResponse.json({
@@ -173,7 +174,7 @@ export const egressHandlers = [
         let deletedCount = 0;
         
         ids.forEach(id => {
-            const index = mockEgressData.findIndex(item => item.id.toString() === id);
+            const index = mockEgressData.findIndex(item => item.id === id);
             if (index !== -1) {
                 mockEgressData.splice(index, 1);
                 deletedCount++;
@@ -189,7 +190,7 @@ export const egressHandlers = [
     // 测试出口连接
     http.post('/v1/egress/:id/test', ({ params }) => {
         const id = params.id as string;
-        const egress = mockEgressData.find(item => item.id.toString() === id);
+        const egress = mockEgressData.find(item => item.id === id);
 
         if (!egress) {
             return HttpResponse.json({
@@ -217,7 +218,7 @@ export const egressHandlers = [
     // 获取出口统计信息
     http.get('/v1/egress/:id/stats', ({ params }) => {
         const id = params.id as string;
-        const egress = mockEgressData.find(item => item.id.toString() === id);
+        const egress = mockEgressData.find(item => item.id === id);
 
         if (!egress) {
             return HttpResponse.json({

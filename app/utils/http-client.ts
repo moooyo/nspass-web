@@ -74,36 +74,29 @@ interface RequestCacheItem {
 // 通用响应处理工具
 class ResponseHandler {
   /**
-   * 统一处理proto API响应，转换为标准ApiResponse格式
+   * 统一处理API响应，转换为标准ApiResponse格式
    */
   static normalizeProtoResponse<T>(response: any): ApiResponse<T> {
     // 如果已经是标准格式，直接返回
-    if (response.success !== undefined && !response.base) {
+    if (response.success !== undefined && !response.status) {
       return response;
     }
 
-    // 处理proto格式响应
-    if (response.base) {
+    // 处理标准status格式响应: {status: {success, message}, data: [], pagination: {}}
+    if (response.status && typeof response.status === 'object') {
       const normalized: ApiResponse<T> = {
-        success: response.base.success ?? false,
-        message: response.base.message,
+        success: response.status.success ?? false,
+        message: response.status.message,
         data: response.data
       };
 
       // 处理分页信息
       if (response.pagination) {
         normalized.pagination = {
-          current: response.pagination.current || response.page || 1,
-          pageSize: response.pagination.pageSize || response.pageSize || 10,
-          total: response.pagination.total || response.total || 0,
-          totalPages: response.pagination.totalPages || Math.ceil((response.total || 0) / (response.pageSize || 10))
-        };
-      } else if (response.total !== undefined || response.page !== undefined) {
-        normalized.pagination = {
-          current: response.page || 1,
-          pageSize: response.pageSize || 10,
-          total: response.total || 0,
-          totalPages: Math.ceil((response.total || 0) / (response.pageSize || 10))
+          current: response.pagination.page || response.pagination.current || 1,
+          pageSize: response.pagination.pageSize || 10,
+          total: response.pagination.total || 0,
+          totalPages: response.pagination.totalPages || Math.ceil((response.pagination.total || 0) / (response.pagination.pageSize || 10))
         };
       }
 
@@ -119,10 +112,10 @@ class ResponseHandler {
   }
 
   /**
-   * 检查是否为proto响应格式
+   * 检查是否为标准status响应格式
    */
-  static isProtoResponse(response: any): response is ProtoApiResponse {
-    return response && typeof response === 'object' && response.base && typeof response.base.success === 'boolean';
+  static isStatusResponse(response: any): boolean {
+    return response && typeof response === 'object' && response.status && typeof response.status.success === 'boolean';
   }
 }
 
