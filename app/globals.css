@@ -293,10 +293,6 @@ html:not([data-theme="dark"]) .ant-menu-dark .ant-menu-item-divider {
   border-top: 1px solid rgba(0, 0, 0, 0.3) !important;
 }
 
-
-
-
-
 /* 卡片样式现代化 */
 .modern-card {
   background: var(--glass-bg);
@@ -499,4 +495,21 @@ html:not([data-theme="dark"]) .ant-menu-dark .ant-menu-item-divider {
 
 .hover-lift:hover {
   transform: translateY(-4px);
+}
+
+/* 适应小屏幕 */
+@media screen and (max-width: 768px) {
+  .ant-table {
+    width: 100%;
+    overflow-x: auto;
+  }
+  
+  .ant-layout-content {
+    margin: 8px !important;
+    border-radius: 16px !important;
+  }
+  
+  .stat-card {
+    padding: 16px;
+  }
 }
