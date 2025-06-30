@@ -1,18 +1,26 @@
 import { http, HttpResponse } from 'msw';
 
-// Local type definitions for mock
-interface UserProfile {
-  id: string;
-  username: string;
-  email: string;
-  avatar: string;
-  createdAt: string;
-  lastLoginAt: string;
+// Local type definitions for mock - 匹配proto UserInfo结构
+interface UserInfo {
+  id: number;
+  name: string;
+  role: number;
+  userGroup: number[];
+  traffic: string;
+  trafficResetDate: string;
+  forwardRuleConfigLimit: string;
+  email?: string;
+  phone?: string;
+  avatar?: string;
+  createTime: string;
+  lastLoginTime: string;
 }
 
 interface UpdateUserInfoRequest {
-  username?: string;
+  name?: string;
   email?: string;
+  phone?: string;
+  avatar?: string;
 }
 
 interface ChangePasswordRequest {
@@ -58,14 +66,20 @@ interface ToggleTwoFactorAuthRequest {
   password: string;
 }
 
-// 模拟用户数据
-const mockUserProfile: UserProfile = {
-  id: '1',
-  username: 'testuser',
+// 模拟用户数据 - 使用proto UserInfo结构
+const mockUserInfo: UserInfo = {
+  id: 1,
+  name: 'testuser',
+  role: 1, // 1 = admin, 2 = user
+  userGroup: [1, 2],
+  traffic: '2.5GB / 10GB',
+  trafficResetDate: '2024-02-01',
+  forwardRuleConfigLimit: '50',
   email: 'test@example.com',
+  phone: '+86 138****1234',
   avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=testuser',
-  createdAt: '2024-01-01T00:00:00Z',
-  lastLoginAt: '2024-01-07T10:00:00Z'
+  createTime: '2024-01-01T00:00:00Z',
+  lastLoginTime: '2024-01-07T10:00:00Z'
 };
 
 const mockTrafficStats: TrafficStats = {
@@ -128,24 +142,27 @@ const mockActivityLogs: ActivityLogItem[] = [
 ];
 
 export const userInfoHandlers = [
-  // 获取当前用户信息
-  http.get('/v1/user/profile', () => {
+  // 获取当前用户信息 - 更新路径为 /v1/profile
+  http.get('/v1/profile', () => {
     return HttpResponse.json({
-      result: { success: true, message: '获取用户信息成功' },
-      data: mockUserProfile
+      base: { success: true, message: '获取用户信息成功' },
+      data: mockUserInfo
     });
   }),
 
-  // 更新用户信息
-  http.put('/v1/user/profile', async ({ request }) => {
+  // 更新用户信息 - 更新路径为 /v1/profile
+  http.put('/v1/profile', async ({ request }) => {
     const body = await request.json() as UpdateUserInfoRequest;
     
     // 更新用户信息
-    Object.assign(mockUserProfile, body);
+    if (body.name) mockUserInfo.name = body.name;
+    if (body.email) mockUserInfo.email = body.email;
+    if (body.phone) mockUserInfo.phone = body.phone;
+    if (body.avatar) mockUserInfo.avatar = body.avatar;
 
     return HttpResponse.json({
-      result: { success: true, message: '用户信息更新成功' },
-      data: mockUserProfile
+      base: { success: true, message: '用户信息更新成功' },
+      data: mockUserInfo
     });
   }),
 
@@ -204,7 +221,7 @@ export const userInfoHandlers = [
     }
 
     const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${Date.now()}`;
-    mockUserProfile.avatar = avatarUrl;
+    mockUserInfo.avatar = avatarUrl;
 
     return HttpResponse.json({
       result: { success: true, message: '头像上传成功' },

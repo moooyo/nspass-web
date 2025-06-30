@@ -1,26 +1,15 @@
 import { http, HttpResponse } from 'msw';
-import type {
-  UserProfile,
-  UpdateUserInfoRequest,
-  ChangePasswordRequest,
-  DeleteAccountRequest,
-  UploadAvatarData,
-  TrafficStats,
-  LoginHistoryItem,
-  ActivityLogItem,
-  ToggleTwoFactorAuthRequest
-} from '@/types/generated/api/users/user_management';
 
-// 模拟用户数据
-const mockUserProfile: UserProfile = {
-  id: '1',
-  username: 'testuser',
-  email: 'test@example.com',
-  avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=testuser',
-  createdAt: '2024-01-01T00:00:00Z',
-  lastLoginAt: '2024-01-07T10:00:00Z'
-};
+// 简化类型定义，只保留实际需要的
+interface TrafficStats {
+  uploadTraffic: number;
+  downloadTraffic: number;
+  totalTraffic: number;
+  trafficLimit: number;
+  resetDate: string;
+}
 
+// 模拟流量统计数据
 const mockTrafficStats: TrafficStats = {
   uploadTraffic: 1250.8,
   downloadTraffic: 2467.3,
@@ -30,30 +19,14 @@ const mockTrafficStats: TrafficStats = {
 };
 
 export const userManagementHandlers = [
-  // 获取当前用户信息
-  http.get('/v1/user/profile', () => {
-    return HttpResponse.json({
-      result: { success: true, message: '获取用户信息成功' },
-      data: mockUserProfile
-    });
-  }),
-
-  // 更新用户信息
-  http.put('/v1/user/profile', async ({ request }) => {
-    const body = await request.json() as UpdateUserInfoRequest;
-    Object.assign(mockUserProfile, body);
-
-    return HttpResponse.json({
-      result: { success: true, message: '用户信息更新成功' },
-      data: mockUserProfile
-    });
-  }),
-
-  // 获取流量统计
+  // 获取流量统计 - 不与userInfo路由冲突
   http.get('/v1/user/traffic', () => {
     return HttpResponse.json({
       result: { success: true, message: '获取流量统计成功' },
       data: mockTrafficStats
     });
   })
+  
+  // 注意：删除了与 userInfo handlers 重复的 /v1/user/profile 路由
+  // 现在 /v1/users/me 由 userInfoHandlers 专门处理
 ]; 

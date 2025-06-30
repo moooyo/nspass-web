@@ -86,7 +86,18 @@ export function MSWProvider({ children }: { children: React.ReactNode }) {
             // MSW启用时，使用空字符串让请求被MSW拦截
             httpClient.updateBaseURL('');
             console.log('🚀 MSW已启动，API请求将被Mock拦截');
+            console.log('🔧 httpClient baseURL已更新为空字符串:', httpClient.getCurrentBaseURL());
+            
+            // 验证baseURL确实被更新了
+            const currentBaseURL = httpClient.getCurrentBaseURL();
+            if (currentBaseURL !== '') {
+              console.error('❌ 警告：httpClient baseURL更新失败，当前值:', currentBaseURL);
+              // 强制再次更新
+              httpClient.updateBaseURL('');
+              console.log('🔄 强制更新后的baseURL:', httpClient.getCurrentBaseURL());
+            }
           } else {
+            console.error('❌ MSW启动失败');
             setMswStatus('error');
             return;
           }

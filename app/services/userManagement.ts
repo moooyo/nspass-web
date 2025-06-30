@@ -77,7 +77,7 @@ class UserManagementService {
    * 获取当前用户信息
    */
   async getCurrentUserInfo(): Promise<ApiResponse<UserProfile>> {
-    return httpClient.get<UserProfile>(`${this.usersEndpoint}/me`);
+    return httpClient.get<UserProfile>(`/v1/profile`);
   }
 
   /**

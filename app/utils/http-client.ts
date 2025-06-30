@@ -384,6 +384,12 @@ class HttpClient {
 // 创建默认实例
 export const httpClient = new HttpClient();
 
+// 在开发环境下将httpClient暴露到window对象，便于调试
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+  (window as any).httpClient = httpClient;
+  console.log('🔧 httpClient已暴露到window.httpClient，当前baseURL:', httpClient.getCurrentBaseURL());
+}
+
 // 导出类型和工具
 export type { ApiResponse, ProtoApiResponse, RequestOptions };
 export { ResponseHandler };
