@@ -129,7 +129,7 @@ const mockActivityLogs: ActivityLogItem[] = [
 
 export const userInfoHandlers = [
   // 获取当前用户信息
-  http.get('/api/v1/user/profile', () => {
+  http.get('/v1/user/profile', () => {
     return HttpResponse.json({
       result: { success: true, message: '获取用户信息成功' },
       data: mockUserProfile
@@ -137,7 +137,7 @@ export const userInfoHandlers = [
   }),
 
   // 更新用户信息
-  http.put('/api/v1/user/profile', async ({ request }) => {
+  http.put('/v1/user/profile', async ({ request }) => {
     const body = await request.json() as UpdateUserInfoRequest;
     
     // 更新用户信息
@@ -150,7 +150,7 @@ export const userInfoHandlers = [
   }),
 
   // 修改密码
-  http.post('/api/v1/user/password', async ({ request }) => {
+  http.post('/v1/user/password', async ({ request }) => {
     const body = await request.json() as ChangePasswordRequest;
 
     // 模拟密码验证
@@ -170,7 +170,7 @@ export const userInfoHandlers = [
   }),
 
   // 删除账户
-  http.post('/api/v1/user/account/delete', async ({ request }) => {
+  http.post('/v1/user/account/delete', async ({ request }) => {
     const body = await request.json() as DeleteAccountRequest;
 
     // 模拟密码验证
@@ -190,7 +190,7 @@ export const userInfoHandlers = [
   }),
 
   // 上传头像
-  http.post('/api/v1/user/avatar', async ({ request }) => {
+  http.post('/v1/user/avatar', async ({ request }) => {
     const body = await request.json() as UploadAvatarData;
 
     if (!body.avatar) {
@@ -213,7 +213,7 @@ export const userInfoHandlers = [
   }),
 
   // 获取流量统计
-  http.get('/api/v1/user/traffic', () => {
+  http.get('/v1/user/traffic', () => {
     return HttpResponse.json({
       result: { success: true, message: '获取流量统计成功' },
       data: mockTrafficStats
@@ -221,7 +221,7 @@ export const userInfoHandlers = [
   }),
 
   // 重置流量
-  http.post('/api/v1/user/traffic/reset', () => {
+  http.post('/v1/user/traffic/reset', () => {
     mockTrafficStats.uploadTraffic = 0;
     mockTrafficStats.downloadTraffic = 0;
     mockTrafficStats.totalTraffic = 0;
@@ -233,7 +233,7 @@ export const userInfoHandlers = [
   }),
 
   // 获取登录历史
-  http.get('/api/v1/user/login-history', ({ request }) => {
+  http.get('/v1/user/login-history', ({ request }) => {
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1');
     const pageSize = parseInt(url.searchParams.get('pageSize') || '10');
@@ -255,7 +255,7 @@ export const userInfoHandlers = [
   }),
 
   // 获取活动日志
-  http.get('/api/v1/user/activity', ({ request }) => {
+  http.get('/v1/user/activity', ({ request }) => {
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1');
     const pageSize = parseInt(url.searchParams.get('pageSize') || '10');
@@ -277,7 +277,7 @@ export const userInfoHandlers = [
   }),
 
   // 二步验证开关
-  http.post('/api/v1/user/2fa/toggle', async ({ request }) => {
+  http.post('/v1/user/2fa/toggle', async ({ request }) => {
     const body = await request.json() as ToggleTwoFactorAuthRequest;
 
     // 模拟密码验证

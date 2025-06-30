@@ -20,7 +20,7 @@ import type {
  */
 export const passkeyHandlers = [
   // 获取Passkey注册选项
-  http.post('/api/v1/auth/passkey/registration/options', async () => {
+  http.post('/v1/auth/passkey/registration/options', async () => {
     // 模拟延迟
     await new Promise(resolve => setTimeout(resolve, 300));
 
@@ -36,7 +36,7 @@ export const passkeyHandlers = [
   }),
 
   // 验证并完成Passkey注册
-  http.post('/api/v1/auth/passkey/registration/verify', async ({ request }) => {
+  http.post('/v1/auth/passkey/registration/verify', async ({ request }) => {
     try {
       const body = await request.json() as PasskeyRegistrationRequest;
       
@@ -81,7 +81,7 @@ export const passkeyHandlers = [
   }),
 
   // 获取Passkey认证选项
-  http.post('/api/v1/auth/passkey/authentication/options', async () => {
+  http.post('/v1/auth/passkey/authentication/options', async () => {
     // 模拟延迟
     await new Promise(resolve => setTimeout(resolve, 200));
 
@@ -97,7 +97,7 @@ export const passkeyHandlers = [
   }),
 
   // 验证并完成Passkey认证
-  http.post('/api/v1/auth/passkey/authentication/verify', async ({ request }) => {
+  http.post('/v1/auth/passkey/authentication/verify', async ({ request }) => {
     try {
       const body = await request.json() as PasskeyAuthenticationRequest;
       
@@ -173,7 +173,7 @@ export const passkeyHandlers = [
   }),
 
   // 获取用户的Passkey列表
-  http.get('/api/v1/user/passkeys', async ({ request }) => {
+  http.get('/v1/user/passkeys', async ({ request }) => {
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1');
     const pageSize = parseInt(url.searchParams.get('pageSize') || '10');
@@ -209,7 +209,7 @@ export const passkeyHandlers = [
   }),
 
   // 删除Passkey凭据
-  http.delete('/api/v1/user/passkeys/:credentialId', async ({ params }) => {
+  http.delete('/v1/user/passkeys/:credentialId', async ({ params }) => {
     const { credentialId } = params;
 
     if (!credentialId || typeof credentialId !== 'string') {
@@ -252,7 +252,7 @@ export const passkeyHandlers = [
   }),
 
   // 重命名Passkey凭据
-  http.put('/api/v1/user/passkeys/:credentialId/name', async ({ params, request }) => {
+  http.put('/v1/user/passkeys/:credentialId/name', async ({ params, request }) => {
     const { credentialId } = params;
 
     if (!credentialId || typeof credentialId !== 'string') {

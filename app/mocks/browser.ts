@@ -10,6 +10,7 @@ const MAX_RETRIES = 3;
 
 // worker的状态
 let workerStarted = false;
+let workerStarting = false;
 
 // 启动MSW的函数
 export const startMSW = async (retryCount = 0) => {
@@ -25,19 +26,37 @@ export const startMSW = async (retryCount = 0) => {
 
   // 如果worker已经启动，就不需要再次启动
   if (workerStarted) {
-    console.log('MSW: 已经在运行中');
-    console.log('MSW: 重置处理程序...');
+    console.log('MSW: 已经在运行中，重置处理程序...');
     console.log(`MSW: 当前处理程序数量: ${handlers.length}`);
-    await worker.resetHandlers(...handlers);
+    try {
+      await worker.resetHandlers(...handlers);
+      console.log('MSW: 处理程序重置完成');
+    } catch (error) {
+      console.error('MSW: 重置处理程序失败:', error);
+    }
     return true;
   }
 
+  // 如果正在启动，等待完成
+  if (workerStarting) {
+    console.log('MSW: 正在启动中，等待完成...');
+    let attempts = 0;
+    const maxWaitAttempts = 30; // 最多等待3秒
+    while (workerStarting && attempts < maxWaitAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      attempts++;
+    }
+    return workerStarted;
+  }
+
   try {
+    workerStarting = true;
     console.log('MSW: 开始启动...');
     console.log(`MSW: 加载了 ${handlers.length} 个处理程序`);
     
-    // 打印所有处理程序的路径
-    handlers.forEach((handler, index) => {
+    // 打印前10个处理程序的路径，用于调试
+    console.log('MSW: 处理程序列表(前10个):');
+    handlers.slice(0, 10).forEach((handler, index) => {
       console.log(`MSW: 处理程序 #${index+1} - ${handler.info.method} ${handler.info.path}`);
     });
     
@@ -47,6 +66,7 @@ export const startMSW = async (retryCount = 0) => {
         url: '/mockServiceWorker.js'
       }
     });
+    
     console.log('🚀 MSW (Mock Service Worker) 已启动');
     workerStarted = true;
     return true;
@@ -67,6 +87,8 @@ export const startMSW = async (retryCount = 0) => {
       console.error('MSW 重试启动失败，已达到最大重试次数');
       return false;
     }
+  } finally {
+    workerStarting = false;
   }
 };
 

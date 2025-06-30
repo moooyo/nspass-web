@@ -31,7 +31,7 @@ const mockTrafficStats: TrafficStats = {
 
 export const userManagementHandlers = [
   // 获取当前用户信息
-  http.get('/api/v1/user/profile', () => {
+  http.get('/v1/user/profile', () => {
     return HttpResponse.json({
       result: { success: true, message: '获取用户信息成功' },
       data: mockUserProfile
@@ -39,7 +39,7 @@ export const userManagementHandlers = [
   }),
 
   // 更新用户信息
-  http.put('/api/v1/user/profile', async ({ request }) => {
+  http.put('/v1/user/profile', async ({ request }) => {
     const body = await request.json() as UpdateUserInfoRequest;
     Object.assign(mockUserProfile, body);
 
@@ -50,7 +50,7 @@ export const userManagementHandlers = [
   }),
 
   // 获取流量统计
-  http.get('/api/v1/user/traffic', () => {
+  http.get('/v1/user/traffic', () => {
     return HttpResponse.json({
       result: { success: true, message: '获取流量统计成功' },
       data: mockTrafficStats

@@ -73,7 +73,7 @@ let nextId = 4;
 
 export const rulesHandlers = [
   // 获取规则列表
-  http.get('/api/v1/rules', ({ request }) => {
+  http.get('/v1/rules', ({ request }) => {
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1');
     const pageSize = parseInt(url.searchParams.get('pageSize') || '10');
@@ -113,7 +113,7 @@ export const rulesHandlers = [
   }),
 
   // 创建规则
-  http.post('/api/v1/rules', async ({ request }) => {
+  http.post('/v1/rules', async ({ request }) => {
     const body = await request.json() as CreateRuleRequest;
 
     // 验证必填字段
@@ -167,7 +167,7 @@ export const rulesHandlers = [
   }),
 
   // 获取单个规则
-  http.get('/api/v1/rules/:id', ({ params }) => {
+  http.get('/v1/rules/:id', ({ params }) => {
     const id = parseInt(params.id as string);
     const rule = mockRules.find(r => r.id === id);
 
@@ -188,7 +188,7 @@ export const rulesHandlers = [
   }),
 
   // 更新规则
-  http.put('/api/v1/rules/:id', async ({ params, request }) => {
+  http.put('/v1/rules/:id', async ({ params, request }) => {
     const id = parseInt(params.id as string);
     const body = await request.json() as UpdateRuleRequest;
     const ruleIndex = mockRules.findIndex(r => r.id === id);
@@ -217,7 +217,7 @@ export const rulesHandlers = [
   }),
 
   // 删除规则
-  http.delete('/api/v1/rules/:id', ({ params }) => {
+  http.delete('/v1/rules/:id', ({ params }) => {
     const id = parseInt(params.id as string);
     const ruleIndex = mockRules.findIndex(r => r.id === id);
 
@@ -239,7 +239,7 @@ export const rulesHandlers = [
   }),
 
   // 批量删除规则
-  http.post('/api/v1/rules/batch-delete', async ({ request }) => {
+  http.post('/v1/rules/batch-delete', async ({ request }) => {
     const body = await request.json() as { ids: number[] };
     let deletedCount = 0;
 
@@ -258,7 +258,7 @@ export const rulesHandlers = [
   }),
 
   // 启用/禁用规则
-  http.post('/api/v1/rules/:id/toggle', async ({ params, request }) => {
+  http.post('/v1/rules/:id/toggle', async ({ params, request }) => {
     const id = parseInt(params.id as string);
     const body = await request.json() as { enabled: boolean };
     const rule = mockRules.find(r => r.id === id);
@@ -283,7 +283,7 @@ export const rulesHandlers = [
   }),
 
   // 获取规则流量统计
-  http.get('/api/v1/rules/:id/traffic-stats', ({ params, request }) => {
+  http.get('/v1/rules/:id/traffic-stats', ({ params, request }) => {
     const id = parseInt(params.id as string);
     const rule = mockRules.find(r => r.id === id);
 

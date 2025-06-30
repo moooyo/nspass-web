@@ -24,7 +24,7 @@ interface ServerResponse<T> {
 // 用户管理相关的 API handlers
 export const usersHandlers = [
   // 获取用户列表
-  http.get('/api/users', ({ request }) => {
+  http.get('/v1/users', ({ request }) => {
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1');
     const pageSize = parseInt(url.searchParams.get('pageSize') || '10');
@@ -65,7 +65,7 @@ export const usersHandlers = [
   }),
 
   // 创建用户
-  http.post('/api/users', async ({ request }) => {
+  http.post('/v1/users', async ({ request }) => {
     const data = await request.json() as UserData;
     const newUser = {
       id: mockUsers.length + 1,
@@ -81,7 +81,7 @@ export const usersHandlers = [
   }),
 
   // 获取单个用户
-  http.get('/api/users/:id', ({ params }) => {
+  http.get('/v1/users/:id', ({ params }) => {
     const { id } = params;
     const user = mockUsers.find(u => u.id === Number(id));
     
@@ -99,7 +99,7 @@ export const usersHandlers = [
   }),
 
   // 更新用户
-  http.put('/api/users/:id', async ({ params, request }) => {
+  http.put('/v1/users/:id', async ({ params, request }) => {
     const { id } = params;
     const updateData = await request.json() as Partial<UserData>;
     const index = mockUsers.findIndex(user => user.id === Number(id));
@@ -126,7 +126,7 @@ export const usersHandlers = [
   }),
 
   // 删除用户
-  http.delete('/api/users/:id', ({ params }) => {
+  http.delete('/v1/users/:id', ({ params }) => {
     const { id } = params;
     const index = mockUsers.findIndex(user => user.id === Number(id));
     

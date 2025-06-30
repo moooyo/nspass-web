@@ -11,7 +11,7 @@ let dnsConfigs = deepClone(mockDnsConfigs);
 
 export const dnsConfigHandlers = [
   // 获取DNS配置列表
-  http.get('/api/v1/dns/configs', ({ request }) => {
+  http.get('/v1/dns/configs', ({ request }) => {
     const url = new URL(request.url);
     const configName = url.searchParams.get('configName');
     const provider = url.searchParams.get('provider');
@@ -50,7 +50,7 @@ export const dnsConfigHandlers = [
   }),
 
   // 创建DNS配置
-  http.post('/api/v1/dns/configs', async ({ request }) => {
+  http.post('/v1/dns/configs', async ({ request }) => {
     const body = await request.json() as any;
     
     const newConfig = {
@@ -71,7 +71,7 @@ export const dnsConfigHandlers = [
   }),
 
   // 更新DNS配置
-  http.put('/api/v1/dns/configs/:id', async ({ params, request }) => {
+  http.put('/v1/dns/configs/:id', async ({ params, request }) => {
     const id = Number(params.id);
     const body = await request.json() as any;
     
@@ -99,7 +99,7 @@ export const dnsConfigHandlers = [
   }),
 
   // 删除DNS配置
-  http.delete('/api/v1/dns/configs/:id', ({ params }) => {
+  http.delete('/v1/dns/configs/:id', ({ params }) => {
     const id = Number(params.id);
     
     const configIndex = dnsConfigs.findIndex(config => Number(config.id) === id);
@@ -120,7 +120,7 @@ export const dnsConfigHandlers = [
   }),
 
   // 测试DNS配置
-  http.post('/api/v1/dns/configs/:id/test', ({ params }) => {
+  http.post('/v1/dns/configs/:id/test', ({ params }) => {
     const id = Number(params.id);
     
     const config = dnsConfigs.find(config => Number(config.id) === id);

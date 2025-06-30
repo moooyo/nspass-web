@@ -20,7 +20,7 @@ const authenticateUser = (identifier: string, password: string): MockUser | null
 
 export const authHandlers = [
   // 用户注册
-  http.post('/api/v1/auth/register', async ({ request }) => {
+  http.post('/v1/auth/register', async ({ request }) => {
     const body = await request.json() as RegisterRequest;
     
     // 模拟验证
@@ -55,7 +55,7 @@ export const authHandlers = [
   }),
 
   // 用户登录
-  http.post('/api/v1/auth/login', async ({ request }) => {
+  http.post('/v1/auth/login', async ({ request }) => {
     const body = await request.json() as LoginRequest;
     
     // 验证输入

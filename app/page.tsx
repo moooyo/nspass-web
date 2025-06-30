@@ -281,57 +281,60 @@ export default function Home() {
     let component: React.ReactNode;
     switch (key) {
       case 'home':
-        component = <HomeContent />;
+        component = <HomeContent key={`${key}-cached`} />;
         break;
       case 'user':
-        component = <UserInfo />;
+        component = <UserInfo key={`${key}-cached`} />;
         break;
       case 'forward_rules':
-        component = <ForwardRules />;
+        component = <ForwardRules key={`${key}-cached`} />;
         break;
       case 'egress':
-        component = <Egress />;
+        component = <Egress key={`${key}-cached`} />;
         break;
       case 'routes':
-        component = <Routes />;
+        component = <Routes key={`${key}-cached`} />;
         break;
       case 'dashboard':
-        component = <Dashboard />;
+        component = <Dashboard key={`${key}-cached`} />;
         break;
       case 'website':
-        component = <Website />;
+        component = <Website key={`${key}-cached`} />;
         break;
       case 'users':
-        component = <Users />;
+        component = <Users key={`${key}-cached`} />;
         break;
       case 'user_groups':
-        component = <UserGroups />;
+        component = <UserGroups key={`${key}-cached`} />;
         break;
       case 'servers':
-        component = <Servers />;
+        component = <Servers key={`${key}-cached`} />;
         break;
       case 'dns_config':
-        component = <DnsConfig />;
+        component = <DnsConfig key={`${key}-cached`} />;
         break;
       default:
-        component = <HomeContent />;
+        component = <HomeContent key={`${key}-cached`} />;
     }
     
     // 包装在Suspense中并缓存
     const wrappedComponent = (
-      <Suspense fallback={
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          height: '300px',
-          flexDirection: 'column',
-          gap: '16px'
-        }}>
-          <Spin size="large" />
-          <Text type="secondary">正在加载组件...</Text>
-        </div>
-      }>
+      <Suspense 
+        key={`suspense-${key}`}
+        fallback={
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            height: '300px',
+            flexDirection: 'column',
+            gap: '16px'
+          }}>
+            <Spin size="large" />
+            <Text type="secondary">正在加载组件...</Text>
+          </div>
+        }
+      >
         {component}
       </Suspense>
     );
@@ -342,18 +345,25 @@ export default function Home() {
 
   // 优化：使用简单的渲染逻辑，减少复杂计算
   const renderContent = useCallback(() => {
+    // 预加载已渲染的标签页组件
+    Array.from(renderedTabs).forEach(tabKey => {
+      if (!componentCacheRef.current[tabKey]) {
+        getComponent(tabKey);
+      }
+    });
+
     return (
       <div style={{ width: '100%', height: '100%' }}>
         {Array.from(renderedTabs).map(tabKey => (
           <div
-            key={tabKey}
+            key={`tab-content-${tabKey}`}
             style={{
               display: selectedKey === tabKey ? 'block' : 'none',
               width: '100%',
               height: '100%'
             }}
           >
-            {getComponent(tabKey)}
+            {componentCacheRef.current[tabKey] || getComponent(tabKey)}
           </div>
         ))}
       </div>

@@ -17,8 +17,8 @@ const getApiBaseUrl = (): string => {
     if (process.env.NEXT_PUBLIC_REAL_API_URL) {
       return process.env.NEXT_PUBLIC_REAL_API_URL;
     }
-    // 否则使用相对路径以支持mock
-    return '/api';
+    // 开发环境默认使用localhost:8080，MSW会在初始化时动态更新
+    return 'http://localhost:8080';
   }
   
   // 4. 生产环境默认值
@@ -63,6 +63,12 @@ interface ProtoApiResponse<T = unknown> {
     total: number;
     totalPages?: number;
   };
+}
+
+// 请求去重缓存
+interface RequestCacheItem {
+  promise: Promise<ApiResponse<any>>;
+  timestamp: number;
 }
 
 // 通用响应处理工具
@@ -122,6 +128,9 @@ class ResponseHandler {
 
 class HttpClient {
   private baseURL: string;
+  private requestCache: Map<string, RequestCacheItem> = new Map();
+  private readonly CACHE_DURATION = 1000; // 1秒内的相同请求将被去重
+
   private defaultErrorResponse<T>(): ApiResponse<T> {
     return {
       success: false,
@@ -142,6 +151,29 @@ class HttpClient {
   // 获取当前 baseURL
   getCurrentBaseURL(): string {
     return this.baseURL;
+  }
+
+  // 生成请求缓存键
+  private generateCacheKey(endpoint: string, options: RequestOptions): string {
+    const { method = 'GET', params, body } = options;
+    const bodyStr = body ? JSON.stringify(body) : '';
+    const paramsStr = params ? JSON.stringify(params) : '';
+    return `${method}:${endpoint}:${paramsStr}:${bodyStr}`;
+  }
+
+  // 清理过期的缓存
+  private cleanExpiredCache() {
+    const now = Date.now();
+    for (const [key, item] of this.requestCache.entries()) {
+      if (now - item.timestamp > this.CACHE_DURATION) {
+        this.requestCache.delete(key);
+      }
+    }
+  }
+
+  // 检查是否为可缓存的请求（只缓存GET请求）
+  private isCacheableRequest(method: string): boolean {
+    return method === 'GET';
   }
 
   private buildURL(endpoint: string, params?: Record<string, string>): string {
@@ -197,6 +229,21 @@ class HttpClient {
   ): Promise<ApiResponse<T>> {
     const { method = 'GET', headers = {}, body, params } = options;
     
+    // 生成缓存键
+    const cacheKey = this.generateCacheKey(endpoint, options);
+    
+    // 检查是否为可缓存的请求且缓存中存在
+    if (this.isCacheableRequest(method)) {
+      // 清理过期缓存
+      this.cleanExpiredCache();
+      
+      const cachedItem = this.requestCache.get(cacheKey);
+      if (cachedItem && (Date.now() - cachedItem.timestamp) < this.CACHE_DURATION) {
+        console.log(`🚀 使用缓存的请求: ${method} ${endpoint}`);
+        return cachedItem.promise;
+      }
+    }
+    
     const url = this.buildURL(endpoint, params);
     
     const config: RequestInit = {
@@ -238,6 +285,21 @@ class HttpClient {
       };
     }
 
+    // 创建请求Promise
+    const requestPromise = this.executeRequest<T>(url, config);
+
+    // 如果是可缓存的请求，加入缓存
+    if (this.isCacheableRequest(method)) {
+      this.requestCache.set(cacheKey, {
+        promise: requestPromise,
+        timestamp: Date.now()
+      });
+    }
+
+    return requestPromise;
+  }
+
+  private async executeRequest<T>(url: string, config: RequestInit): Promise<ApiResponse<T>> {
     try {
       const response = await fetch(url, config);
       
@@ -301,6 +363,21 @@ class HttpClient {
   // DELETE 请求
   async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { method: 'DELETE' });
+  }
+
+  // 清理缓存的方法
+  clearCache() {
+    this.requestCache.clear();
+    console.log('HTTP客户端缓存已清理');
+  }
+
+  // 获取缓存统计信息
+  getCacheStats() {
+    this.cleanExpiredCache();
+    return {
+      size: this.requestCache.size,
+      keys: Array.from(this.requestCache.keys())
+    };
   }
 }
 

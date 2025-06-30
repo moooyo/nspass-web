@@ -71,7 +71,7 @@ let nextId = 6;
 
 export const serverHandlers = [
   // 获取服务器列表
-  http.get('/api/v1/servers', ({ request }) => {
+  http.get('/v1/servers', ({ request }) => {
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1');
     const pageSize = parseInt(url.searchParams.get('pageSize') || '10');
@@ -117,7 +117,7 @@ export const serverHandlers = [
   }),
 
   // 创建服务器
-  http.post('/api/v1/servers', async ({ request }) => {
+  http.post('/v1/servers', async ({ request }) => {
     const body = await request.json() as CreateServerRequest;
 
     // 验证必填字段 - 只有服务器名称是必填的
@@ -151,7 +151,7 @@ export const serverHandlers = [
   }),
 
   // 获取单个服务器
-  http.get('/api/v1/servers/:id', ({ params }) => {
+  http.get('/v1/servers/:id', ({ params }) => {
     const id = params.id as string;
     const server = mockServers.find(s => s.id === id);
 
@@ -172,7 +172,7 @@ export const serverHandlers = [
   }),
 
   // 更新服务器
-  http.put('/api/v1/servers/:id', async ({ params, request }) => {
+  http.put('/v1/servers/:id', async ({ params, request }) => {
     const id = params.id as string;
     const body = await request.json() as UpdateServerRequest;
     const serverIndex = mockServers.findIndex(s => s.id === id);
@@ -198,7 +198,7 @@ export const serverHandlers = [
   }),
 
   // 删除服务器
-  http.delete('/api/v1/servers/:id', ({ params }) => {
+  http.delete('/v1/servers/:id', ({ params }) => {
     const id = params.id as string;
     const serverIndex = mockServers.findIndex(s => s.id === id);
 
@@ -220,7 +220,7 @@ export const serverHandlers = [
   }),
 
   // 批量删除服务器
-  http.post('/api/v1/servers/batch-delete', async ({ request }) => {
+  http.post('/v1/servers/batch-delete', async ({ request }) => {
     const body = await request.json() as { ids: string[] };
     let deletedCount = 0;
 
@@ -238,7 +238,7 @@ export const serverHandlers = [
   }),
 
   // 重启服务器
-  http.post('/api/v1/servers/:id/restart', ({ params }) => {
+  http.post('/v1/servers/:id/restart', ({ params }) => {
     const id = params.id as string;
     const server = mockServers.find(s => s.id === id);
 

@@ -46,7 +46,7 @@ let nextId = 5;
 
 export const egressHandlers = [
     // 获取出口配置列表
-    http.get('/api/v1/egress', ({ request }) => {
+    http.get('/v1/egress', ({ request }) => {
         const url = new URL(request.url);
         const page = parseInt(url.searchParams.get('page') || '1');
         const pageSize = parseInt(url.searchParams.get('pageSize') || '10');
@@ -85,7 +85,7 @@ export const egressHandlers = [
     }),
 
     // 创建出口配置
-    http.post('/api/v1/egress', async ({ request }) => {
+    http.post('/v1/egress', async ({ request }) => {
         const data = await request.json() as EgressItem;
         
         const newEgress: EgressItem = {
@@ -104,7 +104,7 @@ export const egressHandlers = [
     }),
 
     // 获取单个出口配置
-    http.get('/api/v1/egress/:id', ({ params }) => {
+    http.get('/v1/egress/:id', ({ params }) => {
         const id = params.id as string;
         const egress = mockEgressData.find(item => item.id.toString() === id);
 
@@ -124,7 +124,7 @@ export const egressHandlers = [
     }),
 
     // 更新出口配置
-    http.put('/api/v1/egress/:id', async ({ params, request }) => {
+    http.put('/v1/egress/:id', async ({ params, request }) => {
         const id = params.id as string;
         const updateData = await request.json() as Partial<EgressItem>;
         
@@ -147,7 +147,7 @@ export const egressHandlers = [
     }),
 
     // 删除出口配置
-    http.delete('/api/v1/egress/:id', ({ params }) => {
+    http.delete('/v1/egress/:id', ({ params }) => {
         const id = params.id as string;
         const index = mockEgressData.findIndex(item => item.id.toString() === id);
         
@@ -168,7 +168,7 @@ export const egressHandlers = [
     }),
 
     // 批量删除出口配置
-    http.post('/api/v1/egress/batch-delete', async ({ request }) => {
+    http.post('/v1/egress/batch-delete', async ({ request }) => {
         const { ids } = await request.json() as { ids: string[] };
         let deletedCount = 0;
         
@@ -187,7 +187,7 @@ export const egressHandlers = [
     }),
 
     // 测试出口连接
-    http.post('/api/v1/egress/:id/test', ({ params }) => {
+    http.post('/v1/egress/:id/test', ({ params }) => {
         const id = params.id as string;
         const egress = mockEgressData.find(item => item.id.toString() === id);
 
@@ -215,7 +215,7 @@ export const egressHandlers = [
     }),
 
     // 获取出口统计信息
-    http.get('/api/v1/egress/:id/stats', ({ params }) => {
+    http.get('/v1/egress/:id/stats', ({ params }) => {
         const id = params.id as string;
         const egress = mockEgressData.find(item => item.id.toString() === id);
 
@@ -239,7 +239,7 @@ export const egressHandlers = [
     }),
 
     // 验证出口配置
-    http.post('/api/v1/egress/validate', async ({ request }) => {
+    http.post('/v1/egress/validate', async ({ request }) => {
         const data = await request.json() as EgressItem;
         
         // 模拟验证逻辑
@@ -263,7 +263,7 @@ export const egressHandlers = [
     }),
 
     // 获取可用服务器列表
-    http.get('/api/v1/egress/servers', () => {
+    http.get('/v1/egress/servers', () => {
         return HttpResponse.json({
             success: true,
             message: '获取可用服务器列表成功',

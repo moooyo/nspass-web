@@ -1,92 +1,124 @@
 'use client';
 
-import { createContext, useEffect, useState } from 'react';
-import { MockToggle } from './MockToggle';
-import { MSWContextType } from './types';
-import { initMSW } from '../init-msw';
-
-// 创建Mock状态的Context
-export const MSWContext = createContext<MSWContextType>({
-  enabled: true,
-  setEnabled: () => {}
-});
+import { useEffect, useState, useRef } from 'react';
+import { httpClient } from '@/utils/http-client';
+import { MSWContext, MSWContextType } from './types';
 
 // localStorage键名
 const MOCK_ENABLED_KEY = 'nspass-mock-enabled';
 
+// 全局标志，防止重复初始化
+let mswInitialized = false;
+let mswInitializing = false;
+
+// MockToggle组件
+const MockToggle = () => {
+  if (typeof window === 'undefined' || process.env.NODE_ENV !== 'development') {
+    return null;
+  }
+
+  // 动态导入MockToggle组件
+  const [ToggleComponent, setToggleComponent] = useState<React.ComponentType | null>(null);
+
+  useEffect(() => {
+    import('./MockToggle').then(({ MockToggle }) => {
+      setToggleComponent(() => MockToggle);
+    });
+  }, []);
+
+  return ToggleComponent ? <ToggleComponent /> : null;
+};
+
 export function MSWProvider({ children }: { children: React.ReactNode }) {
-  // 确保在客户端渲染
   const [isClient, setIsClient] = useState(false);
   const [mswStatus, setMswStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [mockEnabled, setMockEnabled] = useState<boolean>(true);
+  const initializationAttempted = useRef(false);
 
-  // 使用useEffect确保只在客户端执行
   useEffect(() => {
     setIsClient(true);
   }, []);
 
   useEffect(() => {
-    // 确保仅在客户端执行
-    if (!isClient) {
+    if (!isClient || initializationAttempted.current) {
       return;
     }
 
-    // 在客户端第一次渲染时设置状态
-    setMswStatus('loading');
+    initializationAttempted.current = true;
 
     const initializeMSW = async () => {
-      // 只在开发模式下启动MSW
-      if (process.env.NODE_ENV === 'development') {
-        try {
-          // 检查LocalStorage中的Mock状态
-          const storedMockEnabled = localStorage.getItem(MOCK_ENABLED_KEY);
-          const shouldEnableMock = storedMockEnabled !== null ? storedMockEnabled === 'true' : true;
-          
-          console.log('MSW初始化: 当前Mock状态 =', shouldEnableMock ? '启用' : '禁用');
-          
-          // 更新状态
-          setMockEnabled(shouldEnableMock);
-          
-          // 如果应该启用Mock，则启动MSW
-          if (shouldEnableMock) {
-            console.log('MSW初始化: 开始导入模块并初始化');
-            const success = await initMSW();
-            console.log('MSW初始化: 初始化结果 =', success ? '成功' : '失败');
-            
-            if (success) {
-              console.log('🚀 MSW 已启动并准备就绪');
-            } else {
-              console.error('MSW 初始化失败');
-              setMswStatus('error');
-              return;
-            }
-          } else {
-            console.log('⏹️ MSW 未启动 (已禁用)');
-          }
-          
-          setMswStatus('success');
-        } catch (error) {
-          console.error('MSW 启动失败:', error);
-          setMswStatus('error');
-        }
-      } else {
-        // 生产环境不使用MSW
+      if (process.env.NODE_ENV !== 'development') {
         setMswStatus('success');
+        return;
+      }
+
+      if (mswInitialized) {
+        setMswStatus('success');
+        return;
+      }
+
+      if (mswInitializing) {
+        let attempts = 0;
+        while (mswInitializing && attempts < 30) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          attempts++;
+        }
+        setMswStatus(mswInitialized ? 'success' : 'error');
+        return;
+      }
+
+      try {
+        mswInitializing = true;
+        setMswStatus('loading');
+
+        const storedMockEnabled = localStorage.getItem(MOCK_ENABLED_KEY);
+        const shouldEnableMock = storedMockEnabled !== null ? storedMockEnabled === 'true' : true;
+        
+        setMockEnabled(shouldEnableMock);
+        
+        if (shouldEnableMock) {
+          // 动态导入MSW初始化函数
+          const { initMSW } = await import('../init-msw');
+          const success = await initMSW();
+          
+          if (success) {
+            mswInitialized = true;
+            // MSW启用时，使用空字符串让请求被MSW拦截
+            httpClient.updateBaseURL('');
+            console.log('🚀 MSW已启动，API请求将被Mock拦截');
+          } else {
+            setMswStatus('error');
+            return;
+          }
+        } else {
+          mswInitialized = true;
+          // MSW未启用时，使用真实后端地址
+          const realApiUrl = process.env.NEXT_PUBLIC_REAL_API_URL || 'http://localhost:8080';
+          httpClient.updateBaseURL(realApiUrl);
+          console.log(`⏹️ MSW未启用，API请求将发送到: ${realApiUrl}`);
+        }
+        
+        setMswStatus('success');
+      } catch (error) {
+        console.error('MSW 启动失败:', error);
+        setMswStatus('error');
+        // 错误时使用真实后端地址
+        const realApiUrl = process.env.NEXT_PUBLIC_REAL_API_URL || 'http://localhost:8080';
+        httpClient.updateBaseURL(realApiUrl);
+      } finally {
+        mswInitializing = false;
       }
     };
 
     initializeMSW();
   }, [isClient]);
 
-  // 监听mockEnabled状态变化
   useEffect(() => {
-    // 确保在客户端并且避免初始化时触发
     if (isClient && mswStatus !== 'loading') {
       localStorage.setItem(MOCK_ENABLED_KEY, String(mockEnabled));
     }
   }, [mockEnabled, mswStatus, isClient]);
 
-  // 服务器端渲染时，不显示任何加载或错误UI
   if (!isClient) {
     return (
       <MSWContext.Provider value={{ enabled: true, setEnabled: () => {} }}>
@@ -95,7 +127,6 @@ export function MSWProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // 在开发环境中，等待MSW准备就绪再渲染应用
   if (process.env.NODE_ENV === 'development' && mswStatus === 'loading') {
     return (
       <div style={{ 
@@ -111,7 +142,6 @@ export function MSWProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // 如果MSW启动失败，提供跳过选项
   if (process.env.NODE_ENV === 'development' && mswStatus === 'error') {
     return (
       <div style={{ 
@@ -136,7 +166,7 @@ export function MSWProvider({ children }: { children: React.ReactNode }) {
               cursor: 'pointer'
             }}
           >
-            继续使用应用 (API请求可能会失败)
+            继续使用应用
           </button>
         </div>
       </div>
@@ -146,7 +176,6 @@ export function MSWProvider({ children }: { children: React.ReactNode }) {
   return (
     <MSWContext.Provider value={{ enabled: mockEnabled, setEnabled: setMockEnabled }}>
       {children}
-      
       {/* 仅在开发模式下显示Mock开关按钮 */}
       {process.env.NODE_ENV === 'development' && <MockToggle />}
     </MSWContext.Provider>

@@ -26,6 +26,7 @@ import {
     EyeTwoTone,
     EyeOutlined,
 } from '@ant-design/icons';
+import { useApiOnce } from '@/components/hooks/useApiOnce';
 
 const { Title } = Typography;
 
@@ -109,10 +110,10 @@ const Routes: React.FC = () => {
     const [form] = Form.useForm();
     const [editForm] = Form.useForm();
 
-    // 加载线路数据
-    useEffect(() => {
+    // 使用useApiOnce防止重复API调用
+    useApiOnce(() => {
         loadRoutes();
-    }, []);
+    });
 
     const loadRoutes = async () => {
         setLoading(true);

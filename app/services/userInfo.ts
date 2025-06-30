@@ -75,14 +75,14 @@ class UserInfoService {
    * 修改密码
    */
   async changePassword(request: ChangePasswordRequest): Promise<ApiResponse<void>> {
-    return httpClient.post<void>(`${this.endpoint}/password`, request);
+    return httpClient.post<void>('/v1/user/password', request);
   }
 
   /**
    * 删除账户
    */
   async deleteAccount(request: DeleteAccountRequest): Promise<ApiResponse<void>> {
-    return httpClient.post<void>(`${this.endpoint}/account/delete`, request);
+    return httpClient.post<void>('/v1/user/account/delete', request);
   }
 
   /**
@@ -93,21 +93,21 @@ class UserInfoService {
     formData.append('avatar', file);
     
     // 使用httpClient处理文件上传
-    return httpClient.post<UploadAvatarResponse['data']>(`${this.endpoint}/avatar`, formData);
+    return httpClient.post<UploadAvatarResponse['data']>('/v1/user/avatar', formData);
   }
 
   /**
    * 获取流量统计
    */
   async getTrafficStats(): Promise<ApiResponse<TrafficStats>> {
-    return httpClient.get<TrafficStats>(`${this.endpoint}/traffic`);
+    return httpClient.get<TrafficStats>('/v1/user/traffic');
   }
 
   /**
    * 重置流量
    */
   async resetTraffic(): Promise<ApiResponse<void>> {
-    return httpClient.post<void>(`${this.endpoint}/traffic/reset`);
+    return httpClient.post<void>('/v1/user/traffic/reset');
   }
 
   /**
@@ -119,7 +119,7 @@ class UserInfoService {
     if (params.page) queryParams.page = params.page.toString();
     if (params.pageSize) queryParams.pageSize = params.pageSize.toString();
 
-    return httpClient.get<LoginHistoryItem[]>(`${this.endpoint}/login-history`, queryParams);
+    return httpClient.get<LoginHistoryItem[]>('/v1/user/login-history', queryParams);
   }
 
   /**
@@ -131,21 +131,21 @@ class UserInfoService {
     if (params.page) queryParams.page = params.page.toString();
     if (params.pageSize) queryParams.pageSize = params.pageSize.toString();
 
-    return httpClient.get<ActivityLogItem[]>(`${this.endpoint}/activity`, queryParams);
+    return httpClient.get<ActivityLogItem[]>('/v1/user/activity-logs', queryParams);
   }
 
   /**
    * 启用/禁用二步验证
    */
   async toggleTwoFactorAuth(params: ToggleTwoFactorAuthRequest): Promise<ApiResponse<TwoFactorAuthData>> {
-    return httpClient.put<TwoFactorAuthData>(`${this.endpoint}/2fa`, params);
+    return httpClient.put<TwoFactorAuthData>('/v1/user/two-factor/toggle', params);
   }
 
   /**
    * 验证二步验证码
    */
   async verifyTwoFactorAuth(params: VerifyTwoFactorAuthRequest): Promise<ApiResponse<VerifyTwoFactorAuthData>> {
-    return httpClient.post<VerifyTwoFactorAuthData>(`${this.endpoint}/2fa/verify`, params);
+    return httpClient.post<VerifyTwoFactorAuthData>('/v1/user/two-factor/verify', params);
   }
 }
 

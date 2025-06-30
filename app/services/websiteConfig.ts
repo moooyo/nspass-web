@@ -25,7 +25,7 @@ export interface UpdateWebsiteConfigData {
 }
 
 class WebsiteConfigService {
-  private readonly endpoint = '/settings';
+  private readonly endpoint = '/v1/settings';
 
   /**
    * 获取网站配置

@@ -2,7 +2,7 @@
 
 import React, { useContext, useEffect, useState, useCallback } from 'react';
 import { ApiOutlined } from '@ant-design/icons';
-import { MSWContext } from './MSWProvider';
+import { MSWContext } from './types';
 import { message } from '@/utils/message';
 import { httpClient } from '@/utils/http-client';
 
@@ -19,8 +19,10 @@ export const MockToggle: React.FC = () => {
   // 初始化时同步 baseURL 与 Mock 状态
   useEffect(() => {
     if (mockEnabled) {
-      httpClient.updateBaseURL('/api');
+      // MSW启用时使用空字符串，让MSW拦截请求
+      httpClient.updateBaseURL('');
     } else {
+      // MSW禁用时使用真实后端地址
       const realApiUrl = process.env.NEXT_PUBLIC_REAL_API_URL || 'http://localhost:8080';
       httpClient.updateBaseURL(realApiUrl);
     }
@@ -59,8 +61,8 @@ export const MockToggle: React.FC = () => {
       const { startMSW } = await import('@mock/browser');
       const result = await startMSW();
       
-      // 启动 Mock 时，确保使用相对路径
-      httpClient.updateBaseURL('/api');
+      // 启动 Mock 时，使用空字符串让MSW拦截请求
+      httpClient.updateBaseURL('');
       
       console.log('🚀 Mock服务已启动');
       message.success('Mock服务已启动');

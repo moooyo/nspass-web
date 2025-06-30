@@ -40,7 +40,7 @@ interface GetUserConfigHistoryRequest { userId: string; configKey: string; page?
 // }
 
 class UserManagementService {
-  private readonly authEndpoint = '/api/v1/auth';
+  private readonly authEndpoint = '/v1/auth';
   private readonly userEndpoint = '/v1/user';
   private readonly usersEndpoint = '/v1/users';
 
@@ -77,14 +77,14 @@ class UserManagementService {
    * 获取当前用户信息
    */
   async getCurrentUserInfo(): Promise<ApiResponse<UserProfile>> {
-    return httpClient.get<UserProfile>(`${this.userEndpoint}/profile`);
+    return httpClient.get<UserProfile>(`${this.usersEndpoint}/me`);
   }
 
   /**
    * 更新用户信息
    */
   async updateUserInfo(request: UpdateUserInfoRequest): Promise<UpdateCurrentUserInfoResponse> {
-    const response = await httpClient.put<UserProfile>(`${this.userEndpoint}/profile`, request);
+    const response = await httpClient.put<UserProfile>(`${this.usersEndpoint}/me`, request);
     return response;
   }
 
@@ -94,7 +94,7 @@ class UserManagementService {
    * 修改密码
    */
   async changePassword(request: ChangePasswordRequest): Promise<ApiResponse<void>> {
-    return httpClient.post<void>(`${this.userEndpoint}/change-password`, request);
+    return httpClient.post<void>(`${this.userEndpoint}/password`, request);
   }
 
   /**
@@ -122,14 +122,14 @@ class UserManagementService {
    * 获取流量统计
    */
   async getTrafficStats(): Promise<ApiResponse<TrafficStats>> {
-    return httpClient.get<TrafficStats>(`${this.userEndpoint}/traffic-stats`);
+    return httpClient.get<TrafficStats>(`${this.userEndpoint}/traffic`);
   }
 
   /**
    * 重置流量统计
    */
   async resetTraffic(): Promise<ApiResponse<void>> {
-    return httpClient.post<void>(`${this.userEndpoint}/reset-traffic`);
+    return httpClient.post<void>(`${this.userEndpoint}/traffic/reset`);
   }
 
   // === 登录历史 ===

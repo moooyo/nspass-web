@@ -11,7 +11,7 @@ import { mockUserConfigs } from '@mock/data/userConfigs';
 
 export const userConfigHandlers = [
   // 获取用户配置列表
-  http.get('/api/v1/users', ({ request }) => {
+  http.get('/v1/users', ({ request }) => {
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1');
     const pageSize = parseInt(url.searchParams.get('pageSize') || '10');
@@ -55,7 +55,7 @@ export const userConfigHandlers = [
   }),
 
   // 创建用户配置
-  http.post('/api/v1/users', async ({ request }) => {
+  http.post('/v1/users', async ({ request }) => {
     const data = await request.json() as UserConfigData;
     const newConfig = {
       id: mockUserConfigs.length + 1,
@@ -84,7 +84,7 @@ export const userConfigHandlers = [
   }),
 
   // 更新用户配置
-  http.put('/api/v1/users/:id', async ({ params, request }) => {
+  http.put('/v1/users/:id', async ({ params, request }) => {
     const { id } = params;
     const data = await request.json() as UserConfigData;
     const index = mockUserConfigs.findIndex(config => config.id === Number(id));
@@ -98,7 +98,7 @@ export const userConfigHandlers = [
   }),
 
   // 删除用户配置
-  http.delete('/api/v1/users/:id', ({ params }) => {
+  http.delete('/v1/users/:id', ({ params }) => {
     const { id } = params;
     const index = mockUserConfigs.findIndex(config => config.id === Number(id));
     
@@ -111,7 +111,7 @@ export const userConfigHandlers = [
   }),
 
   // 封禁/解除封禁用户
-  http.put('/api/v1/users/:id/ban', async ({ params, request }) => {
+  http.put('/v1/users/:id/ban', async ({ params, request }) => {
     const { id } = params;
     const data = await request.json() as BanUserData;
     const index = mockUserConfigs.findIndex(config => config.id === Number(id));
@@ -125,7 +125,7 @@ export const userConfigHandlers = [
   }),
 
   // 重置用户流量
-  http.post('/api/v1/users/:id/resetTraffic', ({ params }) => {
+  http.post('/v1/users/:id/resetTraffic', ({ params }) => {
     const { id } = params;
     const index = mockUserConfigs.findIndex(config => config.id === Number(id));
     
@@ -138,7 +138,7 @@ export const userConfigHandlers = [
   }),
 
   // 发送邀请注册链接
-  http.post('/api/v1/users/:id/invite', ({ params }) => {
+  http.post('/v1/users/:id/invite', ({ params }) => {
     const { id } = params;
     const index = mockUserConfigs.findIndex(config => config.id === Number(id));
     
@@ -152,7 +152,7 @@ export const userConfigHandlers = [
   }),
 
   // 批量删除用户配置
-  http.post('/api/v1/users/batchDelete', async ({ request }) => {
+  http.post('/v1/users/batchDelete', async ({ request }) => {
     const data = await request.json() as BatchOperationData;
     data.ids.forEach(id => {
       const index = mockUserConfigs.findIndex(config => config.id === id);
@@ -164,7 +164,7 @@ export const userConfigHandlers = [
   }),
 
   // 批量更新用户配置
-  http.put('/api/v1/users/batchUpdate', async ({ request }) => {
+  http.put('/v1/users/batchUpdate', async ({ request }) => {
     const data = await request.json() as BatchOperationData;
     const updatedConfigs = mockUserConfigs.map(config => {
       if (data.ids.includes(config.id as number) && data.updateData) {

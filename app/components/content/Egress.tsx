@@ -22,6 +22,7 @@ import {
 } from '@ant-design/icons';
 import { egressService } from '@/services/egress';
 import type { EgressItem } from '@/services/egress';
+import { useApiOnce } from '@/components/hooks/useApiOnce';
 
 // 服务器选项
 const serverOptions = [
@@ -120,9 +121,10 @@ const Egress: React.FC = () => {
         }
     }, []);
 
-    useEffect(() => {
+    // 使用useApiOnce防止重复API调用
+    useApiOnce(() => {
         loadEgressData();
-    }, [loadEgressData]);
+    });
 
     // 生成随机密码函数
     const generateRandomPassword = (minLength: number = 100, maxLength: number = 128): string => {

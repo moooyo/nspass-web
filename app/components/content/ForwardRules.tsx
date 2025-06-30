@@ -30,6 +30,7 @@ import { ServerItem } from './LeafletWrapper';
 import { forwardRulesService } from '@/services/forwardRules';
 import type { ForwardRule, RuleStatus } from '@/services/forwardRules';
 import 'leaflet/dist/leaflet.css';
+import { useApiOnce } from '@/components/hooks/useApiOnce';
 
 // 动态导入LeafletWrapper组件，禁用SSR
 const DynamicLeafletWrapper = dynamic(() => import('./LeafletWrapper'), {
@@ -315,9 +316,10 @@ const ForwardRules: React.FC = () => {
         }
     }, []);
 
-    useEffect(() => {
+    // 使用useApiOnce防止重复API调用
+    useApiOnce(() => {
         loadRules();
-    }, [loadRules]);
+    });
 
     // 暂停/启动规则
     const toggleRuleStatus = async (record: ForwardRuleItem) => {
