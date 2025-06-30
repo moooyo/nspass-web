@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Tag, Popconfirm, Tooltip, Space, Card, Typography, Collapse, Input, Modal } from 'antd';
-import { message } from '@/utils/message';
+import { handleDataResponse, message } from '@/utils/message';
 import { routeService, RouteItem, CreateRouteData } from '@/services/routes';
 import { 
   RouteType, 
@@ -125,8 +125,7 @@ const Routes: React.FC = () => {
                 setSystemDataSource(systemResponse.data);
             }
         } catch (error) {
-            console.error('加载线路数据失败:', error);
-            message.error('加载线路数据失败');
+            handleDataResponse.error('加载线路数据', error);
         } finally {
             setLoading(false);
         }
@@ -174,11 +173,10 @@ const Routes: React.FC = () => {
                 setCustomDataSource(customDataSource.filter(item => item.id !== record.id));
                 message.success(`已删除线路: ${record.routeName}`);
             } else {
-                message.error(response.message || '删除线路失败');
+                handleDataResponse.userAction('删除线路', false, response);
             }
         } catch (error) {
-            console.error('删除线路失败:', error);
-            message.error('删除线路失败');
+            handleDataResponse.userAction('删除线路', false, undefined, error);
         }
     };
 
@@ -261,7 +259,7 @@ const Routes: React.FC = () => {
             item.id === editingRecord.id ? updatedRoute : item
         ));
         
-        message.success('线路更新成功');
+                    handleDataResponse.userAction('线路更新', true);
         setEditingRecord(null);
         return true;
     };

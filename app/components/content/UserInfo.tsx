@@ -4,7 +4,7 @@ import {
     ProFormText,
     ProCard,
   } from '@ant-design/pro-components';
-  import { message } from '@/utils/message';
+  import { handleDataResponse } from '@/utils/message';
   import { Card, Row, Col, Avatar, Typography, Space, Tag, Divider, Progress, Statistic, Button } from 'antd';
   import { 
     UserOutlined, 
@@ -46,19 +46,18 @@ const UserInfo: React.FC = () => {
       if (response.success && response.data) {
         setUserInfo(response.data);
         setHasLoadedData(true);
-        message.success(response.message || '获取用户信息成功');
+        handleDataResponse.success('获取用户信息', response);
       } else {
         // 失败时清空数据，避免显示过期缓存
         setUserInfo(null);
         setHasLoadedData(false);
-        message.error(response.message || '获取用户信息失败');
+        handleDataResponse.error('获取用户信息', undefined, response);
       }
     } catch (error) {
-      console.error('获取用户信息失败:', error);
       // 失败时清空数据，避免显示过期缓存
       setUserInfo(null);
       setHasLoadedData(false);
-      message.error('获取用户信息失败');
+      handleDataResponse.error('获取用户信息', error);
     } finally {
       setLoading(false);
     }
@@ -269,18 +268,17 @@ const UserInfo: React.FC = () => {
                   });
                   
                   if (response.success) {
-                    message.success(response.message || '保存成功');
+                    handleDataResponse.userAction('保存用户信息', true, response);
                     // 重新获取用户信息
                     const updatedResponse = await userInfoService.getCurrentUserInfo();
                     if (updatedResponse.success && updatedResponse.data) {
                       setUserInfo(updatedResponse.data);
                     }
                   } else {
-                    message.error(response.message || '保存失败');
+                    handleDataResponse.userAction('保存用户信息', false, response);
                   }
                 } catch (error) {
-                  console.error('保存用户信息失败:', error);
-                  message.error('保存失败');
+                  handleDataResponse.userAction('保存用户信息', false, undefined, error);
                 }
               }}
               initialValues={{

@@ -1,6 +1,6 @@
 import React, { useState, FC, useRef, useCallback, useMemo, useEffect } from 'react';
 import { Button, Tag, Popconfirm, Badge, Space, Tooltip, Modal, Form, Card, Row, Col, Typography, Divider } from 'antd';
-import { message } from '@/utils/message';
+import { handleDataResponse, message } from '@/utils/message';
 import {
     ProTable,
     ProColumns,
@@ -298,19 +298,18 @@ const ForwardRules: React.FC = () => {
                 const convertedRules = rulesData.map(convertForwardRuleToItem);
                 setDataSource(convertedRules);
                 setHasLoadedData(true);
-                message.success(response.message || '获取转发规则成功');
+                handleDataResponse.success('获取转发规则', response);
             } else {
                 // 失败时清空数据，避免显示过期缓存
                 setDataSource([]);
                 setHasLoadedData(false);
-                message.error(response.message || '获取转发规则失败');
+                handleDataResponse.error('获取转发规则', undefined, response);
             }
         } catch (error) {
-            console.error('获取转发规则失败:', error);
             // 失败时清空数据，避免显示过期缓存
             setDataSource([]);
             setHasLoadedData(false);
-            message.error('获取转发规则失败');
+            handleDataResponse.error('获取转发规则', error);
         } finally {
             setLoading(false);
         }
@@ -344,11 +343,10 @@ const ForwardRules: React.FC = () => {
                     `已启动规则: ${record.ruleId}`)
                 );
             } else {
-                message.error(response.message || '操作失败');
+                handleDataResponse.userAction('切换规则状态', false, response);
             }
         } catch (error) {
-            console.error('切换规则状态失败:', error);
-            message.error('操作失败');
+            handleDataResponse.userAction('切换规则状态', false, undefined, error);
         }
     };
 
@@ -372,7 +370,7 @@ const ForwardRules: React.FC = () => {
             viaNodes: [], // 复制的规则途径节点为空
         };
         setDataSource([...dataSource, newRule]);
-        message.success(`已复制规则: ${record.ruleId}`);
+        handleDataResponse.userAction('复制规则', true, { message: `已复制规则: ${record.ruleId}` });
     };
 
     // 删除规则
@@ -381,13 +379,12 @@ const ForwardRules: React.FC = () => {
             const response = await forwardRulesService.deleteRule({ id: record.id as number });
             if (response.success) {
                 setDataSource(dataSource.filter(item => item.id !== record.id));
-                message.success(response.message || `已删除规则: ${record.ruleId}`);
+                handleDataResponse.userAction('删除规则', true, response);
             } else {
-                message.error(response.message || '删除失败');
+                handleDataResponse.userAction('删除规则', false, response);
             }
         } catch (error) {
-            console.error('删除规则失败:', error);
-            message.error('删除失败');
+            handleDataResponse.userAction('删除规则', false, undefined, error);
         }
     };
 
@@ -518,7 +515,7 @@ const ForwardRules: React.FC = () => {
             };
             
             setDataSource([...dataSource, newRule]);
-            message.success('创建规则成功');
+            handleDataResponse.userAction('创建规则', true);
         } else {
             // 编辑现有规则
             if (!currentRecord) {
@@ -949,8 +946,8 @@ const ForwardRules: React.FC = () => {
                 split
                 defaultColsNumber={3}
                 onFinish={async (values) => {
-                    console.log(values);
-                    message.success('查询成功');
+                    console.log('✓ 转发规则查询完成:', values);
+                    // 不显示查询成功提示，只在console记录
                 }}
             >
                 <ProFormText name="ruleId" label="规则ID" colProps={{ span: 8 }} />

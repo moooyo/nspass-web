@@ -99,7 +99,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
       placement={placement}
       trigger={['click']}
       arrow={{ pointAtCenter: true }}
-      destroyPopupOnHide={true}
+      destroyOnHidden={true}
     >
       <Tooltip title={getTooltipTitle()} placement="left">
         <Button

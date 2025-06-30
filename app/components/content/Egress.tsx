@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button, Tag, Popconfirm, Tooltip, Space } from 'antd';
-import { message } from '@/utils/message';
+import { handleDataResponse, message } from '@/utils/message';
 import {
     EditableProTable,
     ProColumns,
@@ -103,19 +103,18 @@ const Egress: React.FC = () => {
                 const convertedData = egressData.map(convertEgressToLocalItem);
                 setDataSource(convertedData);
                 setHasLoadedData(true);
-                message.success(response.message || '获取出口配置成功');
+                handleDataResponse.success('获取出口配置', response);
             } else {
                 // 失败时清空数据，避免显示过期缓存
                 setDataSource([]);
                 setHasLoadedData(false);
-                message.error(response.message || '获取出口配置失败');
+                handleDataResponse.error('获取出口配置', undefined, response);
             }
         } catch (error) {
-            console.error('获取出口配置失败:', error);
             // 失败时清空数据，避免显示过期缓存
             setDataSource([]);
             setHasLoadedData(false);
-            message.error('获取出口配置失败');
+            handleDataResponse.error('获取出口配置', error);
         } finally {
             setLoading(false);
         }
@@ -153,13 +152,12 @@ const Egress: React.FC = () => {
             const response = await egressService.deleteEgress(record.id);
             if (response.success) {
                 setDataSource(dataSource.filter(item => item.id !== record.id));
-                message.success(response.message || `已删除出口: ${record.egressId}`);
+                handleDataResponse.userAction('删除出口', true, response);
             } else {
-                message.error(response.message || '删除失败');
+                handleDataResponse.userAction('删除出口', false, response);
             }
         } catch (error) {
-            console.error('删除出口失败:', error);
-            message.error('删除失败');
+            handleDataResponse.userAction('删除出口', false, undefined, error);
         }
     };
 
@@ -202,16 +200,15 @@ const Egress: React.FC = () => {
                     const convertedData = egressData.map(convertEgressToLocalItem);
                     setDataSource(convertedData);
                 }
-                message.success(response.message || '出口更新成功');
+                handleDataResponse.userAction('更新出口', true, response);
                 setEditingRecord(null);
                 return true;
             } else {
-                message.error(response.message || '出口更新失败');
+                handleDataResponse.userAction('更新出口', false, response);
                 return false;
             }
         } catch (error) {
-            console.error('更新出口失败:', error);
-            message.error('出口更新失败');
+            handleDataResponse.userAction('更新出口', false, undefined, error);
             return false;
         }
     };
@@ -230,15 +227,14 @@ const Egress: React.FC = () => {
                     const convertedData = egressData.map(convertEgressToLocalItem);
                     setDataSource(convertedData);
                 }
-                message.success(response.message || '出口创建成功');
+                handleDataResponse.userAction('创建出口', true, response);
                 return true;
             } else {
-                message.error(response.message || '出口创建失败');
+                handleDataResponse.userAction('创建出口', false, response);
                 return false;
             }
         } catch (error) {
-            console.error('创建出口失败:', error);
-            message.error('出口创建失败');
+            handleDataResponse.userAction('创建出口', false, undefined, error);
             return false;
         }
     };
@@ -340,8 +336,8 @@ const Egress: React.FC = () => {
                 split
                 defaultColsNumber={3}
                 onFinish={async (values) => {
-                    console.log(values);
-                    message.success('查询成功');
+                    console.log('✓ 出口配置查询完成:', values);
+                    // 不显示查询成功提示，只在console记录
                 }}
             >
                 <ProFormText name="egressId" label="出口ID" colProps={{ span: 8 }} />
