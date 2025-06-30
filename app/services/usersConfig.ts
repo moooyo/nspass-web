@@ -45,7 +45,7 @@ export interface UserConfigListParams {
 export type UpdateUserConfigData = Partial<CreateUserConfigData>;
 
 class UsersConfigService {
-  private readonly endpoint = '/users/settings';
+  private readonly endpoint = '/v1/users';
 
   /**
    * 获取用户配置列表

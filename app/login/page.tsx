@@ -55,15 +55,18 @@ const LoginPage = () => {
       // 确定登录类型和标识符
       const isEmailLogin = loginType === 'email';
       const identifier = isEmailLogin ? values.email : values.username;
-      
+      console.log('here')
+
       // 调用登录API - 使用新的proto结构
       const response = await authService.login({
         loginType: isEmailLogin ? ProtoLoginType.LOGIN_TYPE_EMAIL : ProtoLoginType.LOGIN_TYPE_USERNAME,
         identifier,
         password: values.password
       });
+      console.log('response:', response);
 
       if (response.base.success && response.data) {
+        console.log('auth response:', response.data);
         // 保存认证信息
         authService.saveAuthData(response.data);
         
@@ -75,6 +78,7 @@ const LoginPage = () => {
           role: response.data.role.toString(),
           provider: 'local'
         };
+        console.log('user:', user);
         authLogin(user, loginType);
         
         message.success(response.base.message || '登录成功！');

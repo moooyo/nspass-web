@@ -48,7 +48,7 @@ function toProtoResponse<T>(response: ApiResponse<T>): { base: CommonApiResponse
 }
 
 class DashboardService {
-  private readonly endpoint = '/api/v1/dashboard';
+  private readonly endpoint = '/v1/dashboard';
 
   /**
    * 获取系统概览数据

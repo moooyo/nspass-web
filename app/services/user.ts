@@ -23,7 +23,7 @@ export interface UserListParams {
 }
 
 class UserService {
-  private readonly endpoint = '/users';
+  private readonly endpoint = '/v1/users';
 
   /**
    * 获取用户列表

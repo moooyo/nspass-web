@@ -33,7 +33,7 @@ function toProtoResponse<T>(response: ApiResponse<T>): { base: CommonApiResponse
 }
 
 class ServerManagementService {
-  private readonly endpoint = '/api/v1/servers';
+  private readonly endpoint = '/v1/servers';
 
   /**
    * 获取服务器列表

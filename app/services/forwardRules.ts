@@ -98,7 +98,7 @@ function toProtoResponse<T>(response: ApiResponse<T>): { base: CommonApiResponse
 }
 
 class ForwardRulesService {
-  private readonly endpoint = '/api/v1/rules';
+  private readonly endpoint = '/v1/rules';
 
   /**
    * 获取转发规则列表

@@ -159,10 +159,12 @@ class HttpClient {
         // 尝试解析错误响应
         try {
           const errorData = await response.json();
+          
+          // API统一返回proto格式
           return {
-            success: false,
-            message: errorData.message || `请求失败，状态码: ${response.status}`,
-            data: errorData.data as T, // 使用类型断言
+            success: errorData.base?.success ?? false,
+            message: errorData.base?.message || `请求失败，状态码: ${response.status}`,
+            data: errorData.data as T,
           };
         } catch (parseError) {
           // 如果无法解析JSON，返回基本错误
@@ -174,7 +176,13 @@ class HttpClient {
       }
       
       const data = await response.json();
-      return data;
+      
+      // API统一返回proto格式：{base: {success, message, errorCode}, data: ...}
+      return {
+        success: data.base?.success ?? false,
+        message: data.base?.message,
+        data: data.data
+      };
     } catch (error) {
       console.error('API request failed:', error);
       

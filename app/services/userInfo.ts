@@ -55,7 +55,7 @@ function toProtoResponse<T>(response: ApiResponse<T>): { base?: CommonApiRespons
 }
 
 class UserInfoService {
-  private readonly endpoint = '/user/info';
+  private readonly endpoint = '/v1/users';
 
   /**
    * 获取当前用户信息

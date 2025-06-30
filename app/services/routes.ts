@@ -35,7 +35,7 @@ export type CreateRouteData = Omit<RouteItem, 'id'>;
 export type UpdateRouteData = Partial<Omit<RouteItem, 'id'>>;
 
 class RouteService {
-  private readonly endpoint = '/routes';
+  private readonly endpoint = '/v1/routes';
 
   /**
    * 获取线路列表
