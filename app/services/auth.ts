@@ -22,17 +22,12 @@ export interface LoginResponse {
     errorCode?: string;
   };
   data?: {
+    id: number;
+    name: string;
+    email: string;
+    role: number;
     token: string;
-    refreshToken: string;
-    expiresIn: number;
-    user: {
-      id: string;
-      username: string;
-      email: string;
-      avatar: string;
-      createdAt: string;
-      lastLoginAt?: string;
-    };
+    expires: number;
   };
 }
 
@@ -163,7 +158,18 @@ class AuthService {
     
     try {
       localStorage.setItem('auth_token', authData.token);
-      localStorage.setItem('user', JSON.stringify(authData.user));
+      
+      // 将API数据转换为前端期望的用户格式
+      const user = {
+        id: authData.id.toString(),
+        username: authData.name,
+        email: authData.email,
+        avatar: '', // API没有返回avatar，使用默认值
+        createdAt: new Date().toISOString(), // API没有返回，使用当前时间
+        lastLoginAt: new Date().toISOString()
+      };
+      
+      localStorage.setItem('user', JSON.stringify(user));
     } catch (error) {
       console.error('保存认证信息失败:', error);
     }

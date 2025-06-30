@@ -26,6 +26,7 @@ import { authService } from '@/services/auth';
 import { useAuth } from '@/components/hooks/useAuth';
 import { passkeyService } from '@/services/passkey';
 import { PasskeyUtils } from '@/utils/passkey';
+import { LoginType as ProtoLoginType } from '@/types/generated/api/users/user_auth';
 
 const { Text } = Typography;
 
@@ -51,12 +52,14 @@ const LoginPage = () => {
     try {
       console.log('登录表单数据:', values);
       
-      // 确定用户名字段：邮箱登录使用email，账号登录使用username
-      const username = loginType === 'email' ? values.email : values.username;
+      // 确定登录类型和标识符
+      const isEmailLogin = loginType === 'email';
+      const identifier = isEmailLogin ? values.email : values.username;
       
-      // 调用登录API
+      // 调用登录API - 使用新的proto结构
       const response = await authService.login({
-        username,
+        loginType: isEmailLogin ? ProtoLoginType.LOGIN_TYPE_EMAIL : ProtoLoginType.LOGIN_TYPE_USERNAME,
+        identifier,
         password: values.password
       });
 
@@ -66,8 +69,10 @@ const LoginPage = () => {
         
         // 使用 useAuth hook 更新登录状态
         const user = {
-          ...response.data.user,
-          name: response.data.user.username, // 映射 username 到 name
+          id: response.data.id.toString(),
+          name: response.data.name,
+          email: response.data.email,
+          role: response.data.role.toString(),
           provider: 'local'
         };
         authLogin(user, loginType);
@@ -101,17 +106,12 @@ const LoginPage = () => {
         
         // 保存认证信息到本地存储
         authService.saveAuthData({
+          id: loginData.id || 0,
+          name: loginData.name || 'passkey-user',
+          email: loginData.email || 'passkey@nspass.com',
+          role: 1,
           token: loginData.token || 'mock-passkey-token',
-          refreshToken: loginData.refreshToken || 'mock-refresh-token',
-          expiresIn: loginData.expiresIn || 3600,
-          user: {
-            id: loginData.id?.toString() || 'passkey-user',
-            username: loginData.name || 'passkey-user',
-            email: loginData.email || 'passkey@nspass.com',
-            avatar: '',
-            createdAt: new Date().toISOString(),
-            lastLoginAt: new Date().toISOString()
-          }
+          expires: loginData.expiresIn || 24
         });
         
         // 使用 useAuth hook 更新登录状态
