@@ -55,20 +55,20 @@ import type { ApiResponse as CommonApiResponse } from '@/types/generated/common'
 // }
 
 class UserInfoService {
-  private readonly endpoint = '/v1/user';
+  private readonly endpoint = '/v1/users';
 
   /**
    * 获取当前用户信息
    */
   async getCurrentUserInfo(): Promise<ApiResponse<UserInfo>> {
-    return httpClient.get<UserInfo>(`${this.endpoint}/profile`);
+    return httpClient.get<UserInfo>(`${this.endpoint}/me`);
   }
 
   /**
    * 更新当前用户信息
    */
   async updateCurrentUserInfo(request: UpdateUserInfoRequest): Promise<ApiResponse<UserInfo>> {
-    return httpClient.put<UserInfo>(`${this.endpoint}/profile`, request);
+    return httpClient.put<UserInfo>(`${this.endpoint}/me`, request);
   }
 
   /**

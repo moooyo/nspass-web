@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button, Tag, Popconfirm, Tooltip, Space } from 'antd';
 import { message } from '@/utils/message';
 import {
@@ -15,10 +15,13 @@ import {
 import { Form, FormInstance } from 'antd';
 import { 
     PlusOutlined, 
+    ReloadOutlined,
     EditOutlined,
     DeleteOutlined,
     ThunderboltOutlined,
 } from '@ant-design/icons';
+import { egressService } from '@/services/egress';
+import type { EgressItem } from '@/services/egress';
 
 // 服务器选项
 const serverOptions = [
@@ -32,7 +35,6 @@ const egressModeOptions = [
     { label: '直出', value: 'direct' },
     { label: 'iptables', value: 'iptables' },
     { label: 'shadowsocks-2022', value: 'ss2022' },
-    { label: 'Snell Surge', value: 'snell' },
 ];
 
 // 转发类型选项
@@ -42,11 +44,11 @@ const forwardTypeOptions = [
     { label: '全部', value: 'all' },
 ];
 
-type EgressItem = {
+type LocalEgressItem = {
     id: React.Key;
     egressId: string;
     serverId: string;
-    egressMode: 'direct' | 'iptables' | 'ss2022' | 'snell';
+    egressMode: 'direct' | 'iptables' | 'ss2022';
     egressConfig: string;
     
     // 直出模式字段
@@ -60,83 +62,67 @@ type EgressItem = {
     // shadowsocks-2022模式字段
     password?: string;
     supportUdp?: boolean;
-    
-    // Snell模式字段
-    snellAddress?: string;
-    snellPort?: string;
-    snellPsk?: string;
-    snellVersion?: '4' | '5';
 };
 
-const defaultData: EgressItem[] = [
-    {
-        id: 1,
-        egressId: 'egress001',
-        serverId: 'server01',
-        egressMode: 'direct',
-        egressConfig: '目的地址: 203.0.113.1',
-        targetAddress: '203.0.113.1',
-    },
-    {
-        id: 2,
-        egressId: 'egress002',
-        serverId: 'server01',
-        egressMode: 'iptables',
-        egressConfig: 'TCP转发至 192.168.1.1:8080',
-        forwardType: 'tcp',
-        destAddress: '192.168.1.1',
-        destPort: '8080',
-    },
-    {
-        id: 3,
-        egressId: 'egress003',
-        serverId: 'server02',
-        egressMode: 'iptables',
-        egressConfig: '全部转发至 10.0.0.1:443',
-        forwardType: 'all',
-        destAddress: '10.0.0.1',
-        destPort: '443',
-    },
-    {
-        id: 4,
-        egressId: 'egress004',
-        serverId: 'server03',
-        egressMode: 'ss2022',
-        egressConfig: 'Shadowsocks-2022，支持UDP',
-        password: 'password123',
-        supportUdp: true,
-    },
-    {
-        id: 5,
-        egressId: 'egress005',
-        serverId: 'server02',
-        egressMode: 'snell',
-        egressConfig: 'Snell v4: 1.2.3.4:6333',
-        snellAddress: '1.2.3.4',
-        snellPort: '6333',
-        snellPsk: 'UzJr9mX8qN5vL1pAe3tK7wC6hF2dY4nB9sM1xQ8vR6uJ3lO5pT',
-        snellVersion: '4',
-    },
-    {
-        id: 6,
-        egressId: 'egress006',
-        serverId: 'server03',
-        egressMode: 'snell',
-        egressConfig: 'Snell v5: 2.3.4.5:8443',
-        snellAddress: '2.3.4.5',
-        snellPort: '8443',
-        snellPsk: 'Xt9mQ2vL7cF5nA8pK1eH4wD6sJ3gR9uY5tM2xV8zN1qB7lO3pI',
-        snellVersion: '5',
-    },
-];
+// 将API数据转换为组件数据格式
+const convertEgressToLocalItem = (egress: EgressItem): LocalEgressItem => {
+    return {
+        id: egress.id,
+        egressId: egress.egressId,
+        serverId: egress.serverId,
+        egressMode: egress.egressMode,
+        egressConfig: egress.egressConfig,
+        targetAddress: egress.targetAddress,
+        forwardType: egress.forwardType,
+        destAddress: egress.destAddress,
+        destPort: egress.destPort,
+        password: egress.password,
+        supportUdp: egress.supportUdp,
+    };
+};
 
 const Egress: React.FC = () => {
-    const [dataSource, setDataSource] = useState<EgressItem[]>(defaultData);
+    const [dataSource, setDataSource] = useState<LocalEgressItem[]>([]);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [hasLoadedData, setHasLoadedData] = useState<boolean>(false);
     const [createModalVisible, setCreateModalVisible] = useState<boolean>(false);
     const [editModalVisible, setEditModalVisible] = useState<boolean>(false);
-    const [editingRecord, setEditingRecord] = useState<EgressItem | null>(null);
+    const [editingRecord, setEditingRecord] = useState<LocalEgressItem | null>(null);
     const [form] = Form.useForm();
     const [editForm] = Form.useForm();
+
+    // 加载出口配置数据
+    const loadEgressData = useCallback(async () => {
+        try {
+            setLoading(true);
+            const response = await egressService.getEgressList();
+            
+            if (response.success) {
+                const egressData = response.data || [];
+                const convertedData = egressData.map(convertEgressToLocalItem);
+                setDataSource(convertedData);
+                setHasLoadedData(true);
+                message.success(response.message || '获取出口配置成功');
+            } else {
+                // 失败时清空数据，避免显示过期缓存
+                setDataSource([]);
+                setHasLoadedData(false);
+                message.error(response.message || '获取出口配置失败');
+            }
+        } catch (error) {
+            console.error('获取出口配置失败:', error);
+            // 失败时清空数据，避免显示过期缓存
+            setDataSource([]);
+            setHasLoadedData(false);
+            message.error('获取出口配置失败');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadEgressData();
+    }, [loadEgressData]);
 
     // 生成随机密码函数
     const generateRandomPassword = (minLength: number = 100, maxLength: number = 128): string => {
@@ -160,13 +146,23 @@ const Egress: React.FC = () => {
     };
 
     // 删除出口
-    const deleteEgress = (record: EgressItem) => {
-        setDataSource(dataSource.filter(item => item.id !== record.id));
-        message.success(`已删除出口: ${record.egressId}`);
+    const deleteEgress = async (record: LocalEgressItem) => {
+        try {
+            const response = await egressService.deleteEgress(record.id);
+            if (response.success) {
+                setDataSource(dataSource.filter(item => item.id !== record.id));
+                message.success(response.message || `已删除出口: ${record.egressId}`);
+            } else {
+                message.error(response.message || '删除失败');
+            }
+        } catch (error) {
+            console.error('删除出口失败:', error);
+            message.error('删除失败');
+        }
     };
 
     // 打开编辑模态框
-    const openEditModal = (record: EgressItem) => {
+    const openEditModal = (record: LocalEgressItem) => {
         setEditingRecord(record);
         // 设置表单值
         editForm.setFieldsValue({
@@ -184,150 +180,68 @@ const Egress: React.FC = () => {
                 password: record.password,
                 supportUdp: record.supportUdp,
             }),
-            ...(record.egressMode === 'snell' && { 
-                snellAddress: record.snellAddress,
-                snellPort: record.snellPort,
-                snellPsk: record.snellPsk,
-                snellVersion: record.snellVersion,
-            }),
         });
         setEditModalVisible(true);
     };
 
     // 处理编辑出口提交
-    const handleEditEgress = async (values: EgressItem) => {
+    const handleEditEgress = async (values: LocalEgressItem) => {
         console.log('编辑出口表单提交:', values);
         
         if (!editingRecord) return false;
         
-        // 构建配置字符串
-        let egressConfig = '';
-        
-        switch (values.egressMode) {
-            case 'direct':
-                egressConfig = `目的地址: ${values.targetAddress}`;
-                break;
-            case 'iptables':
-                const forwardTypeText = values.forwardType === 'tcp' ? 'TCP' : 
-                                       values.forwardType === 'udp' ? 'UDP' : '全部';
-                egressConfig = `${forwardTypeText}转发至 ${values.destAddress}:${values.destPort}`;
-                break;
-            case 'ss2022':
-                egressConfig = `Shadowsocks-2022${values.supportUdp ? '，支持UDP' : ''}`;
-                break;
-            case 'snell':
-                egressConfig = `Snell v${values.snellVersion || '4'}: ${values.snellAddress}:${values.snellPort}`;
-                break;
-            default:
-                break;
+        try {
+            const response = await egressService.updateEgress(editingRecord.id, values);
+            if (response.success) {
+                // 重新加载数据
+                const listResponse = await egressService.getEgressList();
+                if (listResponse.success) {
+                    const egressData = listResponse.data || [];
+                    const convertedData = egressData.map(convertEgressToLocalItem);
+                    setDataSource(convertedData);
+                }
+                message.success(response.message || '出口更新成功');
+                setEditingRecord(null);
+                return true;
+            } else {
+                message.error(response.message || '出口更新失败');
+                return false;
+            }
+        } catch (error) {
+            console.error('更新出口失败:', error);
+            message.error('出口更新失败');
+            return false;
         }
-
-        const updatedEgress: EgressItem = {
-            ...editingRecord,
-            egressId: values.egressId || editingRecord.egressId,
-            serverId: values.serverId,
-            egressMode: values.egressMode,
-            egressConfig,
-            
-            // 清空其他模式的字段并设置当前模式的字段
-            targetAddress: undefined,
-            forwardType: undefined,
-            destAddress: undefined,
-            destPort: undefined,
-            password: undefined,
-            supportUdp: undefined,
-            snellAddress: undefined,
-            snellPort: undefined,
-            snellPsk: undefined,
-            snellVersion: undefined,
-            
-            // 设置对应模式的字段
-            ...(values.egressMode === 'direct' && { targetAddress: values.targetAddress }),
-            ...(values.egressMode === 'iptables' && { 
-                forwardType: values.forwardType,
-                destAddress: values.destAddress,
-                destPort: values.destPort,
-            }),
-            ...(values.egressMode === 'ss2022' && { 
-                password: values.password,
-                supportUdp: values.supportUdp,
-            }),
-            ...(values.egressMode === 'snell' && { 
-                snellAddress: values.snellAddress,
-                snellPort: values.snellPort,
-                snellPsk: values.snellPsk,
-                snellVersion: values.snellVersion || '4',
-            }),
-        };
-
-        // 更新数据源
-        setDataSource(dataSource.map(item => 
-            item.id === editingRecord.id ? updatedEgress : item
-        ));
-        
-        message.success('出口更新成功');
-        setEditingRecord(null);
-        return true; // 返回 true 关闭弹窗
     };
 
     // 处理新建出口提交
-    const handleCreateEgress = async (values: EgressItem) => {
+    const handleCreateEgress = async (values: LocalEgressItem) => {
         console.log('创建出口表单提交:', values);
         
-        // 构建配置字符串
-        let egressConfig = '';
-        
-        switch (values.egressMode) {
-            case 'direct':
-                egressConfig = `目的地址: ${values.targetAddress}`;
-                break;
-            case 'iptables':
-                const forwardTypeText = values.forwardType === 'tcp' ? 'TCP' : 
-                                       values.forwardType === 'udp' ? 'UDP' : '全部';
-                egressConfig = `${forwardTypeText}转发至 ${values.destAddress}:${values.destPort}`;
-                break;
-            case 'ss2022':
-                egressConfig = `Shadowsocks-2022${values.supportUdp ? '，支持UDP' : ''}`;
-                break;
-            case 'snell':
-                egressConfig = `Snell v${values.snellVersion || '4'}: ${values.snellAddress}:${values.snellPort}`;
-                break;
-            default:
-                break;
+        try {
+            const response = await egressService.createEgress(values);
+            if (response.success) {
+                // 重新加载数据
+                const listResponse = await egressService.getEgressList();
+                if (listResponse.success) {
+                    const egressData = listResponse.data || [];
+                    const convertedData = egressData.map(convertEgressToLocalItem);
+                    setDataSource(convertedData);
+                }
+                message.success(response.message || '出口创建成功');
+                return true;
+            } else {
+                message.error(response.message || '出口创建失败');
+                return false;
+            }
+        } catch (error) {
+            console.error('创建出口失败:', error);
+            message.error('出口创建失败');
+            return false;
         }
-
-        const newEgress: EgressItem = {
-            id: Date.now(),
-            egressId: values.egressId || `egress${Date.now().toString().substr(-6)}`,
-            serverId: values.serverId,
-            egressMode: values.egressMode,
-            egressConfig,
-            
-            // 复制对应模式的字段
-            ...(values.egressMode === 'direct' && { targetAddress: values.targetAddress }),
-            ...(values.egressMode === 'iptables' && { 
-                forwardType: values.forwardType,
-                destAddress: values.destAddress,
-                destPort: values.destPort,
-            }),
-            ...(values.egressMode === 'ss2022' && { 
-                password: values.password,
-                supportUdp: values.supportUdp,
-            }),
-            ...(values.egressMode === 'snell' && { 
-                snellAddress: values.snellAddress,
-                snellPort: values.snellPort,
-                snellPsk: values.snellPsk,
-                snellVersion: values.snellVersion || '4',
-            }),
-        };
-
-        setDataSource([...dataSource, newEgress]);
-        message.success('出口创建成功');
-        return true; // 返回 true 关闭弹窗
     };
 
-    const columns: ProColumns<EgressItem>[] = [
+    const columns: ProColumns<LocalEgressItem>[] = [
         {
             title: '出口ID',
             dataIndex: 'egressId',
@@ -367,20 +281,17 @@ const Egress: React.FC = () => {
                 direct: { text: '直出', status: 'Success' },
                 iptables: { text: 'iptables', status: 'Processing' },
                 ss2022: { text: 'shadowsocks-2022', status: 'Warning' },
-                snell: { text: 'Snell Surge', status: 'Error' },
             },
             render: (_, record) => (
                 <Tag color={
                     record.egressMode === 'direct' ? 'green' : 
                     record.egressMode === 'iptables' ? 'blue' : 
                     record.egressMode === 'ss2022' ? 'purple' :
-                    record.egressMode === 'snell' ? 'magenta' :
                     'default'
                 }>
                     {record.egressMode === 'direct' ? '直出' : 
                      record.egressMode === 'iptables' ? 'iptables' : 
                      record.egressMode === 'ss2022' ? 'shadowsocks-2022' :
-                     record.egressMode === 'snell' ? 'Snell Surge' :
                      record.egressMode}
                 </Tag>
             ),
@@ -446,19 +357,26 @@ const Egress: React.FC = () => {
                         direct: { text: '直出' },
                         iptables: { text: 'iptables' },
                         ss2022: { text: 'shadowsocks-2022' },
-                        snell: { text: 'Snell Surge' },
                     }}
                 />
             </QueryFilter>
 
-            <EditableProTable<EgressItem>
+            <EditableProTable<LocalEgressItem>
                 rowKey="id"
                 headerTitle="出口列表"
                 maxLength={20}
                 scroll={{ x: 'max-content' }}
                 recordCreatorProps={false}
-                loading={false}
+                loading={loading}
                 toolBarRender={() => [
+                    <Button
+                        key="refresh"
+                        icon={<ReloadOutlined />}
+                        onClick={loadEgressData}
+                        loading={loading}
+                    >
+                        刷新
+                    </Button>,
                     <Button
                         key="button"
                         icon={<PlusOutlined />}
@@ -590,83 +508,6 @@ const Egress: React.FC = () => {
                             );
                         }
                         
-                        // Snell模式
-                        if (egressMode === 'snell') {
-                            return (
-                                <ProFormGroup 
-                                    title="Snell 配置"
-                                    extra={
-                                        <a 
-                                            href="https://manual.nssurge.com/others/snell.html" 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            style={{ fontSize: '12px' }}
-                                        >
-                                            查看文档
-                                        </a>
-                                    }
-                                >
-                                    <ProFormText
-                                        name="snellAddress"
-                                        label="服务器地址"
-                                        placeholder="请输入服务器地址 (如: 1.2.3.4)"
-                                        rules={[{ required: true, message: '请输入服务器地址' }]}
-                                        tooltip="Snell 代理服务器的 IP 地址或域名"
-                                    />
-                                    <ProFormText
-                                        name="snellPort"
-                                        label="端口"
-                                        placeholder="请输入端口 (如: 6333)"
-                                        rules={[
-                                            { required: true, message: '请输入端口' },
-                                            { pattern: /^\d+$/, message: '端口必须是数字' },
-                                            { 
-                                                validator: (_, value) => {
-                                                    if (value && (parseInt(value) < 1 || parseInt(value) > 65535)) {
-                                                        return Promise.reject(new Error('端口范围必须在 1-65535 之间'));
-                                                    }
-                                                    return Promise.resolve();
-                                                }
-                                            }
-                                        ]}
-                                        tooltip="Snell 代理服务器的端口号"
-                                    />
-                                    <ProFormText.Password
-                                        name="snellPsk"
-                                        label="PSK (预共享密钥)"
-                                        placeholder="请输入PSK密钥"
-                                        rules={[{ required: true, message: '请输入PSK密钥' }]}
-                                        tooltip="Snell 协议的预共享密钥，用于加密通信"
-                                        fieldProps={{
-                                            addonAfter: (
-                                                <Tooltip title="生成100-128位随机PSK密钥">
-                                                    <Button 
-                                                        type="text" 
-                                                        icon={<ThunderboltOutlined />}
-                                                        onClick={() => generateAndSetPassword('snellPsk', 100, 128, '已生成随机PSK密钥')}
-                                                        size="small"
-                                                    />
-                                                </Tooltip>
-                                            )
-                                        }}
-                                        extra="建议使用生成的随机密钥以确保安全性"
-                                    />
-                                    <ProFormSelect
-                                        name="snellVersion"
-                                        label="协议版本"
-                                        options={[
-                                            { label: 'v4 (稳定版)', value: '4' },
-                                            { label: 'v5 (最新版)', value: '5' }
-                                        ]}
-                                        initialValue="4"
-                                        rules={[{ required: true, message: '请选择协议版本' }]}
-                                        tooltip="Snell 协议版本，v4为稳定版本，v5为最新版本"
-                                        placeholder="请选择协议版本"
-                                    />
-                                </ProFormGroup>
-                            );
-                        }
-                        
                         return null;
                     }}
                 </ProFormDependency>
@@ -776,82 +617,6 @@ const Egress: React.FC = () => {
                                     <ProFormCheckbox name="supportUdp" label="支持UDP">
                                         启用UDP支持
                                     </ProFormCheckbox>
-                                </ProFormGroup>
-                            );
-                        }
-                        
-                        // Snell模式
-                        if (egressMode === 'snell') {
-                            return (
-                                <ProFormGroup 
-                                    title="Snell 配置"
-                                    extra={
-                                        <a 
-                                            href="https://manual.nssurge.com/others/snell.html" 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            style={{ fontSize: '12px' }}
-                                        >
-                                            查看文档
-                                        </a>
-                                    }
-                                >
-                                    <ProFormText
-                                        name="snellAddress"
-                                        label="服务器地址"
-                                        placeholder="请输入服务器地址 (如: 1.2.3.4)"
-                                        rules={[{ required: true, message: '请输入服务器地址' }]}
-                                        tooltip="Snell 代理服务器的 IP 地址或域名"
-                                    />
-                                    <ProFormText
-                                        name="snellPort"
-                                        label="端口"
-                                        placeholder="请输入端口 (如: 6333)"
-                                        rules={[
-                                            { required: true, message: '请输入端口' },
-                                            { pattern: /^\d+$/, message: '端口必须是数字' },
-                                            { 
-                                                validator: (_, value) => {
-                                                    if (value && (parseInt(value) < 1 || parseInt(value) > 65535)) {
-                                                        return Promise.reject(new Error('端口范围必须在 1-65535 之间'));
-                                                    }
-                                                    return Promise.resolve();
-                                                }
-                                            }
-                                        ]}
-                                        tooltip="Snell 代理服务器的端口号"
-                                    />
-                                    <ProFormText.Password
-                                        name="snellPsk"
-                                        label="PSK (预共享密钥)"
-                                        placeholder="请输入PSK密钥"
-                                        rules={[{ required: true, message: '请输入PSK密钥' }]}
-                                        tooltip="Snell 协议的预共享密钥，用于加密通信"
-                                        fieldProps={{
-                                            addonAfter: (
-                                                <Tooltip title="生成100-128位随机PSK密钥">
-                                                    <Button 
-                                                        type="text" 
-                                                        icon={<ThunderboltOutlined />}
-                                                        onClick={() => generateAndSetPassword('snellPsk', 100, 128, '已生成随机PSK密钥', editForm)}
-                                                        size="small"
-                                                    />
-                                                </Tooltip>
-                                            )
-                                        }}
-                                        extra="建议使用生成的随机密钥以确保安全性"
-                                    />
-                                    <ProFormSelect
-                                        name="snellVersion"
-                                        label="协议版本"
-                                        options={[
-                                            { label: 'v4 (稳定版)', value: '4' },
-                                            { label: 'v5 (最新版)', value: '5' }
-                                        ]}
-                                        rules={[{ required: true, message: '请选择协议版本' }]}
-                                        tooltip="Snell 协议版本，v4为稳定版本，v5为最新版本"
-                                        placeholder="请选择协议版本"
-                                    />
                                 </ProFormGroup>
                             );
                         }

@@ -46,6 +46,80 @@ interface ApiResponse<T = unknown> {
   };
 }
 
+// Proto API响应结构
+interface ProtoApiResponse<T = unknown> {
+  base: {
+    success: boolean;
+    message?: string;
+    errorCode?: string;
+  };
+  data?: T;
+  total?: number;
+  page?: number;
+  pageSize?: number;
+  pagination?: {
+    current: number;
+    pageSize: number;
+    total: number;
+    totalPages?: number;
+  };
+}
+
+// 通用响应处理工具
+class ResponseHandler {
+  /**
+   * 统一处理proto API响应，转换为标准ApiResponse格式
+   */
+  static normalizeProtoResponse<T>(response: any): ApiResponse<T> {
+    // 如果已经是标准格式，直接返回
+    if (response.success !== undefined && !response.base) {
+      return response;
+    }
+
+    // 处理proto格式响应
+    if (response.base) {
+      const normalized: ApiResponse<T> = {
+        success: response.base.success ?? false,
+        message: response.base.message,
+        data: response.data
+      };
+
+      // 处理分页信息
+      if (response.pagination) {
+        normalized.pagination = {
+          current: response.pagination.current || response.page || 1,
+          pageSize: response.pagination.pageSize || response.pageSize || 10,
+          total: response.pagination.total || response.total || 0,
+          totalPages: response.pagination.totalPages || Math.ceil((response.total || 0) / (response.pageSize || 10))
+        };
+      } else if (response.total !== undefined || response.page !== undefined) {
+        normalized.pagination = {
+          current: response.page || 1,
+          pageSize: response.pageSize || 10,
+          total: response.total || 0,
+          totalPages: Math.ceil((response.total || 0) / (response.pageSize || 10))
+        };
+      }
+
+      return normalized;
+    }
+
+    // 如果都不匹配，返回错误格式
+    return {
+      success: false,
+      message: '响应格式不正确',
+      data: response as T
+    };
+  }
+
+  /**
+   * 检查是否为proto响应格式
+   */
+  static isProtoResponse(response: any): response is ProtoApiResponse {
+    return response && typeof response === 'object' && response.base && typeof response.base.success === 'boolean';
+  }
+}
+
 class HttpClient {
   private baseURL: string;
   private defaultErrorResponse<T>(): ApiResponse<T> {
@@ -172,22 +246,15 @@ class HttpClient {
         try {
           const errorData = await response.json();
           
-          // 兼容两种错误响应格式
-          if (errorData.result && errorData.result.success !== undefined) {
-            // 新格式错误处理
-            return {
-              success: errorData.result.success ?? false,
-              message: errorData.result.message || `请求失败，状态码: ${response.status}`,
-              data: errorData.data as T,
-            };
-          } else {
-            // 旧格式错误处理
-            return {
-              success: errorData.base?.success ?? false,
-              message: errorData.base?.message || `请求失败，状态码: ${response.status}`,
-              data: errorData.data as T,
-            };
+          // 使用统一的响应处理器处理错误响应
+          const normalizedError = ResponseHandler.normalizeProtoResponse<T>(errorData);
+          
+          // 如果没有错误消息，添加状态码信息
+          if (!normalizedError.message) {
+            normalizedError.message = `请求失败，状态码: ${response.status}`;
           }
+          
+          return normalizedError;
         } catch (parseError) {
           // 如果无法解析JSON，返回基本错误
           return {
@@ -199,30 +266,8 @@ class HttpClient {
       
       const data = await response.json();
       
-      // 兼容两种API响应格式
-      // 1. 新格式：{result: {success, message}, routes: [...], pagination: {...}}
-      // 2. 旧格式：{base: {success, message}, data: ...}
-      if (data.result && data.result.success !== undefined) {
-        // 新格式处理
-        return {
-          success: data.result.success ?? false,
-          message: data.result.message,
-          data: data.routes || data.data,
-          pagination: data.pagination ? {
-            current: data.pagination.page,
-            pageSize: data.pagination.pageSize,
-            total: data.pagination.total,
-            totalPages: data.pagination.totalPages
-          } : undefined
-        };
-      } else {
-        // 旧格式处理
-        return {
-          success: data.base?.success ?? false,
-          message: data.base?.message,
-          data: data.data
-        };
-      }
+      // 使用统一的响应处理器
+      return ResponseHandler.normalizeProtoResponse<T>(data);
     } catch (error) {
       console.error('API request failed:', error);
       
@@ -262,6 +307,7 @@ class HttpClient {
 // 创建默认实例
 export const httpClient = new HttpClient();
 
-// 导出类型
-export type { ApiResponse, RequestOptions };
+// 导出类型和工具
+export type { ApiResponse, ProtoApiResponse, RequestOptions };
+export { ResponseHandler };
 export default HttpClient; 

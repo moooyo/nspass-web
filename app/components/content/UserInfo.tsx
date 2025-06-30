@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
     ProForm,
     ProFormText,
     ProCard,
   } from '@ant-design/pro-components';
   import { message } from '@/utils/message';
-  import { Card, Row, Col, Avatar, Typography, Space, Tag, Divider, Progress, Statistic } from 'antd';
+  import { Card, Row, Col, Avatar, Typography, Space, Tag, Divider, Progress, Statistic, Button } from 'antd';
   import { 
     UserOutlined, 
     CrownOutlined, 
@@ -14,9 +14,12 @@ import {
     CalendarOutlined,
     SettingOutlined,
     SafetyCertificateOutlined,
-    LineChartOutlined
+    LineChartOutlined,
+    ReloadOutlined
   } from '@ant-design/icons';
   import { useTheme } from '../hooks/useTheme';
+  import { userInfoService } from '@/services/userInfo';
+  import type { UserInfo } from '@/services/userInfo';
 
   const { Title, Text, Paragraph } = Typography;
 
@@ -30,7 +33,41 @@ import {
 
 const UserInfo: React.FC = () => {
   const { theme: currentTheme } = useTheme();
+  const [loading, setLoading] = useState<boolean>(true);
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const [hasLoadedData, setHasLoadedData] = useState<boolean>(false);
   
+  // 加载用户信息
+  const loadUserInfo = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await userInfoService.getCurrentUserInfo();
+      
+      if (response.success && response.data) {
+        setUserInfo(response.data);
+        setHasLoadedData(true);
+        message.success(response.message || '获取用户信息成功');
+      } else {
+        // 失败时清空数据，避免显示过期缓存
+        setUserInfo(null);
+        setHasLoadedData(false);
+        message.error(response.message || '获取用户信息失败');
+      }
+    } catch (error) {
+      console.error('获取用户信息失败:', error);
+      // 失败时清空数据，避免显示过期缓存
+      setUserInfo(null);
+      setHasLoadedData(false);
+      message.error('获取用户信息失败');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadUserInfo();
+  }, [loadUserInfo]);
+
   // 模拟用户数据
   const userStats = [
     { title: '规则数量', value: 12, icon: <SettingOutlined />, color: '#1890ff' },
@@ -48,10 +85,11 @@ const UserInfo: React.FC = () => {
             className="modern-card hover-lift"
             style={{ textAlign: 'center' }}
             styles={{ body: { padding: '32px 24px' } }}
+            loading={loading}
           >
             <Avatar 
               size={120} 
-              src="https://api.dicebear.com/7.x/avataaars/svg?seed=user" 
+              src={userInfo?.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=user"} 
               style={{ 
                 marginBottom: 24,
                 border: '4px solid #fff',
@@ -62,7 +100,7 @@ const UserInfo: React.FC = () => {
               margin: '0 0 8px 0', 
               color: currentTheme === 'light' ? '#333' : '#fff' 
             }}>
-              用户名称
+              {userInfo?.name || '用户名称'}
             </Title>
             <Space direction="vertical" size={8} style={{ width: '100%' }}>
               <Tag 
@@ -75,7 +113,7 @@ const UserInfo: React.FC = () => {
                   border: 'none'
                 }}
               >
-                管理员
+                {userInfo?.role === 1 ? '管理员' : '普通用户'}
               </Tag>
               <Tag 
                 icon={<TeamOutlined />} 
@@ -87,7 +125,7 @@ const UserInfo: React.FC = () => {
                   border: 'none'
                 }}
               >
-                高级用户组
+                {userInfo?.userGroup?.[0] ? `用户组${userInfo.userGroup[0]}` : '高级用户组'}
               </Tag>
             </Space>
             
@@ -115,7 +153,7 @@ const UserInfo: React.FC = () => {
                   <Text style={{ 
                     fontSize: 12, 
                     color: currentTheme === 'light' ? '#666' : '#ccc' 
-                  }}>1000 MB</Text>
+                  }}>{userInfo?.traffic || '1000'} MB</Text>
                 </div>
               </div>
               
@@ -133,7 +171,7 @@ const UserInfo: React.FC = () => {
                 <Text style={{ 
                   fontSize: 12,
                   color: currentTheme === 'light' ? '#333' : '#fff'
-                }}>2小时前</Text>
+                }}>{userInfo?.lastLoginTime ? new Date(userInfo.lastLoginTime).toLocaleString() : '2小时前'}</Text>
               </div>
             </Space>
           </Card>
@@ -158,6 +196,7 @@ const UserInfo: React.FC = () => {
                     textAlign: 'center'
                   }}
                   styles={{ body: { padding: '20px 16px' } }}
+                  loading={loading}
                 >
                   <div style={{ 
                     fontSize: 24, 
@@ -199,32 +238,62 @@ const UserInfo: React.FC = () => {
           {/* 用户信息表单 */}
           <Card 
             title={
-              <Title level={4} style={{ 
-                margin: 0, 
-                color: currentTheme === 'light' ? '#333' : '#fff' 
-              }}>
-                <UserOutlined style={{ marginRight: 8, color: '#1890ff' }} />
-                个人信息设置
-              </Title>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Title level={4} style={{ 
+                  margin: 0, 
+                  color: currentTheme === 'light' ? '#333' : '#fff' 
+                }}>
+                  <UserOutlined style={{ marginRight: 8, color: '#1890ff' }} />
+                  个人信息设置
+                </Title>
+                <Button
+                  icon={<ReloadOutlined />}
+                  onClick={loadUserInfo}
+                  loading={loading}
+                  size="small"
+                >
+                  刷新
+                </Button>
+              </div>
             }
             className="modern-card"
+            loading={loading}
           >
             <ProForm
               onFinish={async (values: Record<string, unknown>) => {
-                await waitTime(2000);
-                console.log(values);
-                message.success('保存成功');
+                try {
+                  const response = await userInfoService.updateCurrentUserInfo({
+                    name: values.name as string,
+                    email: values.email as string,
+                    phone: values.phone as string,
+                  });
+                  
+                  if (response.success) {
+                    message.success(response.message || '保存成功');
+                    // 重新获取用户信息
+                    const updatedResponse = await userInfoService.getCurrentUserInfo();
+                    if (updatedResponse.success && updatedResponse.data) {
+                      setUserInfo(updatedResponse.data);
+                    }
+                  } else {
+                    message.error(response.message || '保存失败');
+                  }
+                } catch (error) {
+                  console.error('保存用户信息失败:', error);
+                  message.error('保存失败');
+                }
               }}
               initialValues={{
-                name: 'user name',
-                useMode: 'chapter',
-                company: "my company",
-                user_group: "user group",
-                role: "admin",
-                traffic: "1000",
-                traffic_reset_date: "2025-01-01",
-                forward_rule_config_limit: "1000",
+                name: userInfo?.name || '',
+                email: userInfo?.email || '',
+                phone: userInfo?.phone || '',
+                role: userInfo?.role === 1 ? 'admin' : 'user',
+                user_group: userInfo?.userGroup?.[0]?.toString() || '',
+                traffic: userInfo?.traffic || '',
+                traffic_reset_date: userInfo?.trafficResetDate || '',
+                forward_rule_config_limit: userInfo?.forwardRuleConfigLimit || '',
               }}
+              key={userInfo?.id} // 当用户信息更新时重新渲染表单
               submitter={{
                 searchConfig: {
                   submitText: '保存设置',
@@ -306,6 +375,23 @@ const UserInfo: React.FC = () => {
                     label="规则限制"
                     disabled
                     addonAfter="条"
+                  />
+                </Col>
+              </Row>
+
+              <Row gutter={[24, 0]}>
+                <Col xs={24} lg={12}>
+                  <ProFormText
+                    name="email"
+                    label="邮箱"
+                    placeholder="请输入邮箱"
+                  />
+                </Col>
+                <Col xs={24} lg={12}>
+                  <ProFormText
+                    name="phone"
+                    label="手机号"
+                    placeholder="请输入手机号"
                   />
                 </Col>
               </Row>

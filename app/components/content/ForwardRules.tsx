@@ -11,6 +11,7 @@ import {
 } from '@ant-design/pro-components';
 import { 
     PlusOutlined, 
+    ReloadOutlined,
     PauseCircleOutlined, 
     PlayCircleOutlined,
     BugOutlined, 
@@ -26,6 +27,8 @@ import dynamic from 'next/dynamic';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { ServerItem } from './LeafletWrapper';
+import { forwardRulesService } from '@/services/forwardRules';
+import type { ForwardRule, RuleStatus } from '@/services/forwardRules';
 import 'leaflet/dist/leaflet.css';
 
 // 动态导入LeafletWrapper组件，禁用SSR
@@ -76,41 +79,21 @@ type ForwardRuleItem = {
     viaNodes: string[]; // 途径节点数组
 };
 
-const defaultData: ForwardRuleItem[] = [
-    {
-        id: 1,
-        ruleId: 'rule001',
-        entryType: 'HTTP',
-        entryConfig: '127.0.0.1:8080',
-        trafficUsed: 1024,
-        exitType: 'PROXY',
-        exitConfig: 'proxy.example.com:443',
-        status: 'ACTIVE',
-        viaNodes: ['香港节点', '日本节点'],
-    },
-    {
-        id: 2,
-        ruleId: 'rule002',
-        entryType: 'SOCKS5',
-        entryConfig: '0.0.0.0:1080',
-        trafficUsed: 512,
-        exitType: 'DIRECT',
-        exitConfig: '-',
-        status: 'PAUSED',
-        viaNodes: ['新加坡节点'],
-    },
-    {
-        id: 3,
-        ruleId: 'rule003',
-        entryType: 'SHADOWSOCKS',
-        entryConfig: '0.0.0.0:8388',
-        trafficUsed: 2048,
-        exitType: 'REJECT',
-        exitConfig: '-',
-        status: 'ERROR',
-        viaNodes: [],
-    },
-];
+// 将API数据转换为组件数据格式
+const convertForwardRuleToItem = (rule: ForwardRule): ForwardRuleItem => {
+    return {
+        id: rule.id || 0,
+        ruleId: `rule${rule.id || 0}`,
+        entryType: 'HTTP', // 根据API数据映射
+        entryConfig: `${rule.targetAddress || ''}:${rule.targetPort || 0}`,
+        trafficUsed: (rule.uploadTraffic || 0) + (rule.downloadTraffic || 0),
+        exitType: rule.egressMode === 'EGRESS_MODE_DIRECT' ? 'DIRECT' : 'PROXY',
+        exitConfig: rule.targetAddress || '',
+        status: rule.status === 'RULE_STATUS_ACTIVE' ? 'ACTIVE' : 
+                rule.status === 'RULE_STATUS_INACTIVE' ? 'PAUSED' : 'ERROR',
+        viaNodes: [], // API数据中可能没有这个字段
+    };
+};
 
 // 模拟的服务器数据
 const sampleServers: ServerItem[] = [
@@ -288,7 +271,9 @@ const DraggableServerItem: FC<DraggableServerItemProps> = ({ server, index, move
 };
 
 const ForwardRules: React.FC = () => {
-    const [dataSource, setDataSource] = useState<ForwardRuleItem[]>(defaultData);
+    const [dataSource, setDataSource] = useState<ForwardRuleItem[]>([]);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [hasLoadedData, setHasLoadedData] = useState<boolean>(false);
     
     // 统一的Modal状态管理
     const [modalVisible, setModalVisible] = useState(false);
@@ -301,20 +286,68 @@ const ForwardRules: React.FC = () => {
     // 地图缓存相关状态
     const mapContainerRef = useRef<HTMLDivElement | null>(null);
 
-    // 暂停/启动规则
-    const toggleRuleStatus = (record: ForwardRuleItem) => {
-        const newDataSource = dataSource.map(item => {
-            if (item.id === record.id) {
-                const newStatus: keyof typeof ruleStatusEnum = record.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
-                return { ...item, status: newStatus };
+    // 加载转发规则数据
+    const loadRules = useCallback(async () => {
+        try {
+            setLoading(true);
+            const response = await forwardRulesService.getRules();
+            
+            if (response.success) {
+                const rulesData = response.data?.data || [];
+                const convertedRules = rulesData.map(convertForwardRuleToItem);
+                setDataSource(convertedRules);
+                setHasLoadedData(true);
+                message.success(response.message || '获取转发规则成功');
+            } else {
+                // 失败时清空数据，避免显示过期缓存
+                setDataSource([]);
+                setHasLoadedData(false);
+                message.error(response.message || '获取转发规则失败');
             }
-            return item;
-        });
-        setDataSource(newDataSource);
-        message.success(record.status === 'ACTIVE' ? 
-            `已暂停规则: ${record.ruleId}` : 
-            `已启动规则: ${record.ruleId}`
-        );
+        } catch (error) {
+            console.error('获取转发规则失败:', error);
+            // 失败时清空数据，避免显示过期缓存
+            setDataSource([]);
+            setHasLoadedData(false);
+            message.error('获取转发规则失败');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadRules();
+    }, [loadRules]);
+
+    // 暂停/启动规则
+    const toggleRuleStatus = async (record: ForwardRuleItem) => {
+        try {
+            const newStatus = record.status === 'ACTIVE';
+            const response = await forwardRulesService.toggleRule({
+                id: record.id as number,
+                enabled: !newStatus
+            });
+            
+            if (response.success) {
+                const newDataSource = dataSource.map(item => {
+                    if (item.id === record.id) {
+                        const newStatus: keyof typeof ruleStatusEnum = record.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
+                        return { ...item, status: newStatus };
+                    }
+                    return item;
+                });
+                setDataSource(newDataSource);
+                message.success(response.message || (record.status === 'ACTIVE' ? 
+                    `已暂停规则: ${record.ruleId}` : 
+                    `已启动规则: ${record.ruleId}`)
+                );
+            } else {
+                message.error(response.message || '操作失败');
+            }
+        } catch (error) {
+            console.error('切换规则状态失败:', error);
+            message.error('操作失败');
+        }
     };
 
     // 诊断规则
@@ -341,9 +374,19 @@ const ForwardRules: React.FC = () => {
     };
 
     // 删除规则
-    const deleteRule = (record: ForwardRuleItem) => {
-        setDataSource(dataSource.filter(item => item.id !== record.id));
-        message.success(`已删除规则: ${record.ruleId}`);
+    const deleteRule = async (record: ForwardRuleItem) => {
+        try {
+            const response = await forwardRulesService.deleteRule({ id: record.id as number });
+            if (response.success) {
+                setDataSource(dataSource.filter(item => item.id !== record.id));
+                message.success(response.message || `已删除规则: ${record.ruleId}`);
+            } else {
+                message.error(response.message || '删除失败');
+            }
+        } catch (error) {
+            console.error('删除规则失败:', error);
+            message.error('删除失败');
+        }
     };
 
     // 打开新增弹窗
@@ -933,8 +976,16 @@ const ForwardRules: React.FC = () => {
                 rowKey="id"
                 headerTitle="转发规则列表"
                 scroll={{ x: 'max-content' }}
-                loading={false}
+                loading={loading}
                 toolBarRender={() => [
+                    <Button
+                        key="refresh"
+                        icon={<ReloadOutlined />}
+                        onClick={loadRules}
+                        loading={loading}
+                    >
+                        刷新
+                    </Button>,
                     <Button
                         key="button"
                         icon={<PlusOutlined />}

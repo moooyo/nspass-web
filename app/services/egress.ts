@@ -43,7 +43,7 @@ export interface EgressListParams {
 export type UpdateEgressData = Partial<Omit<EgressItem, 'id'>>;
 
 class EgressService {
-  private readonly endpoint = '/egress';
+  private readonly endpoint = '/v1/egress';
 
   /**
    * 获取出口列表
