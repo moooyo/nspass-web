@@ -1,4 +1,5 @@
 import { RouteItem } from '@/services/routes';
+import { Protocol, ShadowsocksMethod, SnellVersion } from '@/types/generated/model/route';
 
 // 模拟自定义线路数据
 export const mockCustomRoutes: RouteItem[] = [
@@ -7,65 +8,90 @@ export const mockCustomRoutes: RouteItem[] = [
     routeId: 'route001',
     routeName: '自定义线路01',
     entryPoint: '203.0.113.1',
-    protocol: 'shadowsocks',
-    udpSupport: true,
-    tcpFastOpen: false,
-    password: 'password123456',
-    port: '8388',
-    method: 'aes-256-gcm',
-    otherParams: '{"timeout": 300, "fast_open": false}',
+    port: 8388,
+    protocol: Protocol.PROTOCOL_SHADOWSOCKS,
+    protocolParams: {
+      shadowsocks: {
+        method: ShadowsocksMethod.SHADOWSOCKS_METHOD_AES_256_GCM,
+        password: 'password123456',
+        udpSupport: true,
+        tcpFastOpen: false,
+        otherParams: '{"timeout": 300, "fast_open": false}',
+      }
+    },
+    description: '测试用自定义线路',
   },
   {
     id: '2',
     routeId: 'route002',
     routeName: '自定义线路02',
     entryPoint: 'example.com',
-    protocol: 'snell',
-    udpSupport: true,
-    tcpFastOpen: true,
-    password: 'snellpsk12345678',
-    port: '6333',
-    snellVersion: '4',
-    otherParams: '{"obfs": "tls", "obfs_host": "bing.com"}',
+    port: 6333,
+    protocol: Protocol.PROTOCOL_SNELL,
+    protocolParams: {
+      snell: {
+        version: SnellVersion.SNELL_VERSION_V4,
+        psk: 'snellpsk12345678',
+        udpSupport: true,
+        tcpFastOpen: true,
+        otherParams: '{"obfs": "tls", "obfs_host": "bing.com"}',
+      }
+    },
+    description: 'Snell v4 测试线路',
   },
   {
     id: '3',
     routeId: 'route003',
     routeName: '香港线路',
     entryPoint: 'hk.example.com',
-    protocol: 'shadowsocks',
-    udpSupport: true,
-    tcpFastOpen: true,
-    password: 'hk_ss_password_2024',
-    port: '443',
-    method: 'chacha20-ietf-poly1305',
-    otherParams: '{"timeout": 600, "plugin": "obfs-local", "plugin-opts": "obfs=tls"}',
+    port: 443,
+    protocol: Protocol.PROTOCOL_SHADOWSOCKS,
+    protocolParams: {
+      shadowsocks: {
+        method: ShadowsocksMethod.SHADOWSOCKS_METHOD_CHACHA20_IETF_POLY1305,
+        password: 'hk_ss_password_2024',
+        udpSupport: true,
+        tcpFastOpen: true,
+        otherParams: '{"timeout": 600, "plugin": "obfs-local", "plugin-opts": "obfs=tls"}',
+      }
+    },
+    description: '香港高速线路',
   },
   {
     id: '4',
     routeId: 'route004',
     routeName: '美国线路',
     entryPoint: 'us.proxy.example.com',
-    protocol: 'snell',
-    udpSupport: false,
-    tcpFastOpen: true,
-    password: 'us_snell_psk_secret',
-    port: '8443',
-    snellVersion: '5',
-    otherParams: '{"obfs": "http", "obfs_host": "cloudflare.com"}',
+    port: 8443,
+    protocol: Protocol.PROTOCOL_SNELL,
+    protocolParams: {
+      snell: {
+        version: SnellVersion.SNELL_VERSION_V5,
+        psk: 'us_snell_psk_secret',
+        udpSupport: false,
+        tcpFastOpen: true,
+        otherParams: '{"obfs": "http", "obfs_host": "cloudflare.com"}',
+      }
+    },
+    description: '美国西海岸线路',
   },
   {
     id: '5',
     routeId: 'route005',
     routeName: '日本线路',
     entryPoint: 'jp.example.org',
-    protocol: 'shadowsocks',
-    udpSupport: true,
-    tcpFastOpen: false,
-    password: 'jp_shadowsocks_secret_key',
-    port: '9443',
-    method: 'aes-128-gcm',
-    otherParams: '{"timeout": 300, "reuse_port": true}',
+    port: 9443,
+    protocol: Protocol.PROTOCOL_SHADOWSOCKS,
+    protocolParams: {
+      shadowsocks: {
+        method: ShadowsocksMethod.SHADOWSOCKS_METHOD_AES_128_GCM,
+        password: 'jp_shadowsocks_secret_key',
+        udpSupport: true,
+        tcpFastOpen: false,
+        otherParams: '{"timeout": 300, "reuse_port": true}',
+      }
+    },
+    description: '日本东京线路',
   },
 ];
 
@@ -76,52 +102,72 @@ export const mockSystemRoutes: RouteItem[] = [
     routeId: 'sys_route001',
     routeName: '系统线路01',
     entryPoint: '198.51.100.1',
-    protocol: 'shadowsocks',
-    udpSupport: true,
-    tcpFastOpen: false,
-    password: 'sys_password_001',
-    port: '443',
-    method: 'aes-256-gcm',
-    otherParams: '{"timeout": 600, "fast_open": false}',
+    port: 443,
+    protocol: Protocol.PROTOCOL_SHADOWSOCKS,
+    protocolParams: {
+      shadowsocks: {
+        method: ShadowsocksMethod.SHADOWSOCKS_METHOD_AES_256_GCM,
+        password: 'sys_password_001',
+        udpSupport: true,
+        tcpFastOpen: false,
+        otherParams: '{"timeout": 600, "fast_open": false}',
+      }
+    },
+    description: '系统自动生成线路',
   },
   {
     id: '102',
     routeId: 'sys_route002',
     routeName: '系统线路02',
     entryPoint: '192.0.2.1',
-    protocol: 'snell',
-    udpSupport: false,
-    tcpFastOpen: true,
-    password: 'sys_snell_psk_002',
-    port: '8443',
-    snellVersion: '5',
-    otherParams: '{"obfs": "http", "obfs_host": "microsoft.com"}',
+    port: 8443,
+    protocol: Protocol.PROTOCOL_SNELL,
+    protocolParams: {
+      snell: {
+        version: SnellVersion.SNELL_VERSION_V5,
+        psk: 'sys_snell_psk_002',
+        udpSupport: false,
+        tcpFastOpen: true,
+        otherParams: '{"obfs": "http", "obfs_host": "microsoft.com"}',
+      }
+    },
+    description: '系统Snell线路',
   },
   {
     id: '103',
     routeId: 'sys_route003',
     routeName: '系统线路03',
     entryPoint: '203.0.113.50',
-    protocol: 'shadowsocks',
-    udpSupport: true,
-    tcpFastOpen: true,
-    password: 'sys_auto_generated_pwd_003',
-    port: '8388',
-    method: 'chacha20-ietf-poly1305',
-    otherParams: '{"timeout": 300, "no_delay": true}',
+    port: 8388,
+    protocol: Protocol.PROTOCOL_SHADOWSOCKS,
+    protocolParams: {
+      shadowsocks: {
+        method: ShadowsocksMethod.SHADOWSOCKS_METHOD_CHACHA20_IETF_POLY1305,
+        password: 'sys_auto_generated_pwd_003',
+        udpSupport: true,
+        tcpFastOpen: true,
+        otherParams: '{"timeout": 300, "no_delay": true}',
+      }
+    },
+    description: '系统高性能线路',
   },
   {
     id: '104',
     routeId: 'sys_route004',
     routeName: '系统线路04',
     entryPoint: 'auto.system.example.com',
-    protocol: 'snell',
-    udpSupport: true,
-    tcpFastOpen: false,
-    password: 'sys_snell_auto_004',
-    port: '443',
-    snellVersion: '4',
-    otherParams: '{"obfs": "tls", "obfs_host": "github.com"}',
+    port: 443,
+    protocol: Protocol.PROTOCOL_SNELL,
+    protocolParams: {
+      snell: {
+        version: SnellVersion.SNELL_VERSION_V4,
+        psk: 'sys_snell_auto_004',
+        udpSupport: true,
+        tcpFastOpen: false,
+        otherParams: '{"obfs": "tls", "obfs_host": "github.com"}',
+      }
+    },
+    description: '系统备用线路',
   },
 ];
 
@@ -130,54 +176,81 @@ export const mockAllRoutes: RouteItem[] = [...mockCustomRoutes, ...mockSystemRou
 
 // 生成配置的示例数据
 export const mockConfigs = {
-  shadowsocks: {
-    json: (route: RouteItem) => JSON.stringify({
-      server: route.entryPoint,
-      server_port: parseInt(route.port || '8388'),
-      method: route.method || 'aes-256-gcm',
-      password: route.password,
-      timeout: 300,
-      fast_open: route.tcpFastOpen,
-      ...(route.otherParams ? JSON.parse(route.otherParams) : {})
-    }, null, 2),
-    
-    uri: (route: RouteItem) => {
-      const method = route.method || 'aes-256-gcm';
-      const userInfo = Buffer.from(`${method}:${route.password}`).toString('base64');
-      return `ss://${userInfo}@${route.entryPoint}:${route.port}#${encodeURIComponent(route.routeName)}`;
+  [Protocol.PROTOCOL_SHADOWSOCKS]: {
+    json: (route: RouteItem) => {
+      const shadowsocksParams = route.protocolParams?.shadowsocks;
+      if (!shadowsocksParams) return '{}';
+      
+      return JSON.stringify({
+        server: route.entryPoint,
+        server_port: route.port || 8388,
+        method: shadowsocksParams.method?.toLowerCase().replace('shadowsocks_method_', '').replace(/_/g, '-') || 'aes-256-gcm',
+        password: shadowsocksParams.password,
+        timeout: 300,
+        fast_open: shadowsocksParams.tcpFastOpen,
+        udp: shadowsocksParams.udpSupport,
+        ...(shadowsocksParams.otherParams ? JSON.parse(shadowsocksParams.otherParams) : {})
+      }, null, 2);
     },
     
-    yaml: (route: RouteItem) => `
+    uri: (route: RouteItem) => {
+      const shadowsocksParams = route.protocolParams?.shadowsocks;
+      if (!shadowsocksParams) return '';
+      
+      const method = shadowsocksParams.method?.toLowerCase().replace('shadowsocks_method_', '').replace(/_/g, '-') || 'aes-256-gcm';
+      const userInfo = Buffer.from(`${method}:${shadowsocksParams.password}`).toString('base64');
+      return `ss://${userInfo}@${route.entryPoint}:${route.port}#${encodeURIComponent(route.routeName || '')}`;
+    },
+    
+    yaml: (route: RouteItem) => {
+      const shadowsocksParams = route.protocolParams?.shadowsocks;
+      if (!shadowsocksParams) return '';
+      
+      const method = shadowsocksParams.method?.toLowerCase().replace('shadowsocks_method_', '').replace(/_/g, '-') || 'aes-256-gcm';
+      return `
 name: "${route.routeName}"
 type: ss
 server: ${route.entryPoint}
 port: ${route.port}
-cipher: ${route.method || 'aes-256-gcm'}
-password: "${route.password}"
-udp: ${route.udpSupport}
-`.trim()
+cipher: ${method}
+password: "${shadowsocksParams.password}"
+udp: ${shadowsocksParams.udpSupport}
+`.trim();
+    }
   },
   
-  snell: {
-    json: (route: RouteItem) => JSON.stringify({
-      name: route.routeName,
-      type: 'snell',
-      server: route.entryPoint,
-      port: parseInt(route.port || '6333'),
-      psk: route.password,
-      version: parseInt(route.snellVersion || '4'),
-      udp: route.udpSupport,
-      ...(route.otherParams ? JSON.parse(route.otherParams) : {})
-    }, null, 2),
+  [Protocol.PROTOCOL_SNELL]: {
+    json: (route: RouteItem) => {
+      const snellParams = route.protocolParams?.snell;
+      if (!snellParams) return '{}';
+      
+      const version = snellParams.version === SnellVersion.SNELL_VERSION_V5 ? 5 : 4;
+      return JSON.stringify({
+        name: route.routeName,
+        type: 'snell',
+        server: route.entryPoint,
+        port: route.port || 6333,
+        psk: snellParams.psk,
+        version: version,
+        udp: snellParams.udpSupport,
+        ...(snellParams.otherParams ? JSON.parse(snellParams.otherParams) : {})
+      }, null, 2);
+    },
     
-    yaml: (route: RouteItem) => `
+    yaml: (route: RouteItem) => {
+      const snellParams = route.protocolParams?.snell;
+      if (!snellParams) return '';
+      
+      const version = snellParams.version === SnellVersion.SNELL_VERSION_V5 ? 5 : 4;
+      return `
 name: "${route.routeName}"
 type: snell
 server: ${route.entryPoint}
 port: ${route.port}
-psk: "${route.password}"
-version: ${route.snellVersion || '4'}
-udp: ${route.udpSupport}
-`.trim()
+psk: "${snellParams.psk}"
+version: ${version}
+udp: ${snellParams.udpSupport}
+`.trim();
+    }
   }
 }; 

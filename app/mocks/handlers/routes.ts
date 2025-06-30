@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import { RouteItem, CreateRouteData, UpdateRouteData } from '@/services/routes';
-import { RouteType } from '@/types/generated/model/route';
+import { RouteType, Protocol, ShadowsocksMethod, SnellVersion } from '@/types/generated/model/route';
 import { mockCustomRoutes, mockSystemRoutes, mockAllRoutes, mockConfigs } from '@/mocks/data/routes';
 
 // 创建可变的mock数据副本
@@ -76,10 +76,27 @@ export const routeHandlers = [
     const body = await request.json() as CreateRouteData;
 
     // 验证必填字段
-    if (!body.routeName || !body.entryPoint || !body.protocol || !body.password) {
+    if (!body.routeName || !body.entryPoint || !body.protocol || !body.protocolParams) {
       return HttpResponse.json({
         success: false,
-        message: '缺少必填字段：线路名称、入口地址、协议、密码为必填项',
+        message: '缺少必填字段：线路名称、入口地址、协议、协议参数为必填项',
+        errorCode: 'INVALID_INPUT'
+      }, { status: 400 });
+    }
+
+    // 验证协议参数
+    if (body.protocol === Protocol.PROTOCOL_SHADOWSOCKS && !body.protocolParams.shadowsocks?.password) {
+      return HttpResponse.json({
+        success: false,
+        message: 'Shadowsocks协议需要密码参数',
+        errorCode: 'INVALID_INPUT'
+      }, { status: 400 });
+    }
+
+    if (body.protocol === Protocol.PROTOCOL_SNELL && !body.protocolParams.snell?.psk) {
+      return HttpResponse.json({
+        success: false,
+        message: 'Snell协议需要PSK参数',
         errorCode: 'INVALID_INPUT'
       }, { status: 400 });
     }
@@ -104,14 +121,11 @@ export const routeHandlers = [
       routeId,
       routeName: body.routeName,
       entryPoint: body.entryPoint,
+      port: body.port || (body.protocol === Protocol.PROTOCOL_SHADOWSOCKS ? 8388 : 6333),
       protocol: body.protocol,
-      udpSupport: body.udpSupport || false,
-      tcpFastOpen: body.tcpFastOpen || false,
-      password: body.password,
-      otherParams: body.otherParams || '{}',
-      port: body.port || (body.protocol === 'shadowsocks' ? '8388' : '6333'),
-      method: body.method,
-      snellVersion: body.snellVersion,
+      protocolParams: body.protocolParams,
+      description: body.description,
+      metadata: body.metadata,
     };
 
     customRoutes.push(newRoute);
@@ -273,10 +287,14 @@ export const routeHandlers = [
     let config = '';
 
     try {
-      if (route.protocol === 'shadowsocks') {
-        config = mockConfigs.shadowsocks[format as keyof typeof mockConfigs.shadowsocks]?.(route) || '';
-      } else if (route.protocol === 'snell') {
-        config = mockConfigs.snell[format as keyof typeof mockConfigs.snell]?.(route) || '';
+      if (route.protocol && (route.protocol === Protocol.PROTOCOL_SHADOWSOCKS || route.protocol === Protocol.PROTOCOL_SNELL)) {
+        const protocolConfigs = mockConfigs[route.protocol];
+        if (protocolConfigs) {
+          const configFunc = protocolConfigs[format as keyof typeof protocolConfigs];
+          if (configFunc) {
+            config = configFunc(route);
+          }
+        }
       }
 
       if (!config) {

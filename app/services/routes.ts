@@ -1,22 +1,31 @@
 import { httpClient, ApiResponse } from '@/utils/http-client';
-import { RouteType } from '@/types/generated/model/route';
+import { 
+  RouteType, 
+  Protocol, 
+  ShadowsocksMethod, 
+  SnellVersion, 
+  Route,
+  ProtocolParams,
+  ShadowsocksParams,
+  SnellParams
+} from '@/types/generated/model/route';
 
-// 简化的路由项类型，用于UI组件
-export interface RouteItem {
-  id: React.Key;
-  routeId: string;
+// 路由项类型 - 使用proto生成的类型
+export interface RouteItem extends Omit<Route, 'id' | 'metadata'> {
+  id: React.Key; // 保持React.Key用于表格
+  metadata?: { [key: string]: string };
+}
+
+// 创建路由请求数据类型
+export interface CreateRouteData {
+  routeId?: string;
   routeName: string;
   entryPoint: string;
-  protocol: 'shadowsocks' | 'snell';
-  udpSupport: boolean;
-  tcpFastOpen: boolean;
-  password: string;
-  otherParams: string;
-  
-  // 协议特有字段
-  port?: string;
-  method?: string; // shadowsocks加密方法
-  snellVersion?: '4' | '5'; // snell版本
+  port?: number;
+  protocol: Protocol;
+  protocolParams?: ProtocolParams;
+  description?: string;
+  metadata?: { [key: string]: string };
 }
 
 // 查询参数类型
@@ -25,12 +34,9 @@ export interface RouteListParams {
   pageSize?: number;
   routeId?: string;
   routeName?: string;
-  type?: RouteType; // 使用proto枚举类型
-  protocol?: 'shadowsocks' | 'snell';
+  type?: RouteType;
+  protocol?: Protocol;
 }
-
-// 创建线路数据类型
-export type CreateRouteData = Omit<RouteItem, 'id'>;
 
 // 更新线路数据类型
 export type UpdateRouteData = Partial<Omit<RouteItem, 'id'>>;

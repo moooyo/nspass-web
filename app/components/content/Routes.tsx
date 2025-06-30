@@ -2,7 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Button, Tag, Popconfirm, Tooltip, Space, Card, Typography, Collapse, Input, Modal } from 'antd';
 import { message } from '@/utils/message';
 import { routeService, RouteItem, CreateRouteData } from '@/services/routes';
-import { RouteType } from '@/types/generated/model/route';
+import { 
+  RouteType, 
+  Protocol, 
+  ShadowsocksMethod, 
+  SnellVersion,
+  ProtocolParams,
+  ShadowsocksParams,
+  SnellParams
+} from '@/types/generated/model/route';
 import {
     EditableProTable,
     ProColumns,
@@ -14,6 +22,7 @@ import {
     ProFormCheckbox,
     ModalForm,
     QueryFilter,
+    ProFormDigit,
 } from '@ant-design/pro-components';
 import { Form } from 'antd';
 import { 
@@ -30,73 +39,59 @@ import { useApiOnce } from '@/components/hooks/useApiOnce';
 
 const { Title } = Typography;
 
-// 协议选项 - 只支持shadowsocks和snell
+// 协议选项 - 使用proto枚举
 const protocolOptions = [
-    { label: 'Shadowsocks', value: 'shadowsocks' },
-    { label: 'Snell', value: 'snell' },
+    { label: 'Shadowsocks', value: Protocol.PROTOCOL_SHADOWSOCKS },
+    { label: 'Snell', value: Protocol.PROTOCOL_SNELL },
 ];
+
+// Shadowsocks加密方法选项
+const shadowsocksMethodOptions = [
+    { label: 'AES-128-GCM', value: ShadowsocksMethod.SHADOWSOCKS_METHOD_AES_128_GCM },
+    { label: 'AES-256-GCM', value: ShadowsocksMethod.SHADOWSOCKS_METHOD_AES_256_GCM },
+    { label: 'ChaCha20-IETF-Poly1305', value: ShadowsocksMethod.SHADOWSOCKS_METHOD_CHACHA20_IETF_POLY1305 },
+];
+
+// Snell版本选项
+const snellVersionOptions = [
+    { label: 'v4 (稳定版)', value: SnellVersion.SNELL_VERSION_V4 },
+    { label: 'v5 (最新版)', value: SnellVersion.SNELL_VERSION_V5 }
+];
+
+// 获取协议显示名称
+const getProtocolDisplayName = (protocol?: Protocol) => {
+  switch (protocol) {
+    case Protocol.PROTOCOL_SHADOWSOCKS:
+      return 'Shadowsocks';
+    case Protocol.PROTOCOL_SNELL:
+      return 'Snell';
+    default:
+      return '未知';
+  }
+};
+
+// 获取协议参数中的密码
+const getProtocolPassword = (protocolParams?: ProtocolParams): string => {
+  if (protocolParams?.shadowsocks?.password) {
+    return protocolParams.shadowsocks.password;
+  }
+  if (protocolParams?.snell?.psk) {
+    return protocolParams.snell.psk;
+  }
+  return '';
+};
+
+// 获取UDP支持状态
+const getUdpSupport = (protocolParams?: ProtocolParams): boolean => {
+  return protocolParams?.shadowsocks?.udpSupport || protocolParams?.snell?.udpSupport || false;
+};
+
+// 获取TCP Fast Open支持状态
+const getTcpFastOpen = (protocolParams?: ProtocolParams): boolean => {
+  return protocolParams?.shadowsocks?.tcpFastOpen || protocolParams?.snell?.tcpFastOpen || false;
+};
 
 // RouteItem类型已从 @/services/routes 导入
-
-// 默认自定义线路数据
-const defaultCustomRoutes: RouteItem[] = [
-    {
-        id: 1,
-        routeId: 'route001',
-        routeName: '自定义线路01',
-        entryPoint: '203.0.113.1',
-        protocol: 'shadowsocks',
-        udpSupport: true,
-        tcpFastOpen: false,
-        password: 'password123456',
-        port: '8388',
-        method: 'aes-256-gcm',
-        otherParams: '{"timeout": 300, "fast_open": false}',
-    },
-    {
-        id: 2,
-        routeId: 'route002',
-        routeName: '自定义线路02',
-        entryPoint: 'example.com',
-        protocol: 'snell',
-        udpSupport: true,
-        tcpFastOpen: true,
-        password: 'snellpsk12345678',
-        port: '6333',
-        snellVersion: '4',
-        otherParams: '{"obfs": "tls", "obfs_host": "bing.com"}',
-    },
-];
-
-// 默认系统生成线路数据
-const defaultSystemRoutes: RouteItem[] = [
-    {
-        id: 101,
-        routeId: 'sys_route001',
-        routeName: '系统线路01',
-        entryPoint: '198.51.100.1',
-        protocol: 'shadowsocks',
-        udpSupport: true,
-        tcpFastOpen: false,
-        password: 'sys_password_001',
-        port: '443',
-        method: 'aes-256-gcm',
-        otherParams: '{"timeout": 600, "fast_open": false}',
-    },
-    {
-        id: 102,
-        routeId: 'sys_route002',
-        routeName: '系统线路02',
-        entryPoint: '192.0.2.1',
-        protocol: 'snell',
-        udpSupport: false,
-        tcpFastOpen: true,
-        password: 'sys_snell_psk_002',
-        port: '8443',
-        snellVersion: '5',
-        otherParams: '{"obfs": "http", "obfs_host": "microsoft.com"}',
-    },
-];
 
 const Routes: React.FC = () => {
     const [customDataSource, setCustomDataSource] = useState<RouteItem[]>([]);
@@ -160,8 +155,9 @@ const Routes: React.FC = () => {
 
     // 复制整行数据
     const copyRouteData = (record: RouteItem) => {
-        // 这里后续会实现具体的复制逻辑
-        message.success('复制成功');
+        const textToCopy = `${record.routeId} - ${record.routeName} (${record.entryPoint}:${record.port})`;
+        navigator.clipboard.writeText(textToCopy);
+        message.success('线路信息已复制到剪贴板');
     };
 
     // 查看JSON数据
@@ -189,41 +185,76 @@ const Routes: React.FC = () => {
     // 打开编辑模态框
     const openEditModal = (record: RouteItem) => {
         setEditingRecord(record);
-        editForm.setFieldsValue({
+        
+        // 根据协议设置表单初始值
+        const formValues: any = {
             routeId: record.routeId,
             routeName: record.routeName,
             entryPoint: record.entryPoint,
-            protocol: record.protocol,
-            udpSupport: record.udpSupport,
-            tcpFastOpen: record.tcpFastOpen,
-            password: record.password,
             port: record.port,
-            method: record.method,
-            snellVersion: record.snellVersion,
-            otherParams: record.otherParams,
-        });
+            protocol: record.protocol,
+            description: record.description,
+        };
+
+        // 设置协议特定参数
+        if (record.protocol === Protocol.PROTOCOL_SHADOWSOCKS && record.protocolParams?.shadowsocks) {
+            const shadowsocks = record.protocolParams.shadowsocks;
+            formValues.method = shadowsocks.method;
+            formValues.password = shadowsocks.password;
+            formValues.udpSupport = shadowsocks.udpSupport;
+            formValues.tcpFastOpen = shadowsocks.tcpFastOpen;
+            formValues.otherParams = shadowsocks.otherParams;
+        }
+
+        if (record.protocol === Protocol.PROTOCOL_SNELL && record.protocolParams?.snell) {
+            const snell = record.protocolParams.snell;
+            formValues.snellVersion = snell.version;
+            formValues.psk = snell.psk;
+            formValues.udpSupport = snell.udpSupport;
+            formValues.tcpFastOpen = snell.tcpFastOpen;
+            formValues.otherParams = snell.otherParams;
+        }
+
+        editForm.setFieldsValue(formValues);
         setEditModalVisible(true);
     };
 
     // 处理编辑线路提交
-    const handleEditRoute = async (values: RouteItem) => {
+    const handleEditRoute = async (values: any) => {
         console.log('编辑线路表单提交:', values);
         
         if (!editingRecord) return false;
+        
+        // 构建协议参数
+        const protocolParams: ProtocolParams = {};
+        
+        if (values.protocol === Protocol.PROTOCOL_SHADOWSOCKS) {
+            protocolParams.shadowsocks = {
+                method: values.method,
+                password: values.password,
+                udpSupport: values.udpSupport || false,
+                tcpFastOpen: values.tcpFastOpen || false,
+                otherParams: values.otherParams || '{}',
+            };
+        } else if (values.protocol === Protocol.PROTOCOL_SNELL) {
+            protocolParams.snell = {
+                version: values.snellVersion,
+                psk: values.password || values.psk,
+                udpSupport: values.udpSupport || false,
+                tcpFastOpen: values.tcpFastOpen || false,
+                otherParams: values.otherParams || '{}',
+            };
+        }
         
         const updatedRoute: RouteItem = {
             ...editingRecord,
             routeId: values.routeId,
             routeName: values.routeName,
             entryPoint: values.entryPoint,
-            protocol: values.protocol,
-            udpSupport: values.udpSupport || false,
-            tcpFastOpen: values.tcpFastOpen || false,
-            password: values.password,
             port: values.port,
-            method: values.method,
-            snellVersion: values.snellVersion,
-            otherParams: values.otherParams || '{}',
+            protocol: values.protocol,
+            protocolParams: protocolParams,
+            description: values.description,
         };
 
         setCustomDataSource(customDataSource.map(item => 
@@ -235,39 +266,45 @@ const Routes: React.FC = () => {
         return true;
     };
 
-    // 处理新建线路提交
+    // 处理创建线路提交
     const handleCreateRoute = async (values: any) => {
         console.log('创建线路表单提交:', values);
         
-        try {
-            const createData: CreateRouteData = {
-                routeId: values.routeId || `route${Date.now().toString().substr(-6)}`,
-                routeName: values.routeName,
-                entryPoint: values.entryPoint,
-                protocol: values.protocol,
+        // 构建协议参数
+        const protocolParams: ProtocolParams = {};
+        
+        if (values.protocol === Protocol.PROTOCOL_SHADOWSOCKS) {
+            protocolParams.shadowsocks = {
+                method: values.method,
+                password: values.password,
                 udpSupport: values.udpSupport || false,
                 tcpFastOpen: values.tcpFastOpen || false,
-                password: values.password,
-                port: values.port,
-                method: values.method,
-                snellVersion: values.snellVersion,
                 otherParams: values.otherParams || '{}',
             };
-
-            const response = await routeService.createRoute(createData);
-            if (response.success && response.data) {
-                setCustomDataSource([...customDataSource, response.data]);
-                message.success('线路创建成功');
-                return true;
-            } else {
-                message.error(response.message || '线路创建失败');
-                return false;
-            }
-        } catch (error) {
-            console.error('创建线路失败:', error);
-            message.error('线路创建失败');
-            return false;
+        } else if (values.protocol === Protocol.PROTOCOL_SNELL) {
+            protocolParams.snell = {
+                version: values.snellVersion,
+                psk: values.password, // 在表单中统一使用password字段
+                udpSupport: values.udpSupport || false,
+                tcpFastOpen: values.tcpFastOpen || false,
+                otherParams: values.otherParams || '{}',
+            };
         }
+
+        const newRoute: RouteItem = {
+            id: Date.now(),
+            routeId: values.routeId || `route${Date.now()}`,
+            routeName: values.routeName,
+            entryPoint: values.entryPoint,
+            port: values.port || (values.protocol === Protocol.PROTOCOL_SHADOWSOCKS ? 8388 : 6333),
+            protocol: values.protocol,
+            protocolParams: protocolParams,
+            description: values.description,
+        };
+
+        setCustomDataSource([...customDataSource, newRoute]);
+        message.success('线路创建成功');
+        return true;
     };
 
     // 生成表格列配置
@@ -291,39 +328,39 @@ const Routes: React.FC = () => {
             title: '协议',
             dataIndex: 'protocol',
             width: '12%',
-            render: (protocol) => (
-                <Tag color={protocol === 'shadowsocks' ? 'blue' : 'purple'}>
-                    {protocol === 'shadowsocks' ? 'Shadowsocks' : 'Snell'}
+            render: (_, record: RouteItem) => (
+                <Tag color={record.protocol === Protocol.PROTOCOL_SHADOWSOCKS ? 'blue' : 'purple'}>
+                    {getProtocolDisplayName(record.protocol)}
                 </Tag>
             ),
         },
         {
             title: 'UDP支持',
-            dataIndex: 'udpSupport',
+            dataIndex: 'protocolParams',
             width: '10%',
-            render: (udpSupport) => (
-                <Tag color={udpSupport ? 'success' : 'default'}>
-                    {udpSupport ? '是' : '否'}
+            render: (_, record: RouteItem) => (
+                <Tag color={getUdpSupport(record.protocolParams) ? 'success' : 'default'}>
+                    {getUdpSupport(record.protocolParams) ? '是' : '否'}
                 </Tag>
             ),
         },
         {
             title: 'TCP Fast Open支持',
-            dataIndex: 'tcpFastOpen',
+            dataIndex: 'protocolParams',
             width: '15%',
-            render: (tcpFastOpen) => (
-                <Tag color={tcpFastOpen ? 'success' : 'default'}>
-                    {tcpFastOpen ? '是' : '否'}
+            render: (_, record: RouteItem) => (
+                <Tag color={getTcpFastOpen(record.protocolParams) ? 'success' : 'default'}>
+                    {getTcpFastOpen(record.protocolParams) ? '是' : '否'}
                 </Tag>
             ),
         },
         {
             title: '密码',
-            dataIndex: 'password',
+            dataIndex: 'protocolParams',
             width: '15%',
-            render: (password) => (
+            render: (_, record: RouteItem) => (
                 <Input.Password 
-                    value={password as string} 
+                    value={getProtocolPassword(record.protocolParams)} 
                     readOnly 
                     size="small"
                     iconRender={(visible) => (visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />)}
@@ -333,23 +370,37 @@ const Routes: React.FC = () => {
         },
         {
             title: '其他协议参数',
-            dataIndex: 'otherParams',
+            dataIndex: 'protocolParams',
             width: '20%',
-            render: (params) => (
-                <Space>
-                    <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>
-                        {params && typeof params === 'string' && params.length > 30 ? `${params.substring(0, 30)}...` : params}
-                    </span>
-                    <Tooltip title="查看JSON">
-                        <Button 
-                            type="text" 
-                            size="small" 
-                            icon={<EyeOutlined />}
-                            onClick={() => viewJsonData(params as string)}
-                        />
-                    </Tooltip>
-                </Space>
-            ),
+            render: (_, record: RouteItem) => {
+                // 获取其他参数
+                const getOtherParams = (protocolParams?: ProtocolParams): string => {
+                    if (protocolParams?.shadowsocks?.otherParams) {
+                        return protocolParams.shadowsocks.otherParams;
+                    }
+                    if (protocolParams?.snell?.otherParams) {
+                        return protocolParams.snell.otherParams;
+                    }
+                    return '{}';
+                };
+                
+                const params = getOtherParams(record.protocolParams);
+                return (
+                    <Space>
+                        <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>
+                            {params && params.length > 30 ? `${params.substring(0, 30)}...` : params}
+                        </span>
+                        <Tooltip title="查看JSON">
+                            <Button 
+                                type="text" 
+                                size="small" 
+                                icon={<EyeOutlined />}
+                                onClick={() => viewJsonData(params)}
+                            />
+                        </Tooltip>
+                    </Space>
+                );
+            },
         },
         {
             title: '操作',
@@ -520,16 +571,17 @@ const Routes: React.FC = () => {
                     rules={[{ required: true, message: '请输入服务器IP地址或域名' }]}
                 />
 
-                <ProFormText
+                <ProFormDigit
                     name="port"
                     label="端口"
                     placeholder="请输入端口号"
+                    min={1}
+                    max={65535}
                     rules={[
                         { required: true, message: '请输入端口号' },
-                        { pattern: /^\d+$/, message: '端口必须是数字' },
                         { 
-                            validator: (_, value) => {
-                                if (value && (parseInt(value) < 1 || parseInt(value) > 65535)) {
+                            validator: (_: any, value: any) => {
+                                if (value && (value < 1 || value > 65535)) {
                                     return Promise.reject(new Error('端口范围必须在 1-65535 之间'));
                                 }
                                 return Promise.resolve();
@@ -547,34 +599,27 @@ const Routes: React.FC = () => {
                 
                 <ProFormDependency name={['protocol']}>
                     {({ protocol }) => {
-                        if (protocol === 'shadowsocks') {
+                        if (protocol === Protocol.PROTOCOL_SHADOWSOCKS) {
                             return (
                                 <ProFormGroup>
                                     <ProFormSelect
                                         name="method"
                                         label="加密方法"
-                                        options={[
-                                            { label: 'aes-128-gcm', value: 'aes-128-gcm' },
-                                            { label: 'aes-256-gcm', value: 'aes-256-gcm' },
-                                            { label: 'chacha20-ietf-poly1305', value: 'chacha20-ietf-poly1305' },
-                                        ]}
+                                        options={shadowsocksMethodOptions}
                                         rules={[{ required: true, message: '请选择加密方法' }]}
                                     />
                                 </ProFormGroup>
                             );
                         }
                         
-                        if (protocol === 'snell') {
+                        if (protocol === Protocol.PROTOCOL_SNELL) {
                             return (
                                 <ProFormGroup>
                                     <ProFormSelect
                                         name="snellVersion"
                                         label="协议版本"
-                                        options={[
-                                            { label: 'v4 (稳定版)', value: '4' },
-                                            { label: 'v5 (最新版)', value: '5' }
-                                        ]}
-                                        initialValue="4"
+                                        options={snellVersionOptions}
+                                        initialValue={SnellVersion.SNELL_VERSION_V4}
                                         rules={[{ required: true, message: '请选择协议版本' }]}
                                     />
                                 </ProFormGroup>
@@ -636,6 +681,15 @@ const Routes: React.FC = () => {
                         rows: 3,
                     }}
                 />
+
+                <ProFormTextArea
+                    name="description"
+                    label="线路描述"
+                    placeholder="请输入线路描述（可选）"
+                    fieldProps={{
+                        rows: 2,
+                    }}
+                />
             </ModalForm>
 
             {/* 编辑线路的模态表单 */}
@@ -676,16 +730,17 @@ const Routes: React.FC = () => {
                     rules={[{ required: true, message: '请输入服务器IP地址或域名' }]}
                 />
 
-                <ProFormText
+                <ProFormDigit
                     name="port"
                     label="端口"
                     placeholder="请输入端口号"
+                    min={1}
+                    max={65535}
                     rules={[
                         { required: true, message: '请输入端口号' },
-                        { pattern: /^\d+$/, message: '端口必须是数字' },
                         { 
-                            validator: (_, value) => {
-                                if (value && (parseInt(value) < 1 || parseInt(value) > 65535)) {
+                            validator: (_: any, value: any) => {
+                                if (value && (value < 1 || value > 65535)) {
                                     return Promise.reject(new Error('端口范围必须在 1-65535 之间'));
                                 }
                                 return Promise.resolve();
@@ -703,33 +758,26 @@ const Routes: React.FC = () => {
                 
                 <ProFormDependency name={['protocol']}>
                     {({ protocol }) => {
-                        if (protocol === 'shadowsocks') {
+                        if (protocol === Protocol.PROTOCOL_SHADOWSOCKS) {
                             return (
                                 <ProFormGroup>
                                     <ProFormSelect
                                         name="method"
                                         label="加密方法"
-                                        options={[
-                                            { label: 'aes-128-gcm', value: 'aes-128-gcm' },
-                                            { label: 'aes-256-gcm', value: 'aes-256-gcm' },
-                                            { label: 'chacha20-ietf-poly1305', value: 'chacha20-ietf-poly1305' },
-                                        ]}
+                                        options={shadowsocksMethodOptions}
                                         rules={[{ required: true, message: '请选择加密方法' }]}
                                     />
                                 </ProFormGroup>
                             );
                         }
                         
-                        if (protocol === 'snell') {
+                        if (protocol === Protocol.PROTOCOL_SNELL) {
                             return (
                                 <ProFormGroup>
                                     <ProFormSelect
                                         name="snellVersion"
                                         label="协议版本"
-                                        options={[
-                                            { label: 'v4 (稳定版)', value: '4' },
-                                            { label: 'v5 (最新版)', value: '5' }
-                                        ]}
+                                        options={snellVersionOptions}
                                         rules={[{ required: true, message: '请选择协议版本' }]}
                                     />
                                 </ProFormGroup>
@@ -789,6 +837,15 @@ const Routes: React.FC = () => {
                     ]}
                     fieldProps={{
                         rows: 3,
+                    }}
+                />
+
+                <ProFormTextArea
+                    name="description"
+                    label="线路描述"
+                    placeholder="请输入线路描述（可选）"
+                    fieldProps={{
+                        rows: 2,
                     }}
                 />
             </ModalForm>
