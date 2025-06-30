@@ -132,6 +132,18 @@ class HttpClient {
       },
     };
 
+    // 自动添加Authorization header（除了登录和注册接口）
+    const isAuthEndpoint = endpoint.includes('/auth/login') || endpoint.includes('/auth/register');
+    if (!isAuthEndpoint && typeof window !== 'undefined') {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        config.headers = {
+          'Authorization': `Bearer ${token}`,
+          ...config.headers,
+        };
+      }
+    }
+
     if (body && method !== 'GET') {
       // 如果是FormData，不设置Content-Type，让浏览器自动设置
       if (body instanceof FormData) {
