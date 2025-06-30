@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button, Tag, Popconfirm, Tooltip, Space, Card, Typography, Collapse, Input, Modal } from 'antd';
 import { message } from '@/utils/message';
 import { routeService, RouteItem, CreateRouteData } from '@/services/routes';
+import { RouteType } from '@/types/generated/model/route';
 import {
     EditableProTable,
     ProColumns,
@@ -117,13 +118,13 @@ const Routes: React.FC = () => {
         setLoading(true);
         try {
             // 加载自定义线路
-            const customResponse = await routeService.getRouteList({ type: 'custom' });
+            const customResponse = await routeService.getRouteList({ type: RouteType.ROUTE_TYPE_CUSTOM });
             if (customResponse.success && customResponse.data) {
                 setCustomDataSource(customResponse.data);
             }
 
             // 加载系统线路
-            const systemResponse = await routeService.getRouteList({ type: 'system' });
+            const systemResponse = await routeService.getRouteList({ type: RouteType.ROUTE_TYPE_SYSTEM });
             if (systemResponse.success && systemResponse.data) {
                 setSystemDataSource(systemResponse.data);
             }

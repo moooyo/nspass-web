@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import { RouteItem, CreateRouteData, UpdateRouteData } from '@/services/routes';
+import { RouteType } from '@/types/generated/model/route';
 import { mockCustomRoutes, mockSystemRoutes, mockAllRoutes, mockConfigs } from '@/mocks/data/routes';
 
 // 创建可变的mock数据副本
@@ -9,9 +10,9 @@ let nextId = 200;
 
 // 获取指定类型的线路
 function getRoutesByType(type?: string): RouteItem[] {
-  if (type === 'custom') {
+  if (type === RouteType.ROUTE_TYPE_CUSTOM) {
     return customRoutes;
-  } else if (type === 'system') {
+  } else if (type === RouteType.ROUTE_TYPE_SYSTEM) {
     return systemRoutes;
   }
   return [...customRoutes, ...systemRoutes];

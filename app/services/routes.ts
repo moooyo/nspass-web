@@ -1,4 +1,5 @@
 import { httpClient, ApiResponse } from '@/utils/http-client';
+import { RouteType } from '@/types/generated/model/route';
 
 // 简化的路由项类型，用于UI组件
 export interface RouteItem {
@@ -24,7 +25,7 @@ export interface RouteListParams {
   pageSize?: number;
   routeId?: string;
   routeName?: string;
-  type?: 'custom' | 'system';
+  type?: RouteType; // 使用proto枚举类型
   protocol?: 'shadowsocks' | 'snell';
 }
 
@@ -47,7 +48,7 @@ class RouteService {
     if (params.pageSize) queryParams.pageSize = params.pageSize.toString();
     if (params.routeId) queryParams.routeId = params.routeId;
     if (params.routeName) queryParams.routeName = params.routeName;
-    if (params.type) queryParams.type = params.type;
+    if (params.type) queryParams.type = params.type; // 直接使用proto枚举值
     if (params.protocol) queryParams.protocol = params.protocol;
 
     return httpClient.get<RouteItem[]>(this.endpoint, queryParams);
