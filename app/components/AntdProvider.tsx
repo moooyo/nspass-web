@@ -6,6 +6,7 @@ import zhCN from 'antd/locale/zh_CN';
 import '@ant-design/v5-patch-for-react-19';
 import { initMessage } from '@/utils/message';
 import { useTheme } from './hooks/useTheme';
+import { ANTD_THEME_CONFIG } from '@/config/theme.config';
 
 // 内部组件，用于获取 App 实例
 function AppContent({ children }: { children: React.ReactNode }) {
@@ -21,57 +22,35 @@ function AppContent({ children }: { children: React.ReactNode }) {
 
 // 主题感知的配置提供者
 function ThemeAwareConfigProvider({ children }: { children: React.ReactNode }) {
-  const { theme: currentTheme } = useTheme();
+  const { resolvedTheme } = useTheme();
   
-  const getThemeConfig = () => {
-    const isDark = currentTheme === 'dark';
+  // 生成Antd主题配置
+  const getThemeConfig = React.useMemo(() => {
+    const themeConfig = ANTD_THEME_CONFIG[resolvedTheme];
+    
+    // 动态选择算法
+    const algorithm = resolvedTheme === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm;
     
     return {
-      algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
-      token: {
-        colorPrimary: '#1890FF',
-        borderRadius: 6,
-      },
-      components: {
-        Table: {
-          fontSize: 14,
-          headerBg: isDark ? '#1f1f1f' : '#f5f5f5',
-        },
-        Card: {
-          boxShadow: 'none',
-          borderRadius: 8,
-        },
-        Layout: {
-          bodyBg: 'transparent',
-          headerBg: 'transparent',
-          siderBg: 'transparent',
-        },
-        Menu: {
-          darkItemBg: 'transparent',
-          darkSubMenuItemBg: 'transparent',
-          darkItemColor: 'rgba(255, 255, 255, 0.85)',
-          darkItemHoverColor: '#ffffff',
-          darkItemSelectedColor: '#ffffff',
-          darkItemSelectedBg: '#1890ff',
-          itemBg: 'transparent',
-          subMenuItemBg: 'transparent',
-          itemColor: 'rgba(255, 255, 255, 0.85)',
-          itemHoverColor: '#ffffff',
-          itemSelectedColor: '#ffffff',
-          itemSelectedBg: '#1890ff',
-        },
-      },
+      algorithm,
+      token: themeConfig.token,
+      components: themeConfig.components,
     };
-  };
+  }, [resolvedTheme]);
 
   return (
     <ConfigProvider
       locale={zhCN}
-      theme={getThemeConfig()}
+      theme={getThemeConfig}
+      // 确保配置变更时的平滑过渡
+      key={`theme-${resolvedTheme}`}
     >
       <App
         className="ant-app"
-        style={{ height: '100%' }}
+        style={{ 
+          height: '100%',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
         notification={{
           placement: 'topRight',
         }}

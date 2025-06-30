@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Button, Alert, Space } from 'antd';
+import { Button, Alert } from 'antd';
 import { message } from '@/utils/message';
 import {
     ProTable,
@@ -20,8 +20,8 @@ const UserGroups: React.FC = () => {
     const [dataSource, setDataSource] = useState<UserGroupItem[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [modalVisible, setModalVisible] = useState<boolean>(false);
-    const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
-    const [currentRecord, setCurrentRecord] = useState<UserGroupItem | null>(null);
+    const [modalMode] = useState<'create' | 'edit'>('create');
+    const [currentRecord] = useState<UserGroupItem | null>(null);
     const [pagination, setPagination] = useState({
         current: 1,
         pageSize: 10,
@@ -71,7 +71,7 @@ const UserGroups: React.FC = () => {
     }, []);
 
     // 打开编辑弹窗
-    const openEditModal = useCallback((record: UserGroupItem) => {
+    const openEditModal = useCallback((_record: UserGroupItem) => {
         message.warning('当前版本不支持直接编辑用户组，请通过用户管理来修改用户的用户组属性');
     }, []);
 
@@ -111,7 +111,7 @@ const UserGroups: React.FC = () => {
     }, [modalMode, currentRecord, loadUserGroups]);
 
     // 删除用户组
-    const deleteUserGroup = useCallback(async (record: UserGroupItem) => {
+    const deleteUserGroup = useCallback(async (_record: UserGroupItem) => {
         message.warning('当前版本不支持删除用户组，用户组会根据用户设置自动管理');
     }, []);
 

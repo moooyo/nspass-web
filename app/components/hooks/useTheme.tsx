@@ -1,22 +1,71 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-
-type Theme = 'light' | 'dark';
+import {
+  type Theme,
+  type ResolvedTheme,
+  THEME_DETECTION_CONFIG,
+  ThemeUtils,
+  SYSTEM_DETECTION,
+  DEFAULT_THEME_CONFIG,
+} from '@/config/theme.config';
 
 interface ThemeContextType {
+  // 当前主题偏好（可能是'system'）
   theme: Theme;
+  // 解析后的实际主题
+  resolvedTheme: ResolvedTheme;
+  // 切换主题函数
   toggleTheme: () => void;
+  // 设置特定主题
+  setTheme: (theme: Theme) => void;
+  // 系统信息
+  systemInfo: ReturnType<typeof ThemeUtils.getSystemInfo>;
+  // 是否已初始化
+  isInitialized: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>('light');
+  const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME_CONFIG.defaultTheme);
+  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>('light');
   const [isInitialized, setIsInitialized] = useState(false);
+  const [systemInfo] = useState(() => ThemeUtils.getSystemInfo());
   
-  // 使用ref来缓存存储操作
+  // 使用ref来缓存操作，避免内存泄漏
   const saveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const cleanupMediaQueryRef = useRef<(() => void) | null>(null);
+  
+  // 调试日志
+  const debugLog = useCallback((message: string, ...args: any[]) => {
+    if (DEFAULT_THEME_CONFIG.debugMode) {
+      console.log(`[ThemeProvider] ${message}`, ...args);
+    }
+  }, []);
+
+  // 应用主题到DOM
+  const applyThemeToDOM = useCallback((newResolvedTheme: ResolvedTheme) => {
+    debugLog('Applying theme to DOM:', newResolvedTheme);
+    
+    // 使用requestAnimationFrame确保DOM更新的性能
+    requestAnimationFrame(() => {
+      ThemeUtils.applyCSSVariables(newResolvedTheme);
+      ThemeUtils.setDataTheme(newResolvedTheme);
+    });
+  }, [debugLog]);
+
+  // 解析并更新主题
+  const updateResolvedTheme = useCallback((newTheme: Theme) => {
+    const newResolvedTheme = ThemeUtils.resolveTheme(newTheme);
+    
+    debugLog('Theme resolution:', { theme: newTheme, resolved: newResolvedTheme });
+    
+    setResolvedTheme(newResolvedTheme);
+    applyThemeToDOM(newResolvedTheme);
+    
+    return newResolvedTheme;
+  }, [applyThemeToDOM, debugLog]);
 
   // 异步保存主题到localStorage
   const saveThemeAsync = useCallback((newTheme: Theme) => {
@@ -25,82 +74,145 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       clearTimeout(saveTimeoutRef.current);
     }
 
-    // 延迟保存，避免频繁写入
-    saveTimeoutRef.current = setTimeout(() => {
+    // 使用配置的延迟时间
+    ThemeUtils.scheduleUpdate(() => {
       try {
-        localStorage.setItem('theme', newTheme);
+        ThemeUtils.setStoredTheme(newTheme);
+        debugLog('Theme saved to storage:', newTheme);
       } catch (error) {
-        console.error('保存主题失败:', error);
+        console.error('Failed to save theme:', error);
       }
-    }, 50);
-  }, []);
+    });
+  }, [debugLog]);
 
-  // 初始化主题 - 异步加载
+  // 设置主题
+  const setTheme = useCallback((newTheme: Theme) => {
+    debugLog('Setting theme:', newTheme);
+    
+    setThemeState(newTheme);
+    updateResolvedTheme(newTheme);
+    saveThemeAsync(newTheme);
+  }, [updateResolvedTheme, saveThemeAsync, debugLog]);
+
+  // 主题切换函数
+  const toggleTheme = useCallback(() => {
+    const newTheme: Theme = (() => {
+      switch (theme) {
+        case 'light':
+          return 'dark';
+        case 'dark':
+          return DEFAULT_THEME_CONFIG.enableSystemDetection ? 'system' : 'light';
+        case 'system':
+          // 从system切换到与当前系统主题相反的主题
+          const currentSystemTheme = SYSTEM_DETECTION.getSystemTheme();
+          return currentSystemTheme === 'light' ? 'dark' : 'light';
+        default:
+          return 'light';
+      }
+    })();
+    
+    debugLog('Toggling theme:', { from: theme, to: newTheme });
+    setTheme(newTheme);
+  }, [theme, setTheme, debugLog]);
+
+  // 处理系统主题变化
+  const handleSystemThemeChange = useCallback((systemTheme: ResolvedTheme) => {
+    debugLog('System theme changed:', systemTheme);
+    
+    // 只在用户选择了'system'时才跟随系统主题
+    if (theme === 'system') {
+      debugLog('Following system theme change');
+      setResolvedTheme(systemTheme);
+      applyThemeToDOM(systemTheme);
+    }
+  }, [theme, applyThemeToDOM, debugLog]);
+
+  // 初始化主题
   useEffect(() => {
     const initializeTheme = () => {
       try {
-        const savedTheme = localStorage.getItem('theme') as Theme;
-        if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark')) {
-          setTheme(savedTheme);
-        } else {
-          // 检测系统主题偏好
-          const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-          setTheme(prefersDark ? 'dark' : 'light');
-        }
+        debugLog('Initializing theme...');
+        debugLog('System info:', systemInfo);
+        
+        // 获取初始主题
+        const initialTheme = ThemeUtils.getInitialTheme();
+        debugLog('Initial theme determined:', initialTheme);
+        
+        setThemeState(initialTheme);
+        updateResolvedTheme(initialTheme);
+        
       } catch (error) {
-        console.error('加载主题失败:', error);
-        setTheme('light'); // 默认主题
+        console.error('Failed to initialize theme:', error);
+        // 回退到默认主题
+        setThemeState('light');
+        setResolvedTheme('light');
+        applyThemeToDOM('light');
       } finally {
         setIsInitialized(true);
+        debugLog('Theme initialization completed');
       }
     };
 
-    // 使用 requestIdleCallback 在浏览器空闲时初始化主题
+    // 检测浏览器支持情况并选择最佳的初始化策略
     if (typeof window !== 'undefined') {
-      if ('requestIdleCallback' in window) {
-        requestIdleCallback(initializeTheme, { timeout: 100 });
+      if (SYSTEM_DETECTION.supportsIdleCallback()) {
+        requestIdleCallback(initializeTheme, { timeout: THEME_DETECTION_CONFIG.IDLE_CALLBACK_TIMEOUT });
       } else {
         setTimeout(initializeTheme, 0);
       }
     }
-  }, []);
-
-  // 优化的主题切换函数
-  const toggleTheme = useCallback(() => {
-    const newTheme: Theme = theme === 'light' ? 'dark' : 'light';
-    
-    // 立即更新UI状态
-    setTheme(newTheme);
-    
-    // 异步保存到localStorage
-    saveThemeAsync(newTheme);
-  }, [theme, saveThemeAsync]);
+  }, [updateResolvedTheme, applyThemeToDOM, systemInfo, debugLog]);
 
   // 监听系统主题变化
   useEffect(() => {
-    if (!isInitialized) return;
+    if (!isInitialized || !DEFAULT_THEME_CONFIG.enableSystemDetection) {
+      return;
+    }
 
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    debugLog('Setting up system theme listener');
+
+    // 创建媒体查询监听器
+    const cleanup = ThemeUtils.createMediaQueryListener(handleSystemThemeChange);
     
-    const handleSystemThemeChange = (e: MediaQueryListEvent) => {
-      // 只在用户没有手动设置主题时跟随系统主题
-      try {
-        const savedTheme = localStorage.getItem('theme');
-        if (!savedTheme) {
-          const newTheme = e.matches ? 'dark' : 'light';
-          setTheme(newTheme);
+    if (cleanup) {
+      cleanupMediaQueryRef.current = cleanup;
+      debugLog('System theme listener established');
+    } else {
+      debugLog('System theme listener not supported');
+    }
+
+    return () => {
+      if (cleanupMediaQueryRef.current) {
+        cleanupMediaQueryRef.current();
+        cleanupMediaQueryRef.current = null;
+        debugLog('System theme listener cleaned up');
+      }
+    };
+  }, [isInitialized, handleSystemThemeChange, debugLog]);
+
+  // 页面可见性变化时重新检测系统主题
+  useEffect(() => {
+    if (!isInitialized || !DEFAULT_THEME_CONFIG.enableSystemDetection || theme !== 'system') {
+      return;
+    }
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // 页面重新可见时，重新检测系统主题
+        const currentSystemTheme = SYSTEM_DETECTION.getSystemTheme();
+        if (currentSystemTheme !== resolvedTheme) {
+          debugLog('Page visible again, updating system theme:', currentSystemTheme);
+          handleSystemThemeChange(currentSystemTheme);
         }
-      } catch (error) {
-        console.error('检测系统主题失败:', error);
       }
     };
 
-    // 使用 passive 监听器提高性能
-    if (mediaQuery && mediaQuery.addEventListener) {
-      mediaQuery.addEventListener('change', handleSystemThemeChange, { passive: true });
-      return () => mediaQuery.removeEventListener('change', handleSystemThemeChange);
-    }
-  }, [isInitialized]);
+    document.addEventListener('visibilitychange', handleVisibilityChange, { passive: true });
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isInitialized, theme, resolvedTheme, handleSystemThemeChange, debugLog]);
 
   // 清理定时器
   useEffect(() => {
@@ -111,33 +223,27 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, []);
 
-  // 动态更新CSS变量 - 优化为节流
+  // 开发环境下暴露调试信息
   useEffect(() => {
-    if (!isInitialized) return;
+    if (DEFAULT_THEME_CONFIG.debugMode && typeof window !== 'undefined') {
+      (window as any).__themeDebug = {
+        theme,
+        resolvedTheme,
+        systemInfo,
+        isInitialized,
+        getSystemTheme: SYSTEM_DETECTION.getSystemTheme,
+        utils: ThemeUtils,
+      };
+    }
+  }, [theme, resolvedTheme, systemInfo, isInitialized]);
 
-    const updateCSSVariables = () => {
-      const root = document.documentElement;
-      
-      if (theme === 'dark') {
-        root.style.setProperty('--background-color', '#1f1f1f');
-        root.style.setProperty('--text-color', '#ffffff');
-        root.style.setProperty('--border-color', '#434343');
-        root.style.setProperty('--card-background', '#2d2d2d');
-      } else {
-        root.style.setProperty('--background-color', '#ffffff');
-        root.style.setProperty('--text-color', '#000000');
-        root.style.setProperty('--border-color', '#d9d9d9');
-        root.style.setProperty('--card-background', '#fafafa');
-      }
-    };
-
-    // 使用 requestAnimationFrame 来优化DOM更新
-    requestAnimationFrame(updateCSSVariables);
-  }, [theme, isInitialized]);
-
-  const value = {
+  const value: ThemeContextType = {
     theme,
+    resolvedTheme,
     toggleTheme,
+    setTheme,
+    systemInfo,
+    isInitialized,
   };
 
   return (

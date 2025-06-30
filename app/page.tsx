@@ -1,12 +1,13 @@
 'use client'
 import React, { useState, useEffect, Suspense, useMemo, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { EditOutlined, HomeOutlined, MenuFoldOutlined, MenuUnfoldOutlined, UnorderedListOutlined, UserOutlined, ApiOutlined, LogoutOutlined, DownOutlined, SunOutlined, MoonOutlined, DashboardOutlined, SettingOutlined, TeamOutlined, UsergroupAddOutlined, CloudServerOutlined, CloudOutlined } from '@ant-design/icons';
+import { HomeOutlined, MenuFoldOutlined, MenuUnfoldOutlined, UnorderedListOutlined, UserOutlined, ApiOutlined, LogoutOutlined, DownOutlined, DashboardOutlined, SettingOutlined, TeamOutlined, UsergroupAddOutlined, CloudServerOutlined, CloudOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { Button, Layout, Menu, theme, Dropdown, Avatar, Space, Typography, Spin } from 'antd';
 import { message } from '@/utils/message';
 import { useAuth } from '@/components/hooks/useAuth';
 import { useTheme } from '@/components/hooks/useTheme';
+import ThemeToggle from '@/components/ThemeToggle';
 
 // 使用 React.lazy 懒加载组件
 const HomeContent = React.lazy(() => import('./components/content/Home'));
@@ -65,7 +66,7 @@ const items: MenuItem[] = [
 export default function Home() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading, logout } = useAuth();
-  const { theme: currentTheme, toggleTheme } = useTheme();
+  const { resolvedTheme } = useTheme();
   
   const [selectedKey, setSelectedKey] = useState<string>('home');
   
@@ -431,7 +432,7 @@ export default function Home() {
               style={{
                 width: '36px',
                 height: '36px',
-                background: currentTheme === 'light'
+                background: resolvedTheme === 'light'
                   ? 'linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)'
                   : 'linear-gradient(135deg, #13c2c2 0%, #36cfc9 100%)',
                 borderRadius: '10px',
@@ -441,13 +442,13 @@ export default function Home() {
                 color: 'white',
                 fontWeight: 'bold',
                 fontSize: '18px',
-                boxShadow: currentTheme === 'light'
+                boxShadow: resolvedTheme === 'light'
                   ? '0 4px 20px rgba(24, 144, 255, 0.6), 0 0 0 2px rgba(255, 255, 255, 0.2)'
                   : '0 4px 20px rgba(19, 194, 194, 0.8), 0 0 0 2px rgba(255, 255, 255, 0.3)',
                 position: 'relative',
                 overflow: 'hidden',
                 flexShrink: 0,
-                border: currentTheme === 'light'
+                border: resolvedTheme === 'light'
                   ? '2px solid rgba(255, 255, 255, 0.3)'
                   : '2px solid rgba(255, 255, 255, 0.4)',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
@@ -535,13 +536,7 @@ export default function Home() {
           </div>
           
           <Space size="middle">
-            <div 
-              className="theme-toggle"
-              onClick={toggleTheme}
-              title={currentTheme === 'light' ? '切换到深色模式' : '切换到浅色模式'}
-            >
-              {currentTheme === 'light' ? <MoonOutlined /> : <SunOutlined />}
-            </div>
+            <ThemeToggle size="middle" placement="bottomLeft" />
             
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
               <Space style={{ cursor: 'pointer', padding: '8px 12px', borderRadius: '8px' }}>
