@@ -11,7 +11,8 @@ import type {
   TopRule,
   LogSummary,
   TrafficByRegion,
-  SystemHealth
+  SystemHealth,
+  SystemComponent
 } from '@/types/generated/api/dashboard/dashboard_service';
 import {
   ComponentStatus,
@@ -130,99 +131,131 @@ interface MockUserTrafficItem {
   traffic: number;
 }
 
-// 模拟数据
-const mockSystemOverview: MockSystemOverview = {
-  totalUsers: 1250,
-  activeUsers: 892,
-  totalServers: 12,
-  onlineServers: 10,
-  totalTraffic: '2.3TB',
-  monthlyTraffic: '450GB'
+// 模拟数据 - 使用正确的Proto格式
+const mockSystemOverview: SystemOverview = {
+  userCount: 1250,
+  serverCount: 12,
+  ruleCount: 356,
+  monthlyTraffic: 450 // GB
 };
 
-const mockSystemHealth: MockSystemHealth = {
-  status: 'healthy',
-  services: [
-    { name: '主服务', status: 'running', uptime: '99.9%' },
-    { name: '数据库', status: 'running', uptime: '99.8%' },
-    { name: '缓存服务', status: 'running', uptime: '99.7%' },
-    { name: '消息队列', status: 'stopped', uptime: '98.5%' }
-  ],
-  cpu: 45.2,
-  memory: 68.7,
-  disk: 34.1
+const mockSystemHealth: SystemHealth = {
+  overall: HealthStatus.HEALTH_STATUS_HEALTHY,
+  components: [
+    { 
+      name: '主服务', 
+      status: ComponentStatus.COMPONENT_STATUS_UP, 
+      message: '运行正常' 
+    },
+    { 
+      name: '数据库', 
+      status: ComponentStatus.COMPONENT_STATUS_UP, 
+      message: '连接正常' 
+    },
+    { 
+      name: '缓存服务', 
+      status: ComponentStatus.COMPONENT_STATUS_UP, 
+      message: '缓存命中率正常' 
+    },
+    { 
+      name: '消息队列', 
+      status: ComponentStatus.COMPONENT_STATUS_DEGRADED, 
+      message: '性能略有下降' 
+    }
+  ]
 };
 
-const mockTrafficTrend: MockTrafficTrendItem[] = [
-  { date: '2024-01-01', upload: 120, download: 340 },
-  { date: '2024-01-02', upload: 132, download: 398 },
-  { date: '2024-01-03', upload: 101, download: 280 },
-  { date: '2024-01-04', upload: 134, download: 390 },
-  { date: '2024-01-05', upload: 90, download: 320 },
-  { date: '2024-01-06', upload: 230, download: 480 },
-  { date: '2024-01-07', upload: 210, download: 520 }
+const mockTrafficTrend: TrafficTrendItem[] = [
+  { date: '2024-01-01', traffic: 120 },
+  { date: '2024-01-02', traffic: 132 },
+  { date: '2024-01-03', traffic: 101 },
+  { date: '2024-01-04', traffic: 134 },
+  { date: '2024-01-05', traffic: 90 },
+  { date: '2024-01-06', traffic: 230 },
+  { date: '2024-01-07', traffic: 210 },
+  { date: '2024-01-08', traffic: 189 },
+  { date: '2024-01-09', traffic: 156 },
+  { date: '2024-01-10', traffic: 178 },
+  { date: '2024-01-11', traffic: 145 },
+  { date: '2024-01-12', traffic: 167 },
+  { date: '2024-01-13', traffic: 198 },
+  { date: '2024-01-14', traffic: 234 },
+  { date: '2024-01-15', traffic: 187 },
+  { date: '2024-01-16', traffic: 156 },
+  { date: '2024-01-17', traffic: 145 },
+  { date: '2024-01-18', traffic: 167 },
+  { date: '2024-01-19', traffic: 189 },
+  { date: '2024-01-20', traffic: 201 },
+  { date: '2024-01-21', traffic: 178 },
+  { date: '2024-01-22', traffic: 165 },
+  { date: '2024-01-23', traffic: 189 },
+  { date: '2024-01-24', traffic: 234 },
+  { date: '2024-01-25', traffic: 198 },
+  { date: '2024-01-26', traffic: 167 },
+  { date: '2024-01-27', traffic: 189 },
+  { date: '2024-01-28', traffic: 201 },
+  { date: '2024-01-29', traffic: 187 },
+  { date: '2024-01-30', traffic: 156 }
 ];
 
-const mockTrafficByRegion: MockTrafficByRegion[] = [
-  { region: 'Asia', traffic: 1250, percentage: 45.2 },
-  { region: 'North America', traffic: 890, percentage: 32.1 },
-  { region: 'Europe', traffic: 456, percentage: 16.4 },
-  { region: 'Others', traffic: 178, percentage: 6.3 }
+const mockTrafficByRegion: TrafficByRegion[] = [
+  { region: 'Asia', country: 'China', traffic: 1250, users: 450 },
+  { region: 'North America', country: 'United States', traffic: 890, users: 320 },
+  { region: 'Europe', country: 'Germany', traffic: 456, users: 164 },
+  { region: 'Others', country: 'Various', traffic: 178, users: 63 }
 ];
 
-const mockRealTimeTraffic: MockRealTimeTraffic[] = [
-  { timestamp: '2024-01-07T10:00:00Z', upload: 45, download: 123 },
-  { timestamp: '2024-01-07T10:01:00Z', upload: 52, download: 134 },
-  { timestamp: '2024-01-07T10:02:00Z', upload: 38, download: 98 },
-  { timestamp: '2024-01-07T10:03:00Z', upload: 61, download: 156 },
-  { timestamp: '2024-01-07T10:04:00Z', upload: 47, download: 127 }
+const mockRealTimeTraffic: RealTimeTraffic[] = [
+  { timestamp: '2024-01-07T10:00:00Z', upload: 45, download: 123, connections: 89 },
+  { timestamp: '2024-01-07T10:01:00Z', upload: 52, download: 134, connections: 92 },
+  { timestamp: '2024-01-07T10:02:00Z', upload: 38, download: 98, connections: 76 },
+  { timestamp: '2024-01-07T10:03:00Z', upload: 61, download: 156, connections: 103 },
+  { timestamp: '2024-01-07T10:04:00Z', upload: 47, download: 127, connections: 88 }
 ];
 
-const mockSystemPerformance: MockSystemPerformance = {
-  cpu: {
-    usage: 45.2,
-    cores: 8,
-    loadAvg: [1.2, 1.5, 1.8]
-  },
-  memory: {
-    used: 6871,
-    total: 16384,
-    percentage: 41.9
-  },
-  disk: {
-    used: 341,
-    total: 1000,
-    percentage: 34.1
-  },
-  network: {
-    bytesIn: 1250000,
-    bytesOut: 890000,
-    packetsIn: 12500,
-    packetsOut: 8900
-  }
+const mockSystemPerformance: SystemPerformance = {
+  cpuUsage: 45.2,
+  memoryUsage: 68.7,
+  diskUsage: 34.1,
+  networkIn: 125.5,
+  networkOut: 89.3
 };
 
-const mockSystemAlerts: MockSystemAlert[] = [
+const mockSystemAlerts: SystemAlert[] = [
   {
-    id: '1',
-    level: 'warning',
+    id: 1,
+    type: AlertType.ALERT_TYPE_WARNING,
     message: '内存使用率超过80%',
     timestamp: '2024-01-07T10:15:00Z',
-    acknowledged: false
+    resolved: false
   },
   {
-    id: '2',
-    level: 'info',
+    id: 2,
+    type: AlertType.ALERT_TYPE_INFO,
     message: '系统备份已完成',
-    timestamp: '2024-01-07T09:00Z',
-    acknowledged: true
+    timestamp: '2024-01-07T09:00:00Z',
+    resolved: true
   },
   {
-    id: '3',
-    level: 'error',
+    id: 3,
+    type: AlertType.ALERT_TYPE_ERROR,
     message: '数据库连接异常',
     timestamp: '2024-01-07T08:45:00Z',
-    acknowledged: false
+    resolved: false
+  },
+  {
+    id: 4,
+    type: AlertType.ALERT_TYPE_INFO,
+    message: '新用户注册',
+    timestamp: '2024-01-07T08:30:00Z',
+    resolved: true
+  },
+  {
+    id: 5,
+    type: AlertType.ALERT_TYPE_WARNING,
+    message: 'CPU使用率较高',
+    timestamp: '2024-01-07T08:15:00Z',
+    resolved: false
   }
 ];
 
@@ -254,7 +287,7 @@ const mockUserTrafficStats: UserTrafficItem[] = [
   { user: 'user005', value: 9.9, traffic: 49.1 }
 ];
 
-const mockLogSummary: MockLogSummary = {
+const mockLogSummary: LogSummary = {
   total: 2847,
   info: 2456,
   warning: 298,
@@ -375,7 +408,7 @@ export const dashboardHandlers = [
   }),
 
   // 获取日志摘要
-  http.get('/v1/dashboard/logs', () => {
+  http.get('/v1/dashboard/log-summary', () => {
     return HttpResponse.json({
       success: true, 
       message: '获取日志摘要成功',
