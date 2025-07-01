@@ -507,14 +507,24 @@ export default function Home() {
           items={items}
         />
       </Sider>
-      <Layout style={{ width: '100%', overflow: 'hidden' }}>
+      <div style={{ 
+        width: '100%', 
+        overflow: 'hidden',
+        padding: '24px 48px 24px 24px',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh'
+      }}>
         <Header style={{ 
           padding: '0', 
           background: colorBgContainer,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          height: '64px'
+          height: '64px',
+          marginBottom: '24px',
+          borderRadius: borderRadiusLG,
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px', height: '100%', padding: '0 16px' }}>
             <Button
@@ -553,19 +563,25 @@ export default function Home() {
             </Dropdown>
           </Space>
         </Header>
-        <Content
-          style={{
-            margin: '24px 16px',
-            padding: 24,
-            minHeight: 280,
-            background: colorBgContainer,
-            borderRadius: borderRadiusLG,
-            overflowX: 'hidden'
-          }}
-        >
+        
+        <div style={{ 
+          flex: 1,
+          background: colorBgContainer,
+          borderRadius: borderRadiusLG,
+          padding: '32px',
+          boxShadow: '0 8px 32px rgba(24, 144, 255, 0.15)',
+          border: '1px solid rgba(24, 144, 255, 0.1)',
+          overflowX: 'hidden'
+        }}>
           {renderContent()}
-        </Content>
-        <Footer style={{ textAlign: 'center', color: '#999', padding: '12px 0' }}>
+        </div>
+        
+        <Footer style={{ 
+          textAlign: 'center', 
+          color: '#999', 
+          padding: '12px 0',
+          marginTop: '24px'
+        }}>
           <div style={{ 
             display: 'flex', 
             alignItems: 'center', 
@@ -613,7 +629,7 @@ export default function Home() {
             </Text>
           </div>
         </Footer>
-      </Layout>
+      </div>
     </Layout>
   );
 }

@@ -187,10 +187,6 @@ body::before {
 }
 
 /* 确保所有内容都适应其容器 */
-.ant-layout-content {
-  width: 100%;
-  overflow-x: hidden;
-}
 
 /* 现代化布局样式 */
 .ant-layout {
@@ -211,13 +207,17 @@ body::before {
   box-shadow: 0 2px 20px var(--shadow-color) !important;
 }
 
-.ant-layout-content {
+/* 主内容区域 - 卡片漂浮效果 */
+.ant-layout .ant-layout-content {
+  width: 100% !important;
+  overflow-x: hidden !important;
   background: var(--glass-bg) !important;
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px) !important;
   border-radius: 20px !important;
-  margin: 16px !important;
+  margin: 48px !important;
   box-shadow: var(--shadow-soft) !important;
   border: 1px solid var(--glass-border) !important;
+  /* 确保四周边距一致，形成真正的卡片效果 */
 }
 
 /* 菜单样式现代化 */
@@ -462,8 +462,8 @@ html:not([data-theme="dark"]) .ant-menu-dark .ant-menu-item-divider {
     overflow-x: auto;
   }
   
-  .ant-layout-content {
-    margin: 8px !important;
+  .ant-layout .ant-layout-content {
+    margin: 20px !important;
     border-radius: 16px !important;
   }
   
@@ -495,21 +495,4 @@ html:not([data-theme="dark"]) .ant-menu-dark .ant-menu-item-divider {
 
 .hover-lift:hover {
   transform: translateY(-4px);
-}
-
-/* 适应小屏幕 */
-@media screen and (max-width: 768px) {
-  .ant-table {
-    width: 100%;
-    overflow-x: auto;
-  }
-  
-  .ant-layout-content {
-    margin: 8px !important;
-    border-radius: 16px !important;
-  }
-  
-  .stat-card {
-    padding: 16px;
-  }
 }
