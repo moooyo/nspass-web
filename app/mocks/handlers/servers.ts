@@ -105,12 +105,13 @@ export const serverHandlers = [
     const paginatedServers = filteredServers.slice(start, end);
 
     return HttpResponse.json({
-      result: { success: true, message: '获取服务器列表成功' },
+      success: true, 
+      message: '获取服务器列表成功',
       data: paginatedServers,
       pagination: {
-        total: filteredServers.length,
-        page,
+        current: page,
         pageSize,
+        total: filteredServers.length,
         totalPages: Math.ceil(filteredServers.length / pageSize)
       }
     });
@@ -123,11 +124,8 @@ export const serverHandlers = [
     // 验证必填字段 - 只有服务器名称是必填的
     if (!body.name) {
       return HttpResponse.json({
-        result: { 
-          success: false, 
-          message: '服务器名称为必填项',
-          errorCode: 'INVALID_INPUT'
-        }
+        success: false, 
+        message: '服务器名称为必填项'
       }, { status: 400 });
     }
 
@@ -145,7 +143,8 @@ export const serverHandlers = [
     mockServers.push(newServer);
 
     return HttpResponse.json({
-      result: { success: true, message: '服务器创建成功' },
+      success: true, 
+      message: '服务器创建成功',
       data: newServer
     });
   }),
@@ -157,16 +156,14 @@ export const serverHandlers = [
 
     if (!server) {
       return HttpResponse.json({
-        result: { 
-          success: false, 
-          message: '服务器不存在',
-          errorCode: 'SERVER_NOT_FOUND'
-        }
+        success: false, 
+        message: '服务器不存在'
       }, { status: 404 });
     }
 
     return HttpResponse.json({
-      result: { success: true, message: '获取服务器成功' },
+      success: true, 
+      message: '获取服务器成功',
       data: server
     });
   }),
@@ -179,11 +176,8 @@ export const serverHandlers = [
 
     if (serverIndex === -1) {
       return HttpResponse.json({
-        result: { 
-          success: false, 
-          message: '服务器不存在',
-          errorCode: 'SERVER_NOT_FOUND'
-        }
+        success: false, 
+        message: '服务器不存在'
       }, { status: 404 });
     }
 
@@ -192,7 +186,8 @@ export const serverHandlers = [
     Object.assign(server, body);
 
     return HttpResponse.json({
-      result: { success: true, message: '服务器更新成功' },
+      success: true, 
+      message: '服务器更新成功',
       data: server
     });
   }),
@@ -204,18 +199,16 @@ export const serverHandlers = [
 
     if (serverIndex === -1) {
       return HttpResponse.json({
-        result: { 
-          success: false, 
-          message: '服务器不存在',
-          errorCode: 'SERVER_NOT_FOUND'
-        }
+        success: false, 
+        message: '服务器不存在'
       }, { status: 404 });
     }
 
     mockServers.splice(serverIndex, 1);
 
     return HttpResponse.json({
-      result: { success: true, message: '服务器删除成功' }
+      success: true, 
+      message: '服务器删除成功'
     });
   }),
 
@@ -233,7 +226,8 @@ export const serverHandlers = [
     });
 
     return HttpResponse.json({
-      result: { success: true, message: `成功删除 ${deletedCount} 个服务器` }
+      success: true, 
+      message: `成功删除 ${deletedCount} 个服务器`
     });
   }),
 
@@ -244,11 +238,8 @@ export const serverHandlers = [
 
     if (!server) {
       return HttpResponse.json({
-        result: { 
-          success: false, 
-          message: '服务器不存在',
-          errorCode: 'SERVER_NOT_FOUND'
-        }
+        success: false, 
+        message: '服务器不存在'
       }, { status: 404 });
     }
 
@@ -256,7 +247,8 @@ export const serverHandlers = [
     server.status = ServerStatus.SERVER_STATUS_ONLINE;
 
     return HttpResponse.json({
-      result: { success: true, message: '服务器重启成功' }
+      success: true, 
+      message: '服务器重启成功'
     });
   })
 ]; 

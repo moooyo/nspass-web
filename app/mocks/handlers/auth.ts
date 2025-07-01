@@ -26,26 +26,21 @@ export const authHandlers = [
     // 模拟验证
     if (!body.name || !body.email || !body.password) {
       return HttpResponse.json({
-        result: { 
-          success: false, 
-          message: '用户名、邮箱和密码不能为空',
-          errorCode: 'INVALID_INPUT'
-        }
+        success: false, 
+        message: '用户名、邮箱和密码不能为空'
       }, { status: 400 });
     }
 
     if (body.name === 'existinguser') {
       return HttpResponse.json({
-        result: { 
-          success: false, 
-          message: '用户名已存在',
-          errorCode: 'USERNAME_EXISTS'
-        }
+        success: false, 
+        message: '用户名已存在'
       }, { status: 409 });
     }
 
     return HttpResponse.json({
-      result: { success: true, message: '注册成功' },
+      success: true, 
+      message: '注册成功',
       data: {
         userId: '2',
         username: body.name,
@@ -61,11 +56,8 @@ export const authHandlers = [
     // 验证输入
     if (!body.identifier || !body.password) {
       return HttpResponse.json({
-        result: { 
-          success: false, 
-          message: '登录标识符和密码不能为空',
-          errorCode: 'INVALID_INPUT'
-        }
+        success: false, 
+        message: '登录标识符和密码不能为空'
       }, { status: 400 });
     }
 
@@ -77,7 +69,8 @@ export const authHandlers = [
       user.lastLoginAt = new Date().toISOString();
       
       return HttpResponse.json({
-        result: { success: true, message: '登录成功' },
+        success: true, 
+        message: '登录成功',
         data: {
           token: `mock-jwt-token-${user.id}`,
           refreshToken: `mock-refresh-token-${user.id}`,
@@ -95,11 +88,8 @@ export const authHandlers = [
     }
 
     return HttpResponse.json({
-      result: { 
-        success: false, 
-        message: '用户名或密码错误',
-        errorCode: 'INVALID_CREDENTIALS'
-      }
+      success: false, 
+      message: '用户名或密码错误'
     }, { status: 401 });
   })
 ]; 

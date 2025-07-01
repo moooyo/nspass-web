@@ -145,7 +145,8 @@ export const userInfoHandlers = [
   // 获取当前用户信息 - 更新路径为 /v1/profile
   http.get('/v1/profile', () => {
     return HttpResponse.json({
-      base: { success: true, message: '获取用户信息成功' },
+      success: true, 
+      message: '获取用户信息成功',
       data: mockUserInfo
     });
   }),
@@ -161,7 +162,8 @@ export const userInfoHandlers = [
     if (body.avatar) mockUserInfo.avatar = body.avatar;
 
     return HttpResponse.json({
-      base: { success: true, message: '用户信息更新成功' },
+      success: true, 
+      message: '用户信息更新成功',
       data: mockUserInfo
     });
   }),
@@ -173,16 +175,14 @@ export const userInfoHandlers = [
     // 模拟密码验证
     if (body.currentPassword !== 'oldpassword') {
       return HttpResponse.json({
-        result: { 
-          success: false, 
-          message: '当前密码错误',
-          errorCode: 'INVALID_PASSWORD'
-        }
+        success: false, 
+        message: '当前密码错误'
       }, { status: 400 });
     }
 
     return HttpResponse.json({
-      result: { success: true, message: '密码修改成功' }
+      success: true, 
+      message: '密码修改成功'
     });
   }),
 
@@ -193,16 +193,14 @@ export const userInfoHandlers = [
     // 模拟密码验证
     if (body.password !== 'password123') {
       return HttpResponse.json({
-        result: { 
-          success: false, 
-          message: '密码错误',
-          errorCode: 'INVALID_PASSWORD'
-        }
+        success: false, 
+        message: '密码错误'
       }, { status: 400 });
     }
 
     return HttpResponse.json({
-      result: { success: true, message: '账户删除成功' }
+      success: true, 
+      message: '账户删除成功'
     });
   }),
 
@@ -212,11 +210,8 @@ export const userInfoHandlers = [
 
     if (!body.avatar) {
       return HttpResponse.json({
-        result: { 
-          success: false, 
-          message: '头像数据不能为空',
-          errorCode: 'INVALID_INPUT'
-        }
+        success: false, 
+        message: '头像数据不能为空'
       }, { status: 400 });
     }
 
@@ -224,7 +219,8 @@ export const userInfoHandlers = [
     mockUserInfo.avatar = avatarUrl;
 
     return HttpResponse.json({
-      result: { success: true, message: '头像上传成功' },
+      success: true, 
+      message: '头像上传成功',
       data: { avatarUrl }
     });
   }),
@@ -232,7 +228,8 @@ export const userInfoHandlers = [
   // 获取流量统计
   http.get('/v1/user/traffic', () => {
     return HttpResponse.json({
-      result: { success: true, message: '获取流量统计成功' },
+      success: true, 
+      message: '获取流量统计成功',
       data: mockTrafficStats
     });
   }),
@@ -245,7 +242,8 @@ export const userInfoHandlers = [
     mockTrafficStats.resetDate = new Date().toISOString();
 
     return HttpResponse.json({
-      result: { success: true, message: '流量重置成功' }
+      success: true, 
+      message: '流量重置成功'
     });
   }),
 
@@ -260,12 +258,13 @@ export const userInfoHandlers = [
     const paginatedHistory = mockLoginHistory.slice(start, end);
 
     return HttpResponse.json({
-      result: { success: true, message: '获取登录历史成功' },
+      success: true, 
+      message: '获取登录历史成功',
       data: paginatedHistory,
       pagination: {
-        total: mockLoginHistory.length,
-        page,
+        current: page,
         pageSize,
+        total: mockLoginHistory.length,
         totalPages: Math.ceil(mockLoginHistory.length / pageSize)
       }
     });
@@ -282,12 +281,13 @@ export const userInfoHandlers = [
     const paginatedLogs = mockActivityLogs.slice(start, end);
 
     return HttpResponse.json({
-      result: { success: true, message: '获取活动日志成功' },
+      success: true, 
+      message: '获取活动日志成功',
       data: paginatedLogs,
       pagination: {
-        total: mockActivityLogs.length,
-        page,
+        current: page,
         pageSize,
+        total: mockActivityLogs.length,
         totalPages: Math.ceil(mockActivityLogs.length / pageSize)
       }
     });
@@ -300,11 +300,8 @@ export const userInfoHandlers = [
     // 模拟密码验证
     if (body.password !== 'password123') {
       return HttpResponse.json({
-        result: { 
-          success: false, 
-          message: '密码错误',
-          errorCode: 'INVALID_PASSWORD'
-        }
+        success: false, 
+        message: '密码错误'
       }, { status: 400 });
     }
 
@@ -318,7 +315,8 @@ export const userInfoHandlers = [
     }
 
     return HttpResponse.json({
-      result: { success: true, message: `二步验证已${body.enabled ? '启用' : '禁用'}` },
+      success: true, 
+      message: `二步验证已${body.enabled ? '启用' : '禁用'}`,
       data: responseData
     });
   })

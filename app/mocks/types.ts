@@ -8,6 +8,7 @@ export interface ServerResponse<T> {
     current: number;
     pageSize: number;
     total: number;
+    totalPages: number;
   };
 }
 

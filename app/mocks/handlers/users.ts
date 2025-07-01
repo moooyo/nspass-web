@@ -18,6 +18,7 @@ interface ServerResponse<T> {
     current: number;
     pageSize: number;
     total: number;
+    totalPages: number;
   };
 }
 
@@ -57,7 +58,8 @@ export const usersHandlers = [
       pagination: {
         current: page,
         pageSize: pageSize,
-        total: total
+        total: total,
+        totalPages: Math.ceil(total / pageSize)
       }
     };
 
