@@ -178,61 +178,63 @@ const UserInfo: React.FC = () => {
 
         <Col xs={24} lg={16}>
           {/* 统计信息 */}
-          <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-            {userStats.map((stat, index) => (
-              <Col xs={12} lg={6} key={index}>
-                <Card 
-                  className="hover-lift"
-                  style={{
-                    background: currentTheme === 'light' 
-                      ? 'linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%)'
-                      : 'linear-gradient(145deg, rgba(31, 31, 31, 0.9) 0%, rgba(20, 20, 20, 0.9) 100%)',
-                    backdropFilter: 'blur(20px)',
-                    border: currentTheme === 'light'
-                      ? '1px solid rgba(255, 255, 255, 0.2)'
-                      : '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '16px',
-                    textAlign: 'center'
-                  }}
-                  styles={{ body: { padding: '20px 16px' } }}
-                  loading={loading}
-                >
-                  <div style={{ 
-                    fontSize: 24, 
-                    color: stat.color, 
-                    marginBottom: 8,
-                    background: `${stat.color}15`,
-                    width: 48,
-                    height: 48,
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto 12px auto'
-                  }}>
-                    {stat.icon}
+          <Card 
+            title={
+              <Title level={4} style={{ 
+                margin: 0, 
+                color: currentTheme === 'light' ? '#333' : '#fff' 
+              }}>
+                <LineChartOutlined style={{ marginRight: 8, color: '#1890ff' }} />
+                数据概览
+              </Title>
+            }
+            className="modern-card"
+            style={{ marginBottom: 24 }}
+            loading={loading}
+          >
+            <Row gutter={[24, 16]}>
+              {userStats.map((stat, index) => (
+                <Col xs={12} lg={6} key={index}>
+                  <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                    <div style={{ 
+                      fontSize: 28, 
+                      color: stat.color, 
+                      marginBottom: 12,
+                      background: `${stat.color}15`,
+                      width: 56,
+                      height: 56,
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto'
+                    }}>
+                      {stat.icon}
+                    </div>
+                    <Statistic
+                      value={stat.value}
+                      suffix={stat.suffix}
+                      valueStyle={{ 
+                        fontSize: 24, 
+                        fontWeight: 'bold',
+                        color: currentTheme === 'light' ? '#333' : '#fff',
+                        lineHeight: 1.2
+                      }}
+                    />
+                    <Text style={{ 
+                      fontSize: 14, 
+                      color: currentTheme === 'light' ? '#666' : '#ccc', 
+                      marginTop: 8, 
+                      display: 'block',
+                      fontWeight: 500
+                    }}>
+                      {stat.title}
+                    </Text>
                   </div>
-                  <Statistic
-                    value={stat.value}
-                    suffix={stat.suffix}
-                    valueStyle={{ 
-                      fontSize: 20, 
-                      fontWeight: 'bold',
-                      color: currentTheme === 'light' ? '#333' : '#fff'
-                    }}
-                  />
-                  <Text style={{ 
-                    fontSize: 12, 
-                    color: currentTheme === 'light' ? '#666' : '#ccc', 
-                    marginTop: 4, 
-                    display: 'block' 
-                  }}>
-                    {stat.title}
-                  </Text>
-                </Card>
-              </Col>
-            ))}
-          </Row>
+                </Col>
+              ))}
+            </Row>
+          </Card>
 
           {/* 用户信息表单 */}
           <Card 

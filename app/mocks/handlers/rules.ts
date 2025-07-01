@@ -101,13 +101,13 @@ export const rulesHandlers = [
     const paginatedRules = filteredRules.slice(start, end);
 
     return HttpResponse.json({
-      result: { success: true, message: '获取规则列表成功' },
-      data: paginatedRules,
-      pagination: {
+      success: true,
+      message: '获取规则列表成功',
+      data: {
+        data: paginatedRules,
         total: filteredRules.length,
         page,
-        pageSize,
-        totalPages: Math.ceil(filteredRules.length / pageSize)
+        pageSize
       }
     });
   }),
@@ -119,11 +119,9 @@ export const rulesHandlers = [
     // 验证必填字段
     if (!body.name || !body.sourcePort || !body.targetAddress || !body.targetPort || !body.serverId) {
       return HttpResponse.json({
-        result: { 
-          success: false, 
-          message: '缺少必填字段',
-          errorCode: 'INVALID_INPUT'
-        }
+        success: false,
+        message: '缺少必填字段',
+        errorCode: 'INVALID_INPUT'
       }, { status: 400 });
     }
 
@@ -131,11 +129,9 @@ export const rulesHandlers = [
     const existingRule = mockRules.find(rule => rule.sourcePort === body.sourcePort);
     if (existingRule) {
       return HttpResponse.json({
-        result: { 
-          success: false, 
-          message: '源端口已被使用',
-          errorCode: 'PORT_CONFLICT'
-        }
+        success: false,
+        message: '源端口已被使用',
+        errorCode: 'PORT_CONFLICT'
       }, { status: 409 });
     }
 
@@ -161,7 +157,8 @@ export const rulesHandlers = [
     mockRules.push(newRule);
 
     return HttpResponse.json({
-      result: { success: true, message: '规则创建成功' },
+      success: true,
+      message: '规则创建成功',
       data: newRule
     });
   }),
@@ -173,16 +170,15 @@ export const rulesHandlers = [
 
     if (!rule) {
       return HttpResponse.json({
-        result: { 
-          success: false, 
-          message: '规则不存在',
-          errorCode: 'RULE_NOT_FOUND'
-        }
+        success: false,
+        message: '规则不存在',
+        errorCode: 'RULE_NOT_FOUND'
       }, { status: 404 });
     }
 
     return HttpResponse.json({
-      result: { success: true, message: '获取规则成功' },
+      success: true,
+      message: '获取规则成功',
       data: rule
     });
   }),
@@ -195,11 +191,9 @@ export const rulesHandlers = [
 
     if (ruleIndex === -1) {
       return HttpResponse.json({
-        result: { 
-          success: false, 
-          message: '规则不存在',
-          errorCode: 'RULE_NOT_FOUND'
-        }
+        success: false,
+        message: '规则不存在',
+        errorCode: 'RULE_NOT_FOUND'
       }, { status: 404 });
     }
 
@@ -211,7 +205,8 @@ export const rulesHandlers = [
     });
 
     return HttpResponse.json({
-      result: { success: true, message: '规则更新成功' },
+      success: true,
+      message: '规则更新成功',
       data: rule
     });
   }),
@@ -223,18 +218,17 @@ export const rulesHandlers = [
 
     if (ruleIndex === -1) {
       return HttpResponse.json({
-        result: { 
-          success: false, 
-          message: '规则不存在',
-          errorCode: 'RULE_NOT_FOUND'
-        }
+        success: false,
+        message: '规则不存在',
+        errorCode: 'RULE_NOT_FOUND'
       }, { status: 404 });
     }
 
     mockRules.splice(ruleIndex, 1);
 
     return HttpResponse.json({
-      result: { success: true, message: '规则删除成功' }
+      success: true,
+      message: '规则删除成功'
     });
   }),
 
@@ -252,8 +246,9 @@ export const rulesHandlers = [
     });
 
     return HttpResponse.json({
-      result: { success: true, message: `成功删除 ${deletedCount} 个规则` },
-      deletedCount
+      success: true,
+      message: `成功删除 ${deletedCount} 个规则`,
+      data: { deletedCount }
     });
   }),
 
@@ -265,11 +260,9 @@ export const rulesHandlers = [
 
     if (!rule) {
       return HttpResponse.json({
-        result: { 
-          success: false, 
-          message: '规则不存在',
-          errorCode: 'RULE_NOT_FOUND'
-        }
+        success: false,
+        message: '规则不存在',
+        errorCode: 'RULE_NOT_FOUND'
       }, { status: 404 });
     }
 
@@ -277,7 +270,8 @@ export const rulesHandlers = [
     rule.updateTime = new Date().toISOString();
 
     return HttpResponse.json({
-      result: { success: true, message: `规则已${body.enabled ? '启用' : '禁用'}` },
+      success: true,
+      message: `规则已${body.enabled ? '启用' : '禁用'}`,
       data: rule
     });
   }),
@@ -289,11 +283,9 @@ export const rulesHandlers = [
 
     if (!rule) {
       return HttpResponse.json({
-        result: { 
-          success: false, 
-          message: '规则不存在',
-          errorCode: 'RULE_NOT_FOUND'
-        }
+        success: false,
+        message: '规则不存在',
+        errorCode: 'RULE_NOT_FOUND'
       }, { status: 404 });
     }
 
@@ -317,7 +309,8 @@ export const rulesHandlers = [
     };
 
     return HttpResponse.json({
-      result: { success: true, message: '获取流量统计成功' },
+      success: true,
+      message: '获取流量统计成功',
       data: trafficStats
     });
   })

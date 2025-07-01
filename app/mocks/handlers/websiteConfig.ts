@@ -6,7 +6,7 @@ import { mockWebsiteConfig } from '@mock/data/websiteConfig';
 
 export const websiteConfigHandlers = [
   // 获取网站配置
-  http.get('/api/settings', () => {
+  http.get('/v1/settings', () => {
     return HttpResponse.json({
       success: true,
       data: mockWebsiteConfig
@@ -14,7 +14,7 @@ export const websiteConfigHandlers = [
   }),
 
   // 更新网站配置
-  http.put('/api/settings', async ({ request }) => {
+  http.put('/v1/settings', async ({ request }) => {
     const updateData = await request.json() as WebsiteConfigUpdateData;
     
     Object.assign(mockWebsiteConfig, updateData);
@@ -28,7 +28,7 @@ export const websiteConfigHandlers = [
   }),
 
   // 重置网站配置
-  http.post('/api/settings/reset', () => {
+  http.post('/v1/settings/reset', () => {
     Object.assign(mockWebsiteConfig, {
       siteName: 'NSPass',
       allowRegister: true,
@@ -48,7 +48,7 @@ export const websiteConfigHandlers = [
   }),
 
   // 验证邀请码
-  http.post('/api/settings/validateInvite', async ({ request }) => {
+  http.post('/v1/settings/validateInvite', async ({ request }) => {
     const { code } = await request.json() as InviteCodeData;
     const valid = code === mockWebsiteConfig.inviteCode;
     
@@ -59,7 +59,7 @@ export const websiteConfigHandlers = [
   }),
 
   // 生成新邀请码
-  http.post('/api/settings/inviteCode', () => {
+  http.post('/v1/settings/inviteCode', () => {
     const newInviteCode = `nspass${Date.now().toString().substr(-6)}`;
     mockWebsiteConfig.inviteCode = newInviteCode;
     mockWebsiteConfig.updatedAt = new Date().toISOString();

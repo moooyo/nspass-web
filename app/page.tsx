@@ -412,26 +412,49 @@ export default function Home() {
   }
 
   return (
-    <Layout style={{ minHeight: '100vh', width: '100%', overflow: 'hidden' }}>
-      <Sider trigger={null} collapsible collapsed={collapsed}>
+    <Layout style={{ 
+      height: '100vh', 
+      width: '100%', 
+      overflow: 'hidden', 
+      padding: '24px', 
+      display: 'flex',
+      gap: '24px'
+    }}>
+      <Sider 
+        trigger={null} 
+        collapsible 
+        collapsed={collapsed}
+        style={{
+          background: colorBgContainer,
+          borderRadius: borderRadiusLG,
+          boxShadow: '0 8px 32px rgba(24, 144, 255, 0.15)',
+          border: '1px solid rgba(24, 144, 255, 0.1)',
+          overflow: 'hidden',
+          height: 'calc(100vh - 48px)',
+          display: 'flex',
+          flexDirection: 'column'
+        }}
+      >
         {/* LOGO放在侧边栏顶部 */}
         <div style={{ 
-          padding: collapsed ? '16px 8px' : '20px 16px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-          marginBottom: '8px'
+          padding: collapsed ? '12px 8px' : '16px 16px',
+          borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
+          marginBottom: '4px',
+          background: 'linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)',
+          borderRadius: `${borderRadiusLG}px ${borderRadiusLG}px 0 0`
         }}>
           <div 
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: collapsed ? '0' : '12px',
+              gap: collapsed ? '0' : '8px',
               justifyContent: collapsed ? 'center' : 'flex-start'
             }}
           >
             <div 
               style={{
-                width: '36px',
-                height: '36px',
+                width: '32px',
+                height: '32px',
                 background: resolvedTheme === 'light'
                   ? 'linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)'
                   : 'linear-gradient(135deg, #13c2c2 0%, #36cfc9 100%)',
@@ -469,12 +492,12 @@ export default function Home() {
                <div>
                  <div 
                    style={{ 
-                     color: '#ffffff !important',
+                     color: '#ffffff',
                      fontWeight: '700',
-                     fontSize: '20px',
+                     fontSize: '18px',
                      letterSpacing: '0.5px',
                      lineHeight: 1.2,
-                     textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)',
+                     textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
                    }}
                  >
@@ -482,13 +505,13 @@ export default function Home() {
                  </div>
                  <div 
                    style={{ 
-                     color: 'rgba(255, 255, 255, 0.9) !important',
-                     fontSize: '12px',
+                     color: 'rgba(255, 255, 255, 0.9)',
+                     fontSize: '11px',
                      fontWeight: '600',
                      letterSpacing: '1px',
                      textTransform: 'uppercase',
-                     marginTop: '2px',
-                     textShadow: '0 1px 2px rgba(0, 0, 0, 0.3)',
+                     marginTop: '1px',
+                     textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
                    }}
                  >
@@ -499,21 +522,31 @@ export default function Home() {
           </div>
         </div>
         
-        <Menu
-          theme="dark"
-          mode="inline"
-          selectedKeys={[selectedKey]}
-          onSelect={handleMenuSelect}
-          items={items}
-        />
+        <div style={{ 
+          flex: 1, 
+          overflow: 'auto',
+          scrollbarWidth: 'thin'
+        }}>
+          <Menu
+            theme="light"
+            mode="inline"
+            selectedKeys={[selectedKey]}
+            onSelect={handleMenuSelect}
+            items={items}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              padding: '4px 0'
+            }}
+          />
+        </div>
       </Sider>
       <div style={{ 
-        width: '100%', 
+        flex: 1, 
         overflow: 'hidden',
-        padding: '24px 48px 24px 24px',
         display: 'flex',
         flexDirection: 'column',
-        minHeight: '100vh'
+        height: 'calc(100vh - 48px)'
       }}>
         <Header style={{ 
           padding: '0', 
@@ -521,10 +554,11 @@ export default function Home() {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          height: '64px',
-          marginBottom: '24px',
+          height: '56px',
+          marginBottom: '16px',
           borderRadius: borderRadiusLG,
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+          flexShrink: 0
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px', height: '100%', padding: '0 16px' }}>
             <Button
@@ -568,10 +602,11 @@ export default function Home() {
           flex: 1,
           background: colorBgContainer,
           borderRadius: borderRadiusLG,
-          padding: '32px',
+          padding: '24px',
           boxShadow: '0 8px 32px rgba(24, 144, 255, 0.15)',
           border: '1px solid rgba(24, 144, 255, 0.1)',
-          overflowX: 'hidden'
+          overflow: 'auto',
+          marginBottom: '16px'
         }}>
           {renderContent()}
         </div>
@@ -579,8 +614,16 @@ export default function Home() {
         <Footer style={{ 
           textAlign: 'center', 
           color: '#999', 
-          padding: '12px 0',
-          marginTop: '24px'
+          padding: '12px 24px',
+          background: colorBgContainer,
+          borderRadius: borderRadiusLG,
+          boxShadow: '0 8px 32px rgba(24, 144, 255, 0.15)',
+          border: '1px solid rgba(24, 144, 255, 0.1)',
+          flexShrink: 0,
+          height: '48px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
         }}>
           <div style={{ 
             display: 'flex', 

@@ -225,6 +225,20 @@ body::before {
   background: transparent !important;
 }
 
+/* 浅色菜单样式 */
+.ant-menu-light {
+  background: transparent !important;
+}
+
+/* 菜单图标样式优化 */
+.ant-menu-light .ant-menu-item .ant-menu-item-icon {
+  margin-right: 10px !important;
+}
+
+.ant-menu-light .ant-menu-item-selected .ant-menu-item-icon {
+  color: white !important;
+}
+
 /* 防止菜单项溢出的通用样式 */
 .ant-menu-dark .ant-menu-item,
 .ant-menu-dark .ant-menu-item-selected,
@@ -291,6 +305,57 @@ body::before {
 /* 浅色主题下的分隔线 - 使用深色以提高对比度 */
 html:not([data-theme="dark"]) .ant-menu-dark .ant-menu-item-divider {
   border-top: 1px solid rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 浅色菜单项样式 */
+.ant-menu-light .ant-menu-item,
+.ant-menu-light .ant-menu-item-selected,
+.ant-menu-light .ant-menu-item:hover {
+  box-sizing: border-box !important;
+  position: relative !important;
+}
+
+.ant-menu-light .ant-menu-item {
+  border-radius: 8px !important;
+  margin: 2px 12px !important;
+  padding: 8px 16px !important;
+  height: auto !important;
+  line-height: 1.5 !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  color: var(--text-primary) !important;
+  width: calc(100% - 24px) !important;
+  max-width: calc(100% - 24px) !important;
+  overflow: hidden !important;
+}
+
+.ant-menu-light .ant-menu-item-selected {
+  background: var(--primary-gradient) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 15px rgba(24, 144, 255, 0.3) !important;
+  backdrop-filter: blur(10px) !important;
+  color: white !important;
+  margin: 2px 12px !important;
+  padding: 8px 16px !important;
+  height: auto !important;
+  line-height: 1.5 !important;
+  width: calc(100% - 24px) !important;
+  max-width: calc(100% - 24px) !important;
+  overflow: hidden !important;
+}
+
+.ant-menu-light .ant-menu-item:hover {
+  background: rgba(24, 144, 255, 0.1) !important;
+  transform: translateX(2px) !important;
+  color: var(--primary-blue) !important;
+  width: calc(100% - 24px) !important;
+  max-width: calc(100% - 24px) !important;
+  overflow: hidden !important;
+}
+
+.ant-menu-light .ant-menu-item-divider {
+  border-top: 1px solid rgba(0, 0, 0, 0.1) !important;
+  margin: 8px 16px !important;
+  background: transparent !important;
 }
 
 /* 卡片样式现代化 */
@@ -495,4 +560,31 @@ html:not([data-theme="dark"]) .ant-menu-dark .ant-menu-item-divider {
 
 .hover-lift:hover {
   transform: translateY(-4px);
+}
+
+/* 自定义滚动条样式 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(24, 144, 255, 0.2);
+  border-radius: 3px;
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(24, 144, 255, 0.4);
+}
+
+/* Firefox 滚动条样式 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(24, 144, 255, 0.2) transparent;
 }
