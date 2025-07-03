@@ -15,6 +15,8 @@ export const statusToString = (status: ServerStatus): string => {
       return 'pending_install';
     case ServerStatus.SERVER_STATUS_UNKNOWN:
       return 'unknown';
+    case ServerStatus.SERVER_STATUS_UNSPECIFIED:
+      return 'unknown';
     default:
       return 'unknown';
   }
@@ -53,6 +55,7 @@ export interface CreateServerParams {
   registerTime?: string;
   uploadTraffic?: number;
   downloadTraffic?: number;
+  status?: string;
 }
 
 // 更新服务器参数
@@ -86,7 +89,7 @@ export class ServerService {
     if (params.pageSize) queryParams.pageSize = params.pageSize.toString();
     if (params.name) queryParams.name = params.name;
     if (params.status && params.status !== 'all') {
-      queryParams.status = stringToStatus(params.status).toString();
+      queryParams.status = stringToStatus(params.status);
     }
     if (params.country && params.country !== 'all') {
       queryParams.country = params.country;
@@ -169,7 +172,14 @@ export class ServerService {
    * 创建服务器
    */
   static async createServer(data: CreateServerParams): Promise<ServerItem> {
-    const response = await httpClient.post<ServerItem>(this.endpoint, data);
+    const createData = { ...data };
+    
+    // 转换状态值
+    if (createData.status) {
+      createData.status = stringToStatus(createData.status);
+    }
+
+    const response = await httpClient.post<ServerItem>(this.endpoint, createData);
 
     if (!response.success) {
       throw new Error(response.message || '创建服务器失败');
@@ -186,7 +196,7 @@ export class ServerService {
     
     // 转换状态值
     if (updateData.status) {
-      updateData.status = stringToStatus(updateData.status).toString();
+      updateData.status = stringToStatus(updateData.status);
     }
 
     const response = await httpClient.put<ServerItem>(`${this.endpoint}/${id}`, updateData);

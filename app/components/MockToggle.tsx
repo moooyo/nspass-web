@@ -6,9 +6,6 @@ import { useMSW } from './MSWProvider';
 import { message } from '@/utils/message';
 import { httpClient } from '@/utils/http-client';
 
-// LocalStorage键名
-const MOCK_ENABLED_KEY = 'nspass-mock-enabled';
-
 export const MockToggle: React.FC = () => {
   // 使用新的MSWProvider中的useMSW hook
   const { enabled: mockEnabled, toggle, status, loading } = useMSW();
@@ -69,11 +66,8 @@ export const MockToggle: React.FC = () => {
     if (isLoading) return;
     
     try {
-      // 使用MSWProvider的toggle方法
+      // 使用MSWProvider的toggle方法（已包含localStorage操作）
       await toggle();
-      
-      // 保存状态到LocalStorage
-      localStorage.setItem(MOCK_ENABLED_KEY, String(!mockEnabled));
       
       // 显示成功消息
       if (!mockEnabled) {

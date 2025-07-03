@@ -147,8 +147,8 @@ export const serverHandlers = [
 
     // 按状态筛选
     if (status) {
-      const statusValue = parseInt(status) as unknown as ServerStatus;
-      filteredServers = filteredServers.filter(server => server.status === statusValue);
+      // status 参数是字符串枚举值，直接比较
+      filteredServers = filteredServers.filter(server => server.status === status);
     }
 
     // 按国家筛选
@@ -194,7 +194,7 @@ export const serverHandlers = [
       registerTime: body.registerTime || new Date().toISOString(),
       uploadTraffic: body.uploadTraffic || 0,
       downloadTraffic: body.downloadTraffic || 0,
-      status: ServerStatus.SERVER_STATUS_PENDING_INSTALL // 新建时状态固定为待安装
+      status: body.status || ServerStatus.SERVER_STATUS_PENDING_INSTALL // 使用传入的状态，默认为等待安装
     };
 
     mockServers.push(newServer);

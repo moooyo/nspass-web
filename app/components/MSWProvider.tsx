@@ -46,9 +46,17 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<MSWStatus>('idle');
 
-  // 客户端初始化
+  // 客户端初始化并从 localStorage 读取状态
   useEffect(() => {
     setIsClient(true);
+    
+    // 从 localStorage 读取之前保存的状态
+    const savedMockEnabled = localStorage.getItem('nspass-mock-enabled');
+    if (savedMockEnabled !== null) {
+      const shouldEnable = savedMockEnabled === 'true';
+      setEnabled(shouldEnable);
+      console.log('🔄 从 localStorage 恢复 MSW 状态:', shouldEnable ? '启用' : '禁用');
+    }
   }, []);
 
   // 更新httpClient baseURL
@@ -84,6 +92,7 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (success) {
           setEnabled(true);
           setStatus('running');
+          localStorage.setItem('nspass-mock-enabled', 'true');
           setTimeout(() => updateBaseURL(true), 100);
         } else {
           throw new Error('MSW 启动失败');
@@ -94,6 +103,7 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         
         setEnabled(false);
         setStatus('stopped');
+        localStorage.setItem('nspass-mock-enabled', 'false');
         setTimeout(() => updateBaseURL(false), 100);
       }
     } catch (err) {
@@ -119,6 +129,7 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (success) {
         setEnabled(true);
         setStatus('running');
+        localStorage.setItem('nspass-mock-enabled', 'true');
         setTimeout(() => updateBaseURL(true), 100);
       } else {
         throw new Error('MSW 重启失败');
@@ -132,16 +143,31 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [isClient, loading, updateBaseURL]);
 
-  // 开发环境自动启动
+  // 根据 localStorage 状态决定是否启动
   useEffect(() => {
     if (isClient && 
         process.env.NODE_ENV === 'development' && 
-        !enabled && 
         !loading && 
         status === 'idle') {
-      setTimeout(forceRestart, 100);
+      
+      const savedMockEnabled = localStorage.getItem('nspass-mock-enabled');
+      const shouldEnable = savedMockEnabled === null ? true : savedMockEnabled === 'true'; // 默认启用
+      
+      if (shouldEnable && !enabled) {
+        console.log('🚀 根据保存的状态启动 MSW...');
+        setTimeout(forceRestart, 100);
+      } else if (!shouldEnable && enabled) {
+        console.log('⏹️ 根据保存的状态停止 MSW...');
+        setTimeout(async () => {
+          const { worker } = await import('@/mocks/browser');
+          if (worker) await worker.stop();
+          setEnabled(false);
+          setStatus('stopped');
+          setTimeout(() => updateBaseURL(false), 100);
+        }, 100);
+      }
     }
-  }, [isClient, enabled, loading, status, forceRestart]);
+  }, [isClient, enabled, loading, status, forceRestart, updateBaseURL]);
 
   const contextValue = useMemo(() => ({
     enabled,

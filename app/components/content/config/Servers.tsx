@@ -190,6 +190,7 @@ const Servers: React.FC = () => {
                     registerTime: values.registerTime || new Date().toISOString(),
                     uploadTraffic: values.uploadTraffic || 0,
                     downloadTraffic: values.downloadTraffic || 0,
+                    status: 'pending_install', // 新建服务器默认状态为等待安装
                 };
                 
                 await ServerService.createServer(createData);
@@ -383,6 +384,7 @@ const Servers: React.FC = () => {
                     uploadTraffic: 0,
                     downloadTraffic: 0,
                     registerTime: new Date().toISOString().split('T')[0],
+                    status: 'pending_install',
                 }}
                 modalProps={{
                     destroyOnHidden: true,
@@ -437,23 +439,22 @@ const Servers: React.FC = () => {
                     label="下载流量 (MB)"
                     placeholder="请输入下载流量"
                 />
-                {modalMode === 'edit' && (
-                    <ProFormSelect
-                        name="status"
-                        label="状态"
-                        placeholder="请选择状态"
-                        options={[
-                            { label: '在线', value: 'online' },
-                            { label: '离线', value: 'offline' },
-                            { label: '等待安装', value: 'pending_install' },
-                            { label: '未知', value: 'unknown' },
-                        ]}
-                    />
-                )}
+                <ProFormSelect
+                    name="status"
+                    label="状态"
+                    placeholder="请选择状态"
+                    disabled={modalMode === 'create'}
+                    options={[
+                        { label: '在线', value: 'online' },
+                        { label: '离线', value: 'offline' },
+                        { label: '等待安装', value: 'pending_install' },
+                        { label: '未知', value: 'unknown' },
+                    ]}
+                />
                 {modalMode === 'create' && (
-                    <div style={{ background: '#f5f5f5', padding: '12px', borderRadius: '4px', marginBottom: '16px' }}>
-                        <p style={{ margin: 0, color: '#666' }}>
-                            注意：新建服务器时状态默认为"等待安装"，IPV4和IPV6地址将在服务器安装后自动上报
+                    <div style={{ background: '#e6f7ff', padding: '12px', borderRadius: '4px', marginBottom: '16px', border: '1px solid #91d5ff' }}>
+                        <p style={{ margin: 0, color: '#0050b3', fontSize: '14px' }}>
+                            💡 新建服务器时状态默认为"等待安装"，IPV4和IPV6地址将在服务器安装后自动上报
                         </p>
                     </div>
                 )}

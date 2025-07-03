@@ -27,6 +27,7 @@ import { useAuth } from '@/components/hooks/useAuth';
 import { passkeyService } from '@/services/passkey';
 import { PasskeyUtils } from '@/utils/passkey';
 import { LoginType as ProtoLoginType } from '@/types/generated/api/users/user_auth';
+import { MSWToggle } from '@/components/MSWProvider';
 
 const { Text } = Typography;
 
@@ -266,6 +267,23 @@ const LoginPage = () => {
         position: 'relative',
         padding: '20px 0'
       }}>
+        {/* MSW开关 - 开发环境显示 */}
+        {process.env.NODE_ENV === 'development' && (
+          <div style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            zIndex: 1000,
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(10px)',
+            borderRadius: '12px',
+            padding: '12px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
+            border: '1px solid rgba(255, 255, 255, 0.2)'
+          }}>
+            <MSWToggle />
+          </div>
+        )}
         {/* 背景装饰图案 */}
         <div style={{
           position: 'absolute',

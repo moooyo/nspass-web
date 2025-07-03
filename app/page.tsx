@@ -253,7 +253,15 @@ export default function Home() {
     try {
       await logout();
       message.success('注销成功');
-      router.push('/login');
+      
+      // 确保跳转到登录页面，使用多种方式确保成功
+      setTimeout(() => {
+        router.push('/login');
+        // 备用跳转方式，确保在各种情况下都能跳转
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+      }, 500);
     } catch (error) {
       message.error('注销失败');
       console.error('注销错误:', error);
