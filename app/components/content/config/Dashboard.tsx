@@ -3,6 +3,8 @@ import { ProCard, StatisticCard } from '@ant-design/pro-components';
 import { Space, Typography, Progress, Spin, Alert, Button } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import { dashboardService } from '@/services/dashboard';
+import { useMSW } from '@/components/MSWProvider';
+import { httpClient } from '@/utils/http-client';
 import type { 
   SystemOverview, 
   TrafficTrendItem, 
@@ -18,6 +20,8 @@ const DynamicColumn = React.lazy(() =>
 );
 
 const Dashboard: React.FC = () => {
+  const { enabled: mswEnabled, status: mswStatus } = useMSW();
+  
   // 状态管理
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -37,6 +41,9 @@ const Dashboard: React.FC = () => {
         setLoading(true);
       }
       setError(null);
+
+      console.log('📊 开始加载仪表盘数据...');
+      console.log(`🔍 MSW状态: enabled=${mswEnabled}, status=${mswStatus}`);
 
       // 并发请求所有数据
       const [overviewRes, trafficTrendRes, userTrafficRes] = await Promise.all([
@@ -76,7 +83,7 @@ const Dashboard: React.FC = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [mswEnabled, mswStatus]);
 
   // 刷新仪表盘数据
   const handleRefresh = useCallback(async () => {
@@ -99,10 +106,33 @@ const Dashboard: React.FC = () => {
     }
   }, [loadDashboardData]);
 
-  // 组件挂载时加载数据
+  // 组件挂载时加载数据 - 等待MSW准备就绪
   useEffect(() => {
-    loadDashboardData();
-  }, [loadDashboardData]);
+    // 如果MSW启用，等待它准备就绪后再发送请求
+    if (process.env.NODE_ENV === 'development') {
+      if (mswEnabled && mswStatus === 'running') {
+        console.log('✅ MSW已准备就绪，延迟加载仪表盘数据以确保httpClient完全更新');
+        // 延迟500ms确保httpClient的baseURL完全更新并缓存清理完成
+        setTimeout(() => {
+          console.log(`🔍 准备发送请求，当前httpClient baseURL: ${httpClient.getCurrentBaseURL()}`);
+          loadDashboardData();
+        }, 500);
+      } else if (!mswEnabled && mswStatus === 'stopped') {
+        console.log('✅ MSW已停用，延迟使用真实API加载仪表盘数据');
+        setTimeout(() => {
+          console.log(`🔍 准备发送请求，当前httpClient baseURL: ${httpClient.getCurrentBaseURL()}`);
+          loadDashboardData();
+        }, 500);
+      } else if (mswStatus === 'idle') {
+        console.log('⏳ MSW状态为idle，等待初始化完成...');
+      } else {
+        console.log(`⏳ 等待MSW准备就绪... 当前状态: ${mswStatus}`);
+      }
+    } else {
+      // 生产环境直接加载
+      loadDashboardData();
+    }
+  }, [mswEnabled, mswStatus, loadDashboardData]);
 
   // 缓存图表配置，避免重复创建
   const chartConfig = useMemo(() => ({

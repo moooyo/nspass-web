@@ -371,107 +371,107 @@ const ProfessionalWorldMap: React.FC<ProfessionalWorldMapProps> = ({ servers, st
               minWidth: '160px',
               fontSize: '12px'
             }}>
-              <div style={{ 
-                fontSize: 11, 
-                fontWeight: 'bold',
-                color: currentTheme === 'light' ? '#666' : '#ccc',
+                <div style={{ 
+                  fontSize: 11, 
+                  fontWeight: 'bold',
+                  color: currentTheme === 'light' ? '#666' : '#ccc',
                 marginBottom: 8
-              }}>
-                服务器状态
-              </div>
+                }}>
+                  服务器状态
+                </div>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <div style={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: '50%',
-                  background: '#52c41a',
-                  border: '2px solid white'
-                }} />
-                <Text style={{ 
-                  fontSize: 11,
-                  color: currentTheme === 'light' ? '#333' : '#fff'
-                }}>
-                  全部在线
-                </Text>
-              </div>
+                  <div style={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: '50%',
+                    background: '#52c41a',
+                    border: '2px solid white'
+                  }} />
+                  <Text style={{ 
+                    fontSize: 11,
+                    color: currentTheme === 'light' ? '#333' : '#fff'
+                  }}>
+                    全部在线
+                  </Text>
+                </div>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <div style={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: '50%',
-                  background: '#fa8c16',
-                  border: '2px solid white'
-                }} />
-                <Text style={{ 
-                  fontSize: 11,
-                  color: currentTheme === 'light' ? '#333' : '#fff'
+                  <div style={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: '50%',
+                    background: '#fa8c16',
+                    border: '2px solid white'
+                  }} />
+                  <Text style={{ 
+                    fontSize: 11,
+                    color: currentTheme === 'light' ? '#333' : '#fff'
+                  }}>
+                    部分在线
+                  </Text>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: '50%',
+                    background: '#ff4d4f',
+                    border: '2px solid white'
+                  }} />
+                  <Text style={{ 
+                    fontSize: 11,
+                    color: currentTheme === 'light' ? '#333' : '#fff'
+                  }}>
+                    全部离线
+                  </Text>
+                </div>
+                
+                {/* 路由连线 */}
+                <div style={{ 
+                  fontSize: 11, 
+                  fontWeight: 'bold',
+                  color: currentTheme === 'light' ? '#666' : '#ccc',
+                  borderBottom: currentTheme === 'light' 
+                    ? '1px solid rgba(0, 0, 0, 0.1)' 
+                    : '1px solid rgba(255, 255, 255, 0.2)',
+                  paddingBottom: 4,
+                  marginBottom: 4,
+                  marginTop: 8
                 }}>
-                  部分在线
-                </Text>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: '50%',
-                  background: '#ff4d4f',
-                  border: '2px solid white'
-                }} />
-                <Text style={{ 
-                  fontSize: 11,
-                  color: currentTheme === 'light' ? '#333' : '#fff'
-                }}>
-                  全部离线
-                </Text>
-              </div>
-              
-              {/* 路由连线 */}
-              <div style={{ 
-                fontSize: 11, 
-                fontWeight: 'bold',
-                color: currentTheme === 'light' ? '#666' : '#ccc',
-                borderBottom: currentTheme === 'light' 
-                  ? '1px solid rgba(0, 0, 0, 0.1)' 
-                  : '1px solid rgba(255, 255, 255, 0.2)',
-                paddingBottom: 4,
-                marginBottom: 4,
-                marginTop: 8
-              }}>
-                路由连线
-              </div>
+                  路由连线
+                </div>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <div style={{
+                  <div style={{
                   width: 16,
                   height: 3,
                   background: '#52c41a',
                   borderRadius: '2px'
-                }} />
-                <Text style={{ 
-                  fontSize: 11,
-                  color: currentTheme === 'light' ? '#333' : '#fff'
-                }}>
-                  有在线路由
-                </Text>
-              </div>
+                  }} />
+                  <Text style={{ 
+                    fontSize: 11,
+                    color: currentTheme === 'light' ? '#333' : '#fff'
+                  }}>
+                    有在线路由
+                  </Text>
+                </div>
               
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{
                   width: 16,
                   height: 3,
-                  background: '#ff4d4f',
+                    background: '#ff4d4f',
                   borderRadius: '2px',
                   backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(255,255,255,0.3) 3px, rgba(255,255,255,0.3) 6px)'
-                }} />
-                <Text style={{ 
-                  fontSize: 11,
-                  color: currentTheme === 'light' ? '#333' : '#fff'
-                }}>
-                  全部离线
-                </Text>
-              </div>
+                  }} />
+                  <Text style={{ 
+                    fontSize: 11,
+                    color: currentTheme === 'light' ? '#333' : '#fff'
+                  }}>
+                    全部离线
+                  </Text>
+                </div>
 
               {/* 调试信息 */}
               {routeStats.length > 0 && (
@@ -535,7 +535,7 @@ const ProfessionalWorldMap: React.FC<ProfessionalWorldMapProps> = ({ servers, st
                         </div>
                       );
                     })}
-                  </div>
+              </div>
                 </>
               )}
             </div>

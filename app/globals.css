@@ -588,3 +588,71 @@ html:not([data-theme="dark"]) .ant-menu-dark .ant-menu-item-divider {
   scrollbar-width: thin;
   scrollbar-color: rgba(24, 144, 255, 0.2) transparent;
 }
+
+/* MSW开关组件动画样式 */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+  }
+}
+
+/* MSW开关组件悬停效果 */
+.msw-toggle-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.msw-toggle-card:hover {
+  transform: translateY(-2px);
+}
+
+/* MSW开关组件状态指示器动画 */
+.msw-status-indicator {
+  transition: all 0.3s ease;
+}
+
+.msw-status-indicator.running {
+  animation: pulse 2s infinite;
+}
+
+.msw-status-indicator.loading {
+  animation: shimmer 2s infinite;
+}
+
+/* 确保动画在所有浏览器中都能正常工作 */
+@-webkit-keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    -webkit-transform: scale(1);
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    -webkit-transform: scale(1.1);
+    transform: scale(1.1);
+  }
+}
+
+@-webkit-keyframes shimmer {
+  0% {
+    -webkit-transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  }
+  100% {
+    -webkit-transform: translateX(100%) translateY(100%) rotate(45deg);
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+  }
+}

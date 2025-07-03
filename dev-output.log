@@ -1,0 +1,12 @@
+
+> nspass-web@0.1.0 dev:fast
+> next dev
+
+   ▲ Next.js 15.3.2
+   - Local:        http://localhost:3000
+   - Network:      http://10.255.255.254:3000
+   - Environments: .env.local
+   - Experiments (use with caution):
+     ⨯ reactCompiler
+
+ ✓ Starting...

@@ -19,6 +19,7 @@ import {
   AlertOutlined
 } from '@ant-design/icons';
 import { useTheme } from '../hooks/useTheme';
+import { useMSW } from '../MSWProvider';
 import { dashboardService } from '@/services/dashboard';
 import { ServerService } from '@/services/servers';
 import ProfessionalWorldMap, { type ExtendedServerItem } from './ProfessionalWorldMap';
@@ -32,6 +33,7 @@ import type { ServerItem } from '@/types/generated/api/servers/server_management
 import { AlertType } from '@/types/generated/api/dashboard/dashboard_service';
 import { ServerStatus } from '@/types/generated/api/servers/server_management';
 import { message } from '@/utils/message';
+import { httpClient } from '@/utils/http-client';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -47,7 +49,7 @@ interface ServerStatusData extends ServerItem {
   tags?: string[];
 }
 
-// 预警数据类型
+// 服务预警数据类型
 interface ServiceAlert {
   id: string;
   type: 'error' | 'warning' | 'info';
@@ -59,6 +61,7 @@ interface ServiceAlert {
 
 const HomeContent: React.FC = () => {
   const { theme: currentTheme } = useTheme();
+  const { enabled: mswEnabled, status: mswStatus } = useMSW();
   
   // 状态管理
   const [loading, setLoading] = useState(true);
@@ -71,61 +74,71 @@ const HomeContent: React.FC = () => {
   const [servers, setServers] = useState<ServerStatusData[]>([]);
   const [serviceAlerts, setServiceAlerts] = useState<ServiceAlert[]>([]);
 
-  // 获取国旗emoji
+  // 获取国家旗帜emoji
   const getCountryFlag = (country?: string): string => {
     const countryFlags: Record<string, string> = {
-      'CN': '🇨🇳',
-      'US': '🇺🇸', 
-      'JP': '🇯🇵',
-      'KR': '🇰🇷',
-      'SG': '🇸🇬',
-      'HK': '🇭🇰',
-      'UK': '🇬🇧',
-      'DE': '🇩🇪',
-      'CA': '🇨🇦',
-      'AU': '🇦🇺',
-      'FR': '🇫🇷',
-      'AE': '🇦🇪'
+      'china': '🇨🇳',
+      'united states': '🇺🇸',
+      'japan': '🇯🇵',
+      'singapore': '🇸🇬',
+      'germany': '🇩🇪',
+      'united kingdom': '🇬🇧',
+      'hong kong': '🇭🇰',
+      'taiwan': '🇹🇼',
+      'south korea': '🇰🇷',
+      'australia': '🇦🇺'
     };
-    return countryFlags[country || ''] || '🌍';
+    
+    return countryFlags[country?.toLowerCase() || ''] || '🌍';
   };
 
-  // 生成模拟的服务器监控数据
+  // 生成服务器监控数据
   const generateServerMonitoringData = (server: ServerItem): ServerStatusData => {
     return {
       ...server,
-      uptime: Math.floor(Math.random() * 100) + '天',
-      cpuUsage: Math.floor(Math.random() * 30) + 10, // 10-40%
-      memoryUsage: Math.floor(Math.random() * 40) + 20, // 20-60%
-      diskUsage: Math.floor(Math.random() * 30) + 10, // 10-40%
-      uploadSpeed: Math.random() * 10 + 0.1, // 0.1-10 K/s
-      downloadSpeed: Math.random() * 20 + 0.5, // 0.5-20 K/s
-      osVersion: 'Ubuntu',
-      tags: ['300Mbps', '1024GB/月', 'IPv4', server.ipv6 ? 'IPv6' : '', 'MKCloud'].filter(Boolean)
+      uptime: `${Math.floor(Math.random() * 30) + 1}天`,
+      cpuUsage: Math.floor(Math.random() * 80) + 10,
+      memoryUsage: Math.floor(Math.random() * 70) + 20,
+      diskUsage: Math.floor(Math.random() * 60) + 15,
+      uploadSpeed: Math.floor(Math.random() * 100) + 10,
+      downloadSpeed: Math.floor(Math.random() * 150) + 20,
+      osVersion: ['Ubuntu 22.04', 'CentOS 7.9', 'Debian 11', 'AlmaLinux 9'][Math.floor(Math.random() * 4)],
+      tags: [['高性能', 'SSD'], ['经济型', 'HDD'], ['企业级', '冗余'], ['测试', '开发']][Math.floor(Math.random() * 4)]
     };
   };
 
-  // 生成模拟的服务预警数据
+  // 生成服务预警数据
   const generateServiceAlerts = (serverData: ServerStatusData[]): ServiceAlert[] => {
-    const alertTemplates = [
-      { type: 'error', message: '数据库连接失败' },
-      { type: 'warning', message: 'CPU使用率过高' },
-      { type: 'info', message: '系统更新完成' },
-      { type: 'warning', message: '内存使用率达到80%' },
-      { type: 'error', message: '磁盘空间不足' }
-    ];
-
-    return alertTemplates.slice(0, 4).map((template, index) => ({
-      id: `alert-${index}`,
-      type: template.type as 'error' | 'warning' | 'info',
-      serverName: serverData[index]?.name || `服务器${index + 1}`,
-      message: template.message,
-      timestamp: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000).toLocaleString('zh-CN'),
-      resolved: Math.random() > 0.5
-    }));
+    const alerts: ServiceAlert[] = [];
+    
+    serverData.forEach(server => {
+      if (server.cpuUsage && server.cpuUsage > 80) {
+        alerts.push({
+          id: `cpu-${server.id}`,
+          type: 'warning',
+          serverName: server.name || 'Unknown',
+          message: `CPU使用率过高: ${server.cpuUsage}%`,
+          timestamp: new Date().toISOString(),
+          resolved: false
+        });
+      }
+      
+      if (server.memoryUsage && server.memoryUsage > 85) {
+        alerts.push({
+          id: `memory-${server.id}`,
+          type: 'error',
+          serverName: server.name || 'Unknown',
+          message: `内存使用率过高: ${server.memoryUsage}%`,
+          timestamp: new Date().toISOString(),
+          resolved: false
+        });
+      }
+    });
+    
+    return alerts;
   };
 
-  // 转换服务器数据为地图所需格式
+  // 转换服务器数据为地图组件需要的格式
   const convertToExtendedServers = (serverData: ServerStatusData[]): ExtendedServerItem[] => {
     return serverData.map(server => ({
       ...server,
@@ -142,6 +155,9 @@ const HomeContent: React.FC = () => {
         setLoading(true);
       }
       setError(null);
+
+      console.log('🏠 开始加载首页数据...');
+      console.log(`🔍 MSW状态: enabled=${mswEnabled}, status=${mswStatus}`);
 
       // 并发请求所有数据
       const [overviewRes, alertsRes, serversRes] = await Promise.all([
@@ -190,17 +206,40 @@ const HomeContent: React.FC = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [mswEnabled, mswStatus]);
 
   // 刷新数据
   const handleRefresh = useCallback(() => {
     loadHomeData(true);
   }, [loadHomeData]);
 
-  // 组件挂载时加载数据
+  // 组件挂载时加载数据 - 等待MSW准备就绪
   useEffect(() => {
-    loadHomeData();
-  }, [loadHomeData]);
+    // 如果MSW启用，等待它准备就绪后再发送请求
+    if (process.env.NODE_ENV === 'development') {
+      if (mswEnabled && mswStatus === 'running') {
+        console.log('✅ MSW已准备就绪，延迟加载首页数据以确保httpClient完全更新');
+        // 延迟500ms确保httpClient的baseURL完全更新并缓存清理完成
+        setTimeout(() => {
+          console.log(`🔍 准备发送请求，当前httpClient baseURL: ${httpClient.getCurrentBaseURL()}`);
+          loadHomeData();
+        }, 500);
+      } else if (!mswEnabled && mswStatus === 'stopped') {
+        console.log('✅ MSW已停用，延迟使用真实API加载首页数据');
+        setTimeout(() => {
+          console.log(`🔍 准备发送请求，当前httpClient baseURL: ${httpClient.getCurrentBaseURL()}`);
+          loadHomeData();
+        }, 500);
+      } else if (mswStatus === 'idle') {
+        console.log('⏳ MSW状态为idle，等待初始化完成...');
+      } else {
+        console.log(`⏳ 等待MSW准备就绪... 当前状态: ${mswStatus}`);
+      }
+    } else {
+      // 生产环境直接加载
+      loadHomeData();
+    }
+  }, [mswEnabled, mswStatus, loadHomeData]);
 
   // 根据API数据生成统计卡片数据
   const stats = [

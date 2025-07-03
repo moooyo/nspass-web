@@ -10,6 +10,7 @@ import { useTheme } from '@/components/hooks/useTheme';
 import ThemeToggle from '@/components/ThemeToggle';
 import { MSWToggle } from '@/components/MSWProvider';
 
+
 // 使用 React.lazy 懒加载组件
 const HomeContent = React.lazy(() => import('./components/content/Home'));
 const UserInfo = React.lazy(() => import('./components/content/UserInfo'));
@@ -587,7 +588,7 @@ export default function Home() {
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
               <Space style={{ cursor: 'pointer', padding: '8px 12px', borderRadius: '8px' }}>
                 <Avatar 
-                  src={user?.avatar}
+                  src={user?.avatar || undefined}
                   style={{ 
                     backgroundColor: '#1890ff' 
                   }} 

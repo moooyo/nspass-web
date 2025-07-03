@@ -8,10 +8,16 @@ import { MSWContext } from '../MSWProvider';
  * @returns {Object} { mockEnabled, setMockEnabled } - Mock状态和设置函数
  */
 export const useMockStatus = () => {
-  const { enabled, setEnabled } = useContext(MSWContext);
+  const context = useContext(MSWContext);
+  
+  if (!context) {
+    throw new Error('useMockStatus must be used within MSWProvider');
+  }
+  
+  const { enabled, toggle } = context;
   
   return {
     mockEnabled: enabled,
-    setMockEnabled: setEnabled,
+    setMockEnabled: toggle, // 使用toggle函数来切换状态
   };
 }; 

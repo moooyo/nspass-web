@@ -28,6 +28,9 @@ export default function RootLayout({
   return (
     <html lang="zh">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <script dangerouslySetInnerHTML={{
+          __html: `console.log('🚀 Layout加载完成，JavaScript执行正常');`
+        }} />
         <ThemeProvider>
           <MSWProvider>
             <AntdProvider>

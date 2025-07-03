@@ -1,9 +1,17 @@
 import { setupWorker } from 'msw/browser';
 import { handlers } from '@mock/handlers';
 
+// 基础环境检查
+console.log('🔍 MSW browser.ts模块开始加载...');
+console.log(`浏览器环境: ${typeof window !== 'undefined'}`);
+console.log(`ServiceWorker支持: ${typeof window !== 'undefined' && 'serviceWorker' in navigator}`);
+console.log(`处理程序数量: ${handlers.length}`);
+
 // 创建service worker，确保仅在浏览器环境中执行
 // 检查window对象是否存在，确保只在客户端执行
 export const worker = typeof window !== 'undefined' ? setupWorker(...handlers) : null;
+
+console.log(`Worker创建结果: ${worker ? '成功' : '失败（可能在服务器端）'}`);
 
 // 最大重试次数
 const MAX_RETRIES = 3;
@@ -11,6 +19,7 @@ const MAX_RETRIES = 3;
 // worker的状态
 let workerStarted = false;
 let workerStarting = false;
+let lastStartTime = 0;
 
 // 强制清理所有Service Worker的函数
 async function clearAllServiceWorkers(): Promise<void> {
@@ -121,48 +130,43 @@ function isAPIRequest(url: URL): boolean {
 }
 
 // 启动MSW的函数 - 增强版本，包含强制重置
-export const startMSW = async (retryCount = 0, forceReset = false) => {
+export const startMSW = async (
+  options: {
+    quiet?: boolean;
+    forceRestart?: boolean;
+  } = {}
+) => {
   if (typeof window === 'undefined') {
-    console.log('MSW: 不在浏览器环境中，无法启动');
+    console.warn('MSW: 服务器端环境，跳过初始化');
     return false;
   }
 
   if (!worker) {
-    console.error('MSW: worker未初始化，可能是在服务器端运行');
+    console.error('MSW: worker未初始化');
     return false;
   }
 
-  // 如果需要强制重置，先清理所有Service Worker
-  if (forceReset) {
-    console.log('🔄 强制重置模式：清理所有Service Worker...');
-    await clearAllServiceWorkers();
-    workerStarted = false;
-    workerStarting = false;
+  if (workerStarting) {
+    console.log('MSW: 已在启动中，等待完成...');
+    return workerStarted;
   }
 
-  // 如果worker已经启动，就不需要再次启动
-  if (workerStarted && !forceReset) {
-    console.log('MSW: 已经在运行中，重置处理程序...');
-    console.log(`MSW: 当前处理程序数量: ${handlers.length}`);
-    try {
-      await worker.resetHandlers(...handlers);
-      console.log('MSW: 处理程序重置完成');
-    } catch (error) {
-      console.error('MSW: 重置处理程序失败:', error);
-    }
+  if (workerStarted && !options.forceRestart) {
+    console.log('MSW: 服务已启动，跳过重复启动');
     return true;
   }
 
-  // 如果正在启动，等待完成
-  if (workerStarting) {
-    console.log('MSW: 正在启动中，等待完成...');
-    let attempts = 0;
-    const maxWaitAttempts = 30; // 最多等待3秒
-    while (workerStarting && attempts < maxWaitAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-      attempts++;
+  if (options.forceRestart && workerStarted) {
+    console.log('MSW: 强制重启模式，先停止现有服务...');
+    await worker.stop();
+    workerStarted = false;
+    lastStartTime = 0;
+    
+    // 清理所有Service Workers
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      console.log('MSW: 强制清理Service Workers...');
+      await clearAllServiceWorkers();
     }
-    return workerStarted;
   }
 
   try {
@@ -170,10 +174,11 @@ export const startMSW = async (retryCount = 0, forceReset = false) => {
     console.log('MSW: 开始启动...');
     console.log(`MSW: 加载了 ${handlers.length} 个处理程序`);
     
-    // 打印前10个处理程序的路径，用于调试
-    console.log('MSW: 处理程序列表(前10个):');
-    handlers.slice(0, 10).forEach((handler, index) => {
-      console.log(`MSW: 处理程序 #${index+1} - ${handler.info.method} ${handler.info.path}`);
+    // 打印所有处理程序的路径，用于调试
+    console.log('MSW: 所有处理程序列表:');
+    handlers.forEach((handler, index) => {
+      const pathStr = typeof handler.info.path === 'string' ? handler.info.path : handler.info.path.toString();
+      console.log(`MSW: 处理程序 #${index+1} - ${handler.info.method} ${pathStr}`);
     });
     
     // 特别检查auth相关的处理程序
@@ -191,6 +196,8 @@ export const startMSW = async (retryCount = 0, forceReset = false) => {
       onUnhandledRequest(request, print) {
         const url = new URL(request.url);
         
+        console.log(`🔍 MSW: 检查请求 ${request.method} ${url.href}`);
+        
         // 首先检查是否为静态资源
         if (isStaticResource(url)) {
           // 完全静默处理静态资源，不输出任何日志
@@ -205,22 +212,43 @@ export const startMSW = async (retryCount = 0, forceReset = false) => {
           console.warn(`   URL: ${url.href}`);
           console.warn(`   路径: ${url.pathname}`);
           console.warn(`   查询参数: ${url.search}`);
+          console.warn(`   Host: ${url.host}`);
+          console.warn(`   Origin: ${url.origin}`);
           console.warn(`   请检查MSW handlers是否正确配置了此路由`);
           
           // 检查是否有匹配的handlers
+          const exactMatches = handlers.filter(h => {
+            const pathStr = typeof h.info.path === 'string' ? h.info.path : h.info.path.toString();
+            const methodStr = typeof h.info.method === 'string' ? h.info.method : h.info.method.toString();
+            const methodMatches = methodStr.toUpperCase() === request.method.toUpperCase();
+            const pathMatches = pathStr === url.pathname;
+            
+            console.log(`  检查handler: ${methodStr} ${pathStr} - 方法匹配: ${methodMatches}, 路径匹配: ${pathMatches}`);
+            
+            return methodMatches && pathMatches;
+          });
+          
           const potentialMatches = handlers.filter(h => {
             const pathStr = typeof h.info.path === 'string' ? h.info.path : h.info.path.toString();
             return pathStr.includes(url.pathname.replace(/^\//, '')) || url.pathname.includes(pathStr.replace(/^\//, ''));
           });
           
-          if (potentialMatches.length > 0) {
-            console.warn(`   可能匹配的handlers:`);
+          if (exactMatches.length > 0) {
+            console.warn(`   🎯 找到完全匹配的handlers (但未触发):`);
+            exactMatches.forEach(h => {
+              const pathStr = typeof h.info.path === 'string' ? h.info.path : h.info.path.toString();
+              const methodStr = typeof h.info.method === 'string' ? h.info.method : h.info.method.toString();
+              console.warn(`     - ${methodStr} ${pathStr}`);
+            });
+          } else if (potentialMatches.length > 0) {
+            console.warn(`   🔍 可能匹配的handlers:`);
             potentialMatches.forEach(h => {
               const pathStr = typeof h.info.path === 'string' ? h.info.path : h.info.path.toString();
-              console.warn(`     - ${h.info.method} ${pathStr}`);
+              const methodStr = typeof h.info.method === 'string' ? h.info.method : h.info.method.toString();
+              console.warn(`     - ${methodStr} ${pathStr}`);
             });
           } else {
-            console.warn(`   未找到任何可能匹配的handlers`);
+            console.warn(`   ❌ 未找到任何匹配的handlers`);
           }
           
           print.warning();
@@ -230,40 +258,18 @@ export const startMSW = async (retryCount = 0, forceReset = false) => {
             console.debug(`🔍 MSW: 未知请求类型: ${request.method} ${url.href}`);
           }
         }
-      },
-      serviceWorker: {
-        url: '/mockServiceWorker.js',
-        // 添加更多配置选项来优化Service Worker行为
-        options: {
-          scope: '/'
-        }
-      },
-      // 添加安静模式选项
-      quiet: false, // 可以设置为true来减少日志输出
+      }
     });
     
     console.log('🚀 MSW (Mock Service Worker) 已启动');
     console.log('✅ 已启用静态资源智能过滤');
     console.log('🎯 只拦截API请求，忽略所有静态资源');
     workerStarted = true;
+    lastStartTime = Date.now();
     return true;
   } catch (error) {
     console.error('MSW 启动失败:', error);
-    
-    // 如果失败且未超过重试次数，尝试重新启动
-    if (retryCount < MAX_RETRIES) {
-      console.log(`重试启动 MSW (${retryCount + 1}/${MAX_RETRIES})...`);
-      // 延迟一秒后重试
-      return new Promise((resolve) => {
-        setTimeout(async () => {
-          const result = await startMSW(retryCount + 1, retryCount === MAX_RETRIES - 1);
-          resolve(result);
-        }, 1000);
-      });
-    } else {
-      console.error('MSW 重试启动失败，已达到最大重试次数');
-      return false;
-    }
+    return false;
   } finally {
     workerStarting = false;
   }
@@ -304,7 +310,7 @@ export const forceRestartMSW = async () => {
     await clearAllServiceWorkers();
     
     // 重新启动MSW
-    const success = await startMSW(0, true);
+    const success = await startMSW({ forceRestart: true });
     
     if (success) {
       console.log('✅ MSW 强制重启成功');

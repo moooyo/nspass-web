@@ -232,11 +232,11 @@ const RoutesSummary: React.FC<RoutesSummaryProps> = ({ style, onRouteStatsChange
           // 基于路由和出口状态判断在线情况
           // 这里可以根据实际的路由和出口状态API来改进
           if (Math.random() > 0.15) { // 85%在线率
-            stats.onlineRoutes += 1;
-          } else {
-            stats.offlineRoutes += 1;
-          }
-        });
+          stats.onlineRoutes += 1;
+        } else {
+          stats.offlineRoutes += 1;
+        }
+      });
       }
     });
     
@@ -507,7 +507,7 @@ const RoutesSummary: React.FC<RoutesSummaryProps> = ({ style, onRouteStatsChange
                       : 'rgba(255, 77, 79, 0.2)'
                     }
                     showInfo={false}
-                    strokeWidth={8}
+                    size={8}
                   />
                 </div>
               </div>

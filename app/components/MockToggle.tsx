@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useContext, useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { ApiOutlined } from '@ant-design/icons';
-import { MSWContext } from './types';
+import { useMSW } from './MSWProvider';
 import { message } from '@/utils/message';
 import { httpClient } from '@/utils/http-client';
 
@@ -10,23 +10,31 @@ import { httpClient } from '@/utils/http-client';
 const MOCK_ENABLED_KEY = 'nspass-mock-enabled';
 
 export const MockToggle: React.FC = () => {
-  // 从Context获取Mock状态
-  const { enabled: mockEnabled, setEnabled: setMockEnabled } = useContext(MSWContext);
+  // 使用新的MSWProvider中的useMSW hook
+  const { enabled: mockEnabled, toggle, status, loading } = useMSW();
   
-  // 是否正在加载中
+  // 本地loading状态（用于按钮动画）
   const [isLoading, setIsLoading] = useState(false);
 
-  // 初始化时同步 baseURL 与 Mock 状态
+  // 监听MSW状态变化，同步httpClient的baseURL
   useEffect(() => {
     if (mockEnabled) {
-      // MSW启用时使用空字符串，让MSW拦截请求
-      httpClient.updateBaseURL('');
+      // MSW启用时使用当前域名作为baseURL，确保MSW能拦截完整路径
+      const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+      httpClient.updateBaseURL(currentOrigin);
+      console.log(`🎯 MSW已启用，baseURL设置为: ${currentOrigin}`);
     } else {
       // MSW禁用时使用真实后端地址
       const realApiUrl = process.env.NEXT_PUBLIC_REAL_API_URL || 'http://localhost:8080';
       httpClient.updateBaseURL(realApiUrl);
+      console.log(`🎯 MSW已禁用，baseURL设置为: ${realApiUrl}`);
     }
   }, [mockEnabled]);
+
+  // 同步本地loading状态
+  useEffect(() => {
+    setIsLoading(loading);
+  }, [loading]);
 
   // 确保不会出现滚动条
   useEffect(() => {
@@ -54,85 +62,80 @@ export const MockToggle: React.FC = () => {
     };
   }, []);
 
-  // 开启Mock服务
-  const startMockService = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const { startMSW } = await import('@mock/browser');
-      const result = await startMSW();
-      
-      // 启动 Mock 时，使用空字符串让MSW拦截请求
-      httpClient.updateBaseURL('');
-      
-      console.log('🚀 Mock服务已启动');
-      message.success('Mock服务已启动');
-      setIsLoading(false);
-      return Boolean(result);
-    } catch (error) {
-      console.error('启动Mock服务失败:', error);
-      message.error('启动Mock服务失败');
-      setIsLoading(false);
-      return false;
-    }
-  }, []);
-
-  // 停止Mock服务
-  const stopMockService = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const { stopMSW } = await import('@mock/browser');
-      const result = stopMSW();
-      
-      // 停止 Mock 时，切换到真实的后端地址
-      const realApiUrl = process.env.NEXT_PUBLIC_REAL_API_URL || 'http://localhost:8080';
-      httpClient.updateBaseURL(realApiUrl);
-      
-      console.log('⏹️ Mock服务已停止');
-      message.success(`Mock服务已停止，API已切换到: ${realApiUrl}`);
-      setIsLoading(false);
-      return Boolean(result);
-    } catch (error) {
-      console.error('停止Mock服务失败:', error);
-      message.error('停止Mock服务失败');
-      setIsLoading(false);
-      return false;
-    }
-  }, []);
-
   // 切换Mock状态
   const toggleMock = async (e: React.MouseEvent) => {
     e.stopPropagation();
     
     if (isLoading) return;
     
-    const newState = !mockEnabled;
-    
-    let success = false;
-    
-    // 根据状态启动或停止Mock服务
-    if (newState) {
-      success = await startMockService();
-    } else {
-      success = await stopMockService();
-    }
-    
-    // 只有在成功切换服务状态后才更新UI状态
-    if (success) {
-      // 更新Context中的状态
-      setMockEnabled(newState);
+    try {
+      // 使用MSWProvider的toggle方法
+      await toggle();
       
-      // 保存到LocalStorage
-      localStorage.setItem(MOCK_ENABLED_KEY, String(newState));
+      // 保存状态到LocalStorage
+      localStorage.setItem(MOCK_ENABLED_KEY, String(!mockEnabled));
+      
+      // 显示成功消息
+      if (!mockEnabled) {
+        message.success('Mock服务已启动');
+      } else {
+        message.success('Mock服务已停止');
+      }
+    } catch (error) {
+      console.error('切换Mock状态失败:', error);
+      message.error('切换Mock状态失败');
     }
   };
+
+  // 获取状态相关的UI属性
+  const getStatusInfo = () => {
+    switch (status) {
+      case 'starting':
+        return {
+          color: '#1890ff',
+          title: 'MSW正在启动中...',
+          spinning: true
+        };
+      case 'restarting':
+        return {
+          color: '#faad14',
+          title: 'MSW正在重启中...',
+          spinning: true
+        };
+      case 'running':
+        return {
+          color: '#52c41a',
+          title: 'MSW运行中（点击关闭）',
+          spinning: false
+        };
+      case 'error':
+        return {
+          color: '#ff4d4f',
+          title: 'MSW出现错误（点击重试）',
+          spinning: false
+        };
+      case 'stopped':
+        return {
+          color: '#8c8c8c',
+          title: 'MSW已停止（点击启动）',
+          spinning: false
+        };
+      default:
+        return {
+          color: mockEnabled ? '#1677ff' : '#ffffff',
+          title: mockEnabled ? 'Mock已开启（点击关闭）' : 'Mock已关闭（点击开启）',
+          spinning: false
+        };
+    }
+  };
+
+  const statusInfo = getStatusInfo();
 
   return (
     <>
       <button
         onClick={toggleMock}
-        title={isLoading 
-          ? "正在处理..." 
-          : (mockEnabled ? "Mock 已开启 (点击关闭)" : "Mock 已关闭 (点击开启)")}
+        title={statusInfo.title}
         data-testid="mock-toggle"
         style={{
           position: 'fixed',
@@ -143,8 +146,8 @@ export const MockToggle: React.FC = () => {
           height: '40px',
           borderRadius: '50%',
           border: 'none',
-          backgroundColor: mockEnabled ? '#1677ff' : '#ffffff',
-          color: mockEnabled ? '#ffffff' : '#666666',
+          backgroundColor: statusInfo.color === '#ffffff' ? '#ffffff' : statusInfo.color,
+          color: statusInfo.color === '#ffffff' ? '#666666' : '#ffffff',
           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
           cursor: isLoading ? 'not-allowed' : 'pointer',
           display: 'flex',
@@ -169,7 +172,7 @@ export const MockToggle: React.FC = () => {
           e.currentTarget.style.transform = 'translate3d(0, 0, 0) scale(1)';
         }}
       >
-        <ApiOutlined spin={isLoading} />
+        <ApiOutlined spin={statusInfo.spinning || isLoading} />
       </button>
     </>
   );

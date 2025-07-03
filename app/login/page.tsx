@@ -105,7 +105,7 @@ const LoginPage = () => {
     try {
       const result = await passkeyService.completeAuthentication();
       
-      if (result.base?.success && result.data) {
+      if (result.status?.success && result.data) {
         const loginData = result.data;
         
         // 保存认证信息到本地存储
@@ -131,7 +131,7 @@ const LoginPage = () => {
         message.success(`Passkey登录成功！使用设备: ${loginData.credentialName}`);
         router.push('/');
       } else {
-        message.error(result.base?.message || 'Passkey登录失败');
+        message.error(result.status?.message || 'Passkey登录失败');
       }
     } catch (error) {
       console.error('Passkey登录错误:', error);

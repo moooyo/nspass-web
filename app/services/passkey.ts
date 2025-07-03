@@ -96,8 +96,8 @@ export class PasskeyService {
     try {
       // 2. 获取注册选项
       const optionsResponse = await this.getRegistrationOptions();
-      if (!optionsResponse.base?.success || !optionsResponse.data) {
-        throw new Error(optionsResponse.base?.message || '获取注册选项失败');
+      if (!optionsResponse.status?.success || !optionsResponse.data) {
+        throw new Error(optionsResponse.status?.message || '获取注册选项失败');
       }
 
       const options = optionsResponse.data;
@@ -157,8 +157,8 @@ export class PasskeyService {
     try {
       // 2. 获取认证选项
       const optionsResponse = await this.getAuthenticationOptions();
-      if (!optionsResponse.base?.success || !optionsResponse.data) {
-        throw new Error(optionsResponse.base?.message || '获取认证选项失败');
+      if (!optionsResponse.status?.success || !optionsResponse.data) {
+        throw new Error(optionsResponse.status?.message || '获取认证选项失败');
       }
 
       const options = optionsResponse.data;
