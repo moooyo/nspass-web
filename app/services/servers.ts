@@ -106,6 +106,66 @@ export class ServerService {
   }
 
   /**
+   * 获取服务器组列表
+   */
+  static async getServerGroups(): Promise<{
+    data: Array<{ label: string; value: string; count: number }>;
+    success: boolean;
+  }> {
+    try {
+      // 先获取所有服务器
+      const serverResponse = await this.getServers();
+      
+      if (!serverResponse.success) {
+        throw new Error('获取服务器数据失败');
+      }
+
+      // 统计各个组的服务器数量
+      const groupStats = new Map<string, { count: number; onlineCount: number }>();
+      
+      serverResponse.data.forEach(server => {
+        const groupName = server.group || '未分组';
+        const current = groupStats.get(groupName) || { count: 0, onlineCount: 0 };
+        
+        current.count += 1;
+        if (server.status === ServerStatus.SERVER_STATUS_ONLINE) {
+          current.onlineCount += 1;
+        }
+        
+        groupStats.set(groupName, current);
+      });
+
+      // 转换为API需要的格式
+      const groups = Array.from(groupStats.entries()).map(([groupName, stats]) => ({
+        label: `${groupName} (${stats.onlineCount}/${stats.count})`,
+        value: groupName,
+        count: stats.count,
+        onlineCount: stats.onlineCount
+      }));
+
+      // 添加"全部"选项
+      const totalOnline = serverResponse.data.filter(s => s.status === ServerStatus.SERVER_STATUS_ONLINE).length;
+      groups.unshift({
+        label: `All (${totalOnline}/${serverResponse.data.length})`,
+        value: 'all',
+        count: serverResponse.data.length,
+        onlineCount: totalOnline
+      });
+
+      return {
+        data: groups,
+        success: true
+      };
+    } catch (error) {
+      console.error('获取服务器组失败:', error);
+      return {
+        data: [],
+        success: false
+      };
+    }
+  }
+
+  /**
    * 创建服务器
    */
   static async createServer(data: CreateServerParams): Promise<ServerItem> {

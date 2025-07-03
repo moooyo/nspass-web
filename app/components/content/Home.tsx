@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Row, Col, Statistic, Typography, Space, Progress, Avatar, List, Timeline, Badge, Spin, Alert, Button } from 'antd';
+import { Card, Row, Col, Statistic, Typography, Space, Progress, Avatar, List, Timeline, Badge, Spin, Alert, Button, Tag, Tooltip } from 'antd';
 import { 
   UserOutlined, 
   GlobalOutlined, 
@@ -10,25 +10,52 @@ import {
   CheckCircleOutlined,
   ClockCircleOutlined,
   ExclamationCircleOutlined,
-  FireOutlined,
-  SafetyOutlined,
-  ThunderboltOutlined,
   ReloadOutlined,
-  WarningOutlined
+  WarningOutlined,
+  UploadOutlined,
+  DownloadOutlined,
+  HddOutlined,
+  WifiOutlined,
+  AlertOutlined
 } from '@ant-design/icons';
 import { useTheme } from '../hooks/useTheme';
 import { dashboardService } from '@/services/dashboard';
+import { ServerService } from '@/services/servers';
+import ProfessionalWorldMap, { type ExtendedServerItem } from './ProfessionalWorldMap';
 import type { 
   SystemOverview, 
   SystemHealth, 
   SystemAlert,
   SystemPerformance
 } from '@/services/dashboard';
+import type { ServerItem } from '@/types/generated/api/servers/server_management';
 import { AlertType } from '@/types/generated/api/dashboard/dashboard_service';
+import { ServerStatus } from '@/types/generated/api/servers/server_management';
 import { message } from '@/utils/message';
-import { ComponentStatus } from '@/types/generated/api/dashboard/dashboard_service';
 
 const { Title, Text, Paragraph } = Typography;
+
+// 服务器扩展数据类型（包含监控信息）
+interface ServerStatusData extends ServerItem {
+  uptime?: string;
+  cpuUsage?: number;
+  memoryUsage?: number;
+  diskUsage?: number;
+  uploadSpeed?: number;
+  downloadSpeed?: number;
+  osVersion?: string;
+  tags?: string[];
+}
+
+// 预警数据类型
+interface ServiceAlert {
+  id: string;
+  type: 'error' | 'warning' | 'info';
+  serverName: string;
+  message: string;
+  timestamp: string;
+  resolved: boolean;
+}
 
 const HomeContent: React.FC = () => {
   const { theme: currentTheme } = useTheme();
@@ -40,9 +67,71 @@ const HomeContent: React.FC = () => {
   
   // 数据状态
   const [systemOverview, setSystemOverview] = useState<SystemOverview | null>(null);
-  const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null);
   const [systemAlerts, setSystemAlerts] = useState<SystemAlert[]>([]);
-  const [systemPerformance, setSystemPerformance] = useState<SystemPerformance | null>(null);
+  const [servers, setServers] = useState<ServerStatusData[]>([]);
+  const [serviceAlerts, setServiceAlerts] = useState<ServiceAlert[]>([]);
+
+  // 获取国旗emoji
+  const getCountryFlag = (country?: string): string => {
+    const countryFlags: Record<string, string> = {
+      'CN': '🇨🇳',
+      'US': '🇺🇸', 
+      'JP': '🇯🇵',
+      'KR': '🇰🇷',
+      'SG': '🇸🇬',
+      'HK': '🇭🇰',
+      'UK': '🇬🇧',
+      'DE': '🇩🇪',
+      'CA': '🇨🇦',
+      'AU': '🇦🇺',
+      'FR': '🇫🇷',
+      'AE': '🇦🇪'
+    };
+    return countryFlags[country || ''] || '🌍';
+  };
+
+  // 生成模拟的服务器监控数据
+  const generateServerMonitoringData = (server: ServerItem): ServerStatusData => {
+    return {
+      ...server,
+      uptime: Math.floor(Math.random() * 100) + '天',
+      cpuUsage: Math.floor(Math.random() * 30) + 10, // 10-40%
+      memoryUsage: Math.floor(Math.random() * 40) + 20, // 20-60%
+      diskUsage: Math.floor(Math.random() * 30) + 10, // 10-40%
+      uploadSpeed: Math.random() * 10 + 0.1, // 0.1-10 K/s
+      downloadSpeed: Math.random() * 20 + 0.5, // 0.5-20 K/s
+      osVersion: 'Ubuntu',
+      tags: ['300Mbps', '1024GB/月', 'IPv4', server.ipv6 ? 'IPv6' : '', 'MKCloud'].filter(Boolean)
+    };
+  };
+
+  // 生成模拟的服务预警数据
+  const generateServiceAlerts = (serverData: ServerStatusData[]): ServiceAlert[] => {
+    const alertTemplates = [
+      { type: 'error', message: '数据库连接失败' },
+      { type: 'warning', message: 'CPU使用率过高' },
+      { type: 'info', message: '系统更新完成' },
+      { type: 'warning', message: '内存使用率达到80%' },
+      { type: 'error', message: '磁盘空间不足' }
+    ];
+
+    return alertTemplates.slice(0, 4).map((template, index) => ({
+      id: `alert-${index}`,
+      type: template.type as 'error' | 'warning' | 'info',
+      serverName: serverData[index]?.name || `服务器${index + 1}`,
+      message: template.message,
+      timestamp: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000).toLocaleString('zh-CN'),
+      resolved: Math.random() > 0.5
+    }));
+  };
+
+  // 转换服务器数据为地图所需格式
+  const convertToExtendedServers = (serverData: ServerStatusData[]): ExtendedServerItem[] => {
+    return serverData.map(server => ({
+      ...server,
+      flag: getCountryFlag(server.country)
+    }));
+  };
 
   // 加载首页数据
   const loadHomeData = useCallback(async (isRefresh = false) => {
@@ -55,11 +144,10 @@ const HomeContent: React.FC = () => {
       setError(null);
 
       // 并发请求所有数据
-      const [overviewRes, healthRes, alertsRes, performanceRes] = await Promise.all([
+      const [overviewRes, alertsRes, serversRes] = await Promise.all([
         dashboardService.getSystemOverview(),
-        dashboardService.getSystemHealth(),
         dashboardService.getSystemAlerts(),
-        dashboardService.getSystemPerformance()
+        ServerService.getServers()
       ]);
 
       // 检查响应状态并设置数据
@@ -67,21 +155,23 @@ const HomeContent: React.FC = () => {
         setSystemOverview(overviewRes.data || null);
         console.log('首页 - 系统概览数据:', overviewRes.data);
       }
-      if (healthRes.success) {
-        setSystemHealth(healthRes.data || null);
-        console.log('首页 - 系统健康数据:', healthRes.data);
-      }
+      
       if (alertsRes.success) {
         setSystemAlerts(alertsRes.data || []);
         console.log('首页 - 系统警报数据:', alertsRes.data);
       }
-      if (performanceRes.success) {
-        setSystemPerformance(performanceRes.data || null);
-        console.log('首页 - 系统性能数据:', performanceRes.data);
+
+      if (serversRes.success) {
+        const serverData = (serversRes.data || []).map(generateServerMonitoringData);
+        setServers(serverData);
+        console.log('首页 - 服务器数据:', serverData);
+        
+        // 生成服务预警数据
+        setServiceAlerts(generateServiceAlerts(serverData));
       }
 
       // 如果所有请求都失败，设置错误
-      if (!overviewRes.success && !healthRes.success && !alertsRes.success && !performanceRes.success) {
+      if (!overviewRes.success && !alertsRes.success && !serversRes.success) {
         throw new Error('所有数据加载失败');
       }
 
@@ -120,7 +210,7 @@ const HomeContent: React.FC = () => {
       prefix: <UserOutlined style={{ color: '#52c41a' }} />,
       suffix: '人',
       precision: 0,
-      trend: { value: 12.8, isUp: true }, // 暂时使用固定值，后续可以通过历史数据计算
+      trend: { value: 12.8, isUp: true },
       gradient: 'linear-gradient(135deg, #52c41a 0%, #389e0d 100%)'
     },
     {
@@ -152,32 +242,6 @@ const HomeContent: React.FC = () => {
     }
   ];
 
-  // 根据系统警报生成最近活动数据
-  const recentActivities = systemAlerts.slice(0, 4).map((alert, index) => ({
-    user: '系统',
-    action: alert.message || '未知活动',
-    time: alert.timestamp ? new Date(alert.timestamp).toLocaleString('zh-CN') : '未知时间',
-    type: alert.type === AlertType.ALERT_TYPE_ERROR ? 'error' : 
-          alert.type === AlertType.ALERT_TYPE_WARNING ? 'warning' : 
-          alert.type === AlertType.ALERT_TYPE_INFO ? 'info' : 'default'
-  }));
-
-  // 根据系统健康状态生成服务状态数据
-  const systemStatus = systemHealth?.components?.map(component => ({
-    name: component.name || '未知服务',
-    status: component.status === ComponentStatus.COMPONENT_STATUS_UP ? 'online' : 
-            component.status === ComponentStatus.COMPONENT_STATUS_DEGRADED ? 'warning' : 'offline',
-    uptime: '99.9%', // 暂时使用固定值，后续可以从性能数据中获取
-    message: component.message
-  })) || [];
-
-  const quickActions = [
-    { title: '创建规则', icon: <FireOutlined />, description: '快速创建新的转发规则' },
-    { title: '用户管理', icon: <SafetyOutlined />, description: '管理系统用户和权限' },
-    { title: '性能监控', icon: <ThunderboltOutlined />, description: '查看系统性能指标' },
-    { title: '安全设置', icon: <SafetyOutlined />, description: '配置安全策略' }
-  ];
-
   // 如果正在加载且没有数据，显示加载状态
   if (loading && !systemOverview) {
     return (
@@ -197,6 +261,39 @@ const HomeContent: React.FC = () => {
 
   return (
     <div className="fade-in-up" style={{ padding: '0' }}>
+      <style jsx>{`
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.5;
+          }
+        }
+        
+        @keyframes slideInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .server-card {
+          animation: slideInUp 0.5s ease-out;
+        }
+        
+        .alert-card {
+          animation: slideInUp 0.5s ease-out;
+        }
+        
+        .pulse {
+          animation: pulse 2s infinite;
+        }
+      `}</style>
       {/* 欢迎区域 */}
       <div style={{ 
         marginBottom: 32,
@@ -317,188 +414,629 @@ const HomeContent: React.FC = () => {
         ))}
       </Row>
 
+              {/* 服务器分布地图 */}
+      <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
+        <Col xs={24}>
+          <ProfessionalWorldMap servers={convertToExtendedServers(servers)} />
+        </Col>
+      </Row>
+
       {/* 主要内容区域 */}
       <Row gutter={[24, 24]}>
-        {/* 快速操作 */}
-        <Col xs={24} lg={12}>
+        {/* 服务器状态 */}
+        <Col xs={24} xl={16}>
           <Card 
             title={
-              <Title level={4} style={{ 
-                margin: 0, 
-                color: currentTheme === 'light' ? '#333' : '#fff' 
-              }}>
-                <FireOutlined style={{ marginRight: 8, color: '#fa8c16' }} />
-                快速操作
-              </Title>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Title level={4} style={{ 
+                  margin: 0, 
+                  color: currentTheme === 'light' ? '#333' : '#fff',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}>
+                  <CloudServerOutlined style={{ marginRight: 8, color: '#52c41a' }} />
+                  服务器状态
+                </Title>
+                <Text type="secondary" style={{ fontSize: 14 }}>
+                  {servers.filter(s => s.status === ServerStatus.SERVER_STATUS_ONLINE).length}/{servers.length} 在线
+                </Text>
+              </div>
             }
             className="modern-card"
-          >
-            <Row gutter={[16, 16]}>
-              {quickActions.map((action, index) => (
-                <Col span={12} key={index}>
-                  <Card 
-                    size="small"
-                    className="hover-lift"
-                    style={{
-                      background: currentTheme === 'light' 
-                        ? 'linear-gradient(145deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.6) 100%)'
-                        : 'linear-gradient(145deg, rgba(42, 42, 42, 0.8) 0%, rgba(31, 31, 31, 0.6) 100%)',
-                      border: currentTheme === 'light'
-                        ? '1px solid rgba(255, 255, 255, 0.3)'
-                        : '1px solid rgba(255, 255, 255, 0.1)',
-                      borderRadius: '12px',
-                      textAlign: 'center',
-                      cursor: 'pointer'
-                    }}
-                    styles={{ body: { padding: '16px' } }}
-                  >
-                    <div style={{ fontSize: 24, color: '#1890ff', marginBottom: 8 }}>
-                      {action.icon}
-                    </div>
-                    <Title level={5} style={{ 
-                      margin: '0 0 4px 0', 
-                      fontSize: 14,
-                      color: currentTheme === 'light' ? '#333' : '#fff'
-                    }}>
-                      {action.title}
-                    </Title>
-                    <Text style={{ 
-                      fontSize: 12, 
-                      color: currentTheme === 'light' ? '#666' : '#ccc' 
-                    }}>
-                      {action.description}
-                    </Text>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
-          </Card>
-        </Col>
-
-        {/* 系统状态 */}
-        <Col xs={24} lg={12}>
-          <Card 
-            title={
-              <Title level={4} style={{ 
-                margin: 0, 
-                color: currentTheme === 'light' ? '#333' : '#fff' 
-              }}>
-                <CloudServerOutlined style={{ marginRight: 8, color: '#52c41a' }} />
-                系统状态
-              </Title>
-            }
-            className="modern-card"
+            styles={{ body: { padding: '20px' } }}
           >
             {loading || refreshing ? (
               <div style={{ 
                 display: 'flex', 
                 justifyContent: 'center', 
                 alignItems: 'center', 
-                height: '200px' 
+                height: '300px' 
               }}>
                 <Spin />
               </div>
-            ) : (
-              <List
-                dataSource={systemStatus}
-                renderItem={(item) => (
-                  <List.Item style={{ border: 'none', padding: '12px 0' }}>
-                    <List.Item.Meta
-                      avatar={
-                        <Badge 
-                          status={item.status === 'online' ? 'success' : item.status === 'warning' ? 'warning' : 'error'} 
-                          dot 
-                        />
-                      }
-                      title={
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Text strong style={{ 
-                            fontSize: 14,
-                            color: currentTheme === 'light' ? '#333' : '#fff'
-                          }}>{item.name}</Text>
-                          <Text style={{ 
-                            fontSize: 12, 
-                            color: currentTheme === 'light' ? '#666' : '#ccc' 
-                          }}>{item.uptime}</Text>
+            ) : servers.length > 0 ? (
+              <Row gutter={[16, 16]}>
+                {servers.map((server, index) => (
+                  <Col xs={24} lg={12} key={server.id}>
+                    <div
+                      className="server-card hover-lift"
+                      style={{
+                        padding: '16px',
+                        background: currentTheme === 'light' 
+                          ? '#ffffff'
+                          : 'rgba(255, 255, 255, 0.04)',
+                        border: currentTheme === 'light'
+                          ? '1px solid #f0f0f0'
+                          : '1px solid rgba(255, 255, 255, 0.08)',
+                        borderRadius: '12px',
+                        boxShadow: currentTheme === 'light'
+                          ? '0 2px 8px rgba(0, 0, 0, 0.05)'
+                          : '0 2px 8px rgba(0, 0, 0, 0.15)',
+                        transition: 'all 0.3s ease',
+                        cursor: 'pointer',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        height: '100%'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = currentTheme === 'light'
+                          ? '0 8px 24px rgba(0, 0, 0, 0.12)'
+                          : '0 8px 24px rgba(0, 0, 0, 0.25)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = currentTheme === 'light'
+                          ? '0 2px 8px rgba(0, 0, 0, 0.05)'
+                          : '0 2px 8px rgba(0, 0, 0, 0.15)';
+                      }}
+                    >
+                      {/* 状态指示条 */}
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: '3px',
+                        background: server.status === ServerStatus.SERVER_STATUS_ONLINE
+                          ? 'linear-gradient(90deg, #52c41a, #73d13d)'
+                          : 'linear-gradient(90deg, #ff4d4f, #ff7875)'
+                      }} />
+
+                      {/* 服务器头部信息 */}
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'flex-start',
+                        marginBottom: 16
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: '20px' }}>
+                            {getCountryFlag(server.country)}
+                          </span>
+                          <div>
+                            <Title level={5} style={{ 
+                              margin: 0, 
+                              fontSize: 16,
+                              fontWeight: 600,
+                              color: currentTheme === 'light' ? '#333' : '#fff'
+                            }}>
+                              {server.name}
+                            </Title>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                              <Badge 
+                                status={server.status === ServerStatus.SERVER_STATUS_ONLINE ? 'success' : 'error'} 
+                                text={
+                                  <Text style={{ 
+                                    color: server.status === ServerStatus.SERVER_STATUS_ONLINE ? '#52c41a' : '#ff4d4f',
+                                    fontWeight: 500,
+                                    fontSize: 12
+                                  }}>
+                                    {server.status === ServerStatus.SERVER_STATUS_ONLINE ? '在线' : '离线'}
+                                  </Text>
+                                }
+                              />
+                              <Text type="secondary" style={{ fontSize: 11 }}>
+                                {server.osVersion} • {server.uptime}
+                              </Text>
+                            </div>
+                          </div>
                         </div>
-                      }
-                      description={
-                        <Progress 
-                          percent={parseFloat(item.uptime)} 
-                          size="small" 
-                          showInfo={false}
-                          strokeColor={item.status === 'online' ? '#52c41a' : '#fa8c16'}
-                        />
-                      }
-                    />
-                  </List.Item>
-                )}
-              />
-            )}
-          </Card>
-        </Col>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                          {server.tags?.slice(0, 3).map(tag => (
+                            <Tag 
+                              key={tag} 
+                              color="processing" 
+                              style={{ 
+                                fontSize: '10px',
+                                border: 'none',
+                                background: currentTheme === 'light' 
+                                  ? 'rgba(24, 144, 255, 0.1)' 
+                                  : 'rgba(24, 144, 255, 0.2)',
+                                color: '#1890ff',
+                                fontWeight: 500,
+                                padding: '2px 6px'
+                              }}
+                            >
+                              {tag}
+                            </Tag>
+                          ))}
+                        </div>
+                      </div>
 
-        {/* 最近活动 */}
-        <Col xs={24}>
-          <Card 
-            title={
-              <Title level={4} style={{ 
-                margin: 0, 
-                color: currentTheme === 'light' ? '#333' : '#fff' 
-              }}>
-                <ClockCircleOutlined style={{ marginRight: 8, color: '#1890ff' }} />
-                最近活动
-              </Title>
-            }
-            className="modern-card"
-          >
-            {loading || refreshing ? (
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
-                alignItems: 'center', 
-                height: '200px' 
-              }}>
-                <Spin />
-              </div>
-            ) : recentActivities.length > 0 ? (
-              <Timeline
-                items={recentActivities.map((activity, index) => ({
-                  dot: activity.type === 'error' ? <WarningOutlined style={{ color: '#ff4d4f' }} /> :
-                       activity.type === 'warning' ? <ExclamationCircleOutlined style={{ color: '#fa8c16' }} /> :
-                       activity.type === 'info' ? <CheckCircleOutlined style={{ color: '#52c41a' }} /> :
-                       <ClockCircleOutlined style={{ color: '#1890ff' }} />,
-                  children: (
-                    <div>
-                      <Space direction="vertical" size={0}>
-                        <Text strong style={{ 
-                          color: currentTheme === 'light' ? '#333' : '#fff' 
-                        }}>{activity.user}</Text>
-                        <Text style={{ 
-                          color: currentTheme === 'light' ? '#666' : '#ccc' 
-                        }}>{activity.action}</Text>
-                        <Text type="secondary" style={{ 
-                          fontSize: 12,
-                          color: currentTheme === 'light' ? '#999' : '#888'
-                        }}>{activity.time}</Text>
-                      </Space>
+                      {/* 资源监控面板 - 紧凑版 */}
+                      <Row gutter={[12, 12]}>
+                        {/* CPU使用率 */}
+                        <Col span={12}>
+                          <div style={{
+                            padding: '12px',
+                            background: currentTheme === 'light' 
+                              ? 'rgba(82, 196, 26, 0.05)' 
+                              : 'rgba(82, 196, 26, 0.1)',
+                            borderRadius: '8px',
+                            textAlign: 'center'
+                          }}>
+                            <div style={{ 
+                              fontSize: 20, 
+                              fontWeight: 'bold',
+                              color: server.cpuUsage! > 80 ? '#ff4d4f' : '#52c41a',
+                              marginBottom: 2
+                            }}>
+                              {server.cpuUsage}%
+                            </div>
+                            <Text type="secondary" style={{ fontSize: 11 }}>CPU</Text>
+                            <Progress 
+                              percent={server.cpuUsage} 
+                              size="small" 
+                              showInfo={false}
+                              strokeColor={server.cpuUsage! > 80 ? '#ff4d4f' : '#52c41a'}
+                              trailColor={currentTheme === 'light' ? '#f5f5f5' : 'rgba(255, 255, 255, 0.1)'}
+                              style={{ marginTop: 4 }}
+                            />
+                          </div>
+                        </Col>
+
+                        {/* 内存使用率 */}
+                        <Col span={12}>
+                          <div style={{
+                            padding: '12px',
+                            background: currentTheme === 'light' 
+                              ? 'rgba(24, 144, 255, 0.05)' 
+                              : 'rgba(24, 144, 255, 0.1)',
+                            borderRadius: '8px',
+                            textAlign: 'center'
+                          }}>
+                            <div style={{ 
+                              fontSize: 20, 
+                              fontWeight: 'bold',
+                              color: server.memoryUsage! > 80 ? '#ff4d4f' : '#1890ff',
+                              marginBottom: 2
+                            }}>
+                              {server.memoryUsage}%
+                            </div>
+                            <Text type="secondary" style={{ fontSize: 11 }}>内存</Text>
+                            <Progress 
+                              percent={server.memoryUsage} 
+                              size="small" 
+                              showInfo={false}
+                              strokeColor={server.memoryUsage! > 80 ? '#ff4d4f' : '#1890ff'}
+                              trailColor={currentTheme === 'light' ? '#f5f5f5' : 'rgba(255, 255, 255, 0.1)'}
+                              style={{ marginTop: 4 }}
+                            />
+                          </div>
+                        </Col>
+
+                        {/* 存储使用率 */}
+                        <Col span={12}>
+                          <div style={{
+                            padding: '12px',
+                            background: currentTheme === 'light' 
+                              ? 'rgba(250, 140, 22, 0.05)' 
+                              : 'rgba(250, 140, 22, 0.1)',
+                            borderRadius: '8px',
+                            textAlign: 'center'
+                          }}>
+                            <div style={{ 
+                              fontSize: 20, 
+                              fontWeight: 'bold',
+                              color: server.diskUsage! > 80 ? '#ff4d4f' : '#fa8c16',
+                              marginBottom: 2
+                            }}>
+                              {server.diskUsage}%
+                            </div>
+                            <Text type="secondary" style={{ fontSize: 11 }}>存储</Text>
+                            <Progress 
+                              percent={server.diskUsage} 
+                              size="small" 
+                              showInfo={false}
+                              strokeColor={server.diskUsage! > 80 ? '#ff4d4f' : '#fa8c16'}
+                              trailColor={currentTheme === 'light' ? '#f5f5f5' : 'rgba(255, 255, 255, 0.1)'}
+                              style={{ marginTop: 4 }}
+                            />
+                          </div>
+                        </Col>
+
+                        {/* 网络速度 */}
+                        <Col span={12}>
+                          <div style={{
+                            padding: '12px',
+                            background: currentTheme === 'light' 
+                              ? 'rgba(114, 46, 209, 0.05)' 
+                              : 'rgba(114, 46, 209, 0.1)',
+                            borderRadius: '8px',
+                            textAlign: 'center'
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                              <div style={{ textAlign: 'left' }}>
+                                <div style={{ fontSize: 12, fontWeight: 'bold', color: '#52c41a' }}>
+                                  ↑ {server.uploadSpeed?.toFixed(1)}K/s
+                                </div>
+                                <Text type="secondary" style={{ fontSize: 10 }}>上传</Text>
+                              </div>
+                              <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: 12, fontWeight: 'bold', color: '#1890ff' }}>
+                                  ↓ {server.downloadSpeed?.toFixed(1)}K/s
+                                </div>
+                                <Text type="secondary" style={{ fontSize: 10 }}>下载</Text>
+                              </div>
+                            </div>
+                          </div>
+                        </Col>
+                      </Row>
+
+                      {/* 流量统计 - 紧凑版 */}
+                      <div style={{
+                        marginTop: 16,
+                        padding: '12px',
+                        background: currentTheme === 'light' 
+                          ? 'rgba(0, 0, 0, 0.02)' 
+                          : 'rgba(255, 255, 255, 0.02)',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        justifyContent: 'space-around',
+                        textAlign: 'center'
+                      }}>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 'bold', color: '#52c41a' }}>
+                            {((server.uploadTraffic || 0) / 1024).toFixed(1)} GB
+                          </div>
+                          <Text type="secondary" style={{ fontSize: 10 }}>总上传</Text>
+                        </div>
+                        <div style={{ 
+                          width: '1px', 
+                          background: currentTheme === 'light' ? '#f0f0f0' : 'rgba(255, 255, 255, 0.1)' 
+                        }} />
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 'bold', color: '#1890ff' }}>
+                            {((server.downloadTraffic || 0) / 1024).toFixed(1)} GB
+                          </div>
+                          <Text type="secondary" style={{ fontSize: 10 }}>总下载</Text>
+                        </div>
+                        <div style={{ 
+                          width: '1px', 
+                          background: currentTheme === 'light' ? '#f0f0f0' : 'rgba(255, 255, 255, 0.1)' 
+                        }} />
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 'bold', color: '#fa8c16' }}>
+                            {(((server.uploadTraffic || 0) + (server.downloadTraffic || 0)) / 1024).toFixed(1)} GB
+                          </div>
+                          <Text type="secondary" style={{ fontSize: 10 }}>总流量</Text>
+                        </div>
+                      </div>
                     </div>
-                  )
-                }))}
-              />
+                  </Col>
+                ))}
+              </Row>
             ) : (
               <div style={{ 
                 display: 'flex', 
+                flexDirection: 'column',
                 justifyContent: 'center', 
                 alignItems: 'center', 
                 height: '200px',
                 color: '#999'
               }}>
-                暂无最近活动
+                <CloudServerOutlined style={{ fontSize: 48, marginBottom: 16, opacity: 0.3 }} />
+                <Text type="secondary">暂无服务器数据</Text>
               </div>
             )}
           </Card>
         </Col>
+
+                {/* 服务预警 */}
+        <Col xs={24} xl={8}>
+          <Card 
+            title={
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Title level={4} style={{ 
+                  margin: 0, 
+                  color: currentTheme === 'light' ? '#333' : '#fff',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}>
+                  <AlertOutlined style={{ marginRight: 8, color: '#fa8c16' }} />
+                  服务预警
+                </Title>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <Badge 
+                    count={serviceAlerts.filter(a => a.type === 'error' && !a.resolved).length} 
+                    size="small" 
+                    style={{ backgroundColor: '#ff4d4f' }}
+                  />
+                  <Badge 
+                    count={serviceAlerts.filter(a => a.type === 'warning' && !a.resolved).length} 
+                    size="small" 
+                    style={{ backgroundColor: '#fa8c16' }}
+                  />
+                </div>
+              </div>
+            }
+            className="modern-card"
+            styles={{ body: { padding: '20px' } }}
+          >
+            {loading || refreshing ? (
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                height: '300px' 
+              }}>
+                <Spin />
+              </div>
+            ) : serviceAlerts.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {serviceAlerts.map((alert, index) => (
+                                                        <div
+                     key={alert.id}
+                     className="alert-card hover-lift"
+                     style={{
+                       padding: '20px',
+                       background: currentTheme === 'light' 
+                         ? '#ffffff'
+                         : 'rgba(255, 255, 255, 0.04)',
+                       border: currentTheme === 'light'
+                         ? '1px solid #f0f0f0'
+                         : '1px solid rgba(255, 255, 255, 0.08)',
+                       borderLeft: `4px solid ${
+                         alert.type === 'error' ? '#ff4d4f' : 
+                         alert.type === 'warning' ? '#fa8c16' : '#52c41a'
+                       }`,
+                       borderRadius: '12px',
+                       boxShadow: currentTheme === 'light'
+                         ? '0 2px 8px rgba(0, 0, 0, 0.05)'
+                         : '0 2px 8px rgba(0, 0, 0, 0.15)',
+                       transition: 'all 0.3s ease',
+                       cursor: 'pointer',
+                       position: 'relative',
+                       opacity: alert.resolved ? 0.6 : 1
+                     }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = currentTheme === 'light'
+                        ? '0 8px 20px rgba(0, 0, 0, 0.1)'
+                        : '0 8px 20px rgba(0, 0, 0, 0.2)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = currentTheme === 'light'
+                        ? '0 2px 8px rgba(0, 0, 0, 0.05)'
+                        : '0 2px 8px rgba(0, 0, 0, 0.15)';
+                    }}
+                  >
+                    {/* 预警头部 */}
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'flex-start', 
+                      justifyContent: 'space-between',
+                      marginBottom: 12
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        {alert.type === 'error' ? (
+                          <div style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: '50%',
+                            background: 'linear-gradient(135deg, #ff4d4f, #ff7875)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            fontSize: 16
+                          }}>
+                            <WarningOutlined />
+                          </div>
+                        ) : alert.type === 'warning' ? (
+                          <div style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: '50%',
+                            background: 'linear-gradient(135deg, #fa8c16, #ffa940)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            fontSize: 16
+                          }}>
+                            <ExclamationCircleOutlined />
+                          </div>
+                        ) : (
+                          <div style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: '50%',
+                            background: 'linear-gradient(135deg, #52c41a, #73d13d)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            fontSize: 16
+                          }}>
+                            <CheckCircleOutlined />
+                          </div>
+                        )}
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                            <Text strong style={{ 
+                              fontSize: 16,
+                              color: currentTheme === 'light' ? '#333' : '#fff'
+                            }}>
+                              {alert.serverName}
+                            </Text>
+                            {alert.resolved && (
+                              <Tag 
+                                color="success" 
+                                style={{ 
+                                  fontSize: '11px',
+                                  border: 'none',
+                                  background: 'rgba(82, 196, 26, 0.1)',
+                                  color: '#52c41a',
+                                  fontWeight: 500
+                                }}
+                              >
+                                已解决
+                              </Tag>
+                            )}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Tag 
+                              color={
+                                alert.type === 'error' ? 'error' : 
+                                alert.type === 'warning' ? 'warning' : 'success'
+                              }
+                              style={{ 
+                                fontSize: '11px',
+                                fontWeight: 500,
+                                border: 'none'
+                              }}
+                            >
+                              {alert.type === 'error' ? '严重' : 
+                               alert.type === 'warning' ? '警告' : '信息'}
+                            </Tag>
+                            <Text type="secondary" style={{ 
+                              fontSize: 12,
+                              color: currentTheme === 'light' ? '#999' : '#888'
+                            }}>
+                              {alert.timestamp}
+                            </Text>
+                          </div>
+                        </div>
+                      </div>
+                      
+                                             {!alert.resolved && (
+                         <div 
+                           className="pulse"
+                           style={{
+                             width: 8,
+                             height: 8,
+                             borderRadius: '50%',
+                             background: alert.type === 'error' ? '#ff4d4f' : '#fa8c16'
+                           }} 
+                         />
+                       )}
+                    </div>
+
+                    {/* 预警内容 */}
+                    <div style={{
+                      padding: '16px',
+                      background: currentTheme === 'light' 
+                        ? 'rgba(0, 0, 0, 0.02)' 
+                        : 'rgba(255, 255, 255, 0.02)',
+                      borderRadius: '8px',
+                      marginTop: 12
+                    }}>
+                      <Text style={{ 
+                        color: currentTheme === 'light' ? '#666' : '#ccc',
+                        fontSize: 14,
+                        lineHeight: 1.5
+                      }}>
+                        {alert.message}
+                      </Text>
+                    </div>
+
+                    {/* 操作按钮（如果需要的话） */}
+                    {!alert.resolved && (
+                      <div style={{ 
+                        marginTop: 16,
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        gap: 8
+                      }}>
+                        <Button 
+                          size="small" 
+                          type="text"
+                          style={{ 
+                            fontSize: 12,
+                            color: currentTheme === 'light' ? '#666' : '#ccc'
+                          }}
+                        >
+                          查看详情
+                        </Button>
+                        <Button 
+                          size="small" 
+                          type="primary"
+                          style={{ fontSize: 12 }}
+                        >
+                          标记已解决
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                
+                {/* 查看更多按钮 */}
+                <div style={{ 
+                  textAlign: 'center',
+                  marginTop: 16,
+                  paddingTop: 16,
+                  borderTop: currentTheme === 'light' 
+                    ? '1px solid #f0f0f0' 
+                    : '1px solid rgba(255, 255, 255, 0.08)'
+                }}>
+                  <Button type="link" style={{ fontSize: 13 }}>
+                    查看全部预警 ({serviceAlerts.length})
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ 
+                display: 'flex', 
+                flexDirection: 'column',
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                height: '300px',
+                color: '#999'
+              }}>
+                <div style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: '50%',
+                  background: currentTheme === 'light' 
+                    ? 'rgba(82, 196, 26, 0.1)' 
+                    : 'rgba(82, 196, 26, 0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 16
+                }}>
+                  <CheckCircleOutlined style={{ 
+                    fontSize: 32, 
+                    color: '#52c41a',
+                    opacity: 0.8
+                  }} />
+                </div>
+                <Title level={5} style={{ 
+                  color: currentTheme === 'light' ? '#52c41a' : '#73d13d',
+                  margin: '0 0 8px 0'
+                }}>
+                  系统运行正常
+                </Title>
+                <Text type="secondary" style={{ fontSize: 13 }}>
+                  暂无服务预警信息
+                </Text>
+              </div>
+            )}
+          </Card>
+                </Col>
       </Row>
     </div>
   );

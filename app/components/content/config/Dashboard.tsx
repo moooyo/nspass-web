@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ProCard, StatisticCard } from '@ant-design/pro-components';
 import { Space, Typography, Progress, Spin, Alert, Button } from 'antd';
-import { Column } from '@ant-design/charts';
 import { ReloadOutlined } from '@ant-design/icons';
 import { dashboardService } from '@/services/dashboard';
 import type { 
@@ -12,6 +11,11 @@ import type {
 import { message } from '@/utils/message';
 
 const { Title } = Typography;
+
+// 动态导入图表组件
+const DynamicColumn = React.lazy(() => 
+  import('@ant-design/charts').then(module => ({ default: module.Column }))
+);
 
 const Dashboard: React.FC = () => {
   // 状态管理
@@ -241,7 +245,18 @@ const Dashboard: React.FC = () => {
                 <Spin />
               </div>
             ) : trafficTrend.length > 0 ? (
-              <Column {...chartConfig} />
+              <React.Suspense fallback={
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  alignItems: 'center', 
+                  height: '300px' 
+                }}>
+                  <Spin tip="正在加载图表..." />
+                </div>
+              }>
+                <DynamicColumn {...chartConfig} />
+              </React.Suspense>
             ) : (
               <div style={{ 
                 display: 'flex', 

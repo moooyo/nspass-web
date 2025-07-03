@@ -8,6 +8,7 @@ import { message } from '@/utils/message';
 import { useAuth } from '@/components/hooks/useAuth';
 import { useTheme } from '@/components/hooks/useTheme';
 import ThemeToggle from '@/components/ThemeToggle';
+import { MSWToggle } from '@/components/MSWProvider';
 
 // 使用 React.lazy 懒加载组件
 const HomeContent = React.lazy(() => import('./components/content/Home'));
@@ -581,6 +582,7 @@ export default function Home() {
           
           <Space size="middle">
             <ThemeToggle size="middle" placement="bottomLeft" />
+            {process.env.NODE_ENV === 'development' && <MSWToggle />}
             
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
               <Space style={{ cursor: 'pointer', padding: '8px 12px', borderRadius: '8px' }}>

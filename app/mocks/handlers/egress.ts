@@ -239,12 +239,13 @@ export const egressHandlers = [
         });
     }),
 
-    // 验证出口配置
-    http.post('/v1/egress/validate', async ({ request }) => {
+    // 验证出口配置 - 匹配swagger接口 POST /v1/egress/validate-config
+    http.post('/v1/egress/validate-config', async ({ request }) => {
         const data = await request.json() as EgressItem;
         
         // 模拟验证逻辑
         const errors: string[] = [];
+        const warnings: string[] = [];
         
         if (!data.serverId) {
             errors.push('服务器ID不能为空');
@@ -253,28 +254,33 @@ export const egressHandlers = [
             errors.push('出口模式不能为空');
         }
         
+        if (data.egressMode === EgressMode.EGRESS_MODE_SS2022 && !data.password) {
+            warnings.push('建议设置强密码以确保安全性');
+        }
+        
         return HttpResponse.json({
             success: true,
             message: '配置验证完成',
             data: {
                 valid: errors.length === 0,
-                errors
+                errors,
+                warnings
             }
         });
     }),
 
-    // 获取可用服务器列表
-    http.get('/v1/egress/servers', () => {
+    // 获取可用服务器列表 - 匹配swagger接口 GET /v1/egress/available-servers
+    http.get('/v1/egress/available-servers', () => {
         return HttpResponse.json({
             success: true,
             message: '获取可用服务器列表成功',
             data: [
-                { label: '服务器01', value: 'server01' },
-                { label: '服务器02', value: 'server02' },
-                { label: '服务器03', value: 'server03' },
-                { label: '香港服务器', value: 'hk-server-01' },
-                { label: '日本服务器', value: 'jp-server-01' },
-                { label: '美国服务器', value: 'us-server-01' },
+                { id: 'server01', name: '服务器01', country: 'CN' },
+                { id: 'server02', name: '服务器02', country: 'US' },
+                { id: 'server03', name: '服务器03', country: 'JP' },
+                { id: 'hk-server-01', name: '香港服务器', country: 'HK' },
+                { id: 'jp-server-01', name: '日本服务器', country: 'JP' },
+                { id: 'us-server-01', name: '美国服务器', country: 'US' },
             ]
         });
     }),

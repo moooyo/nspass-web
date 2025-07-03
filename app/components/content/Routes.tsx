@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Tag, Popconfirm, Tooltip, Space, Card, Typography, Collapse, Input, Modal } from 'antd';
 import { handleDataResponse, message } from '@/utils/message';
-import { routeService, RouteItem, CreateRouteData } from '@/services/routes';
+import { routeService, RouteItem, CreateRouteData, UpdateRouteData } from '@/services/routes';
 import { 
   RouteType, 
   Protocol, 
@@ -170,8 +170,9 @@ const Routes: React.FC = () => {
         try {
             const response = await routeService.deleteRoute(record.id);
             if (response.success) {
-                setCustomDataSource(customDataSource.filter(item => item.id !== record.id));
                 message.success(`已删除线路: ${record.routeName}`);
+                // 重新拉取数据
+                await loadRoutes();
             } else {
                 handleDataResponse.userAction('删除线路', false, response);
             }
@@ -223,86 +224,105 @@ const Routes: React.FC = () => {
         
         if (!editingRecord) return false;
         
-        // 构建协议参数
-        const protocolParams: ProtocolParams = {};
-        
-        if (values.protocol === Protocol.PROTOCOL_SHADOWSOCKS) {
-            protocolParams.shadowsocks = {
-                method: values.method,
-                password: values.password,
-                udpSupport: values.udpSupport || false,
-                tcpFastOpen: values.tcpFastOpen || false,
-                otherParams: values.otherParams || '{}',
+        try {
+            // 构建协议参数
+            const protocolParams: ProtocolParams = {};
+            
+            if (values.protocol === Protocol.PROTOCOL_SHADOWSOCKS) {
+                protocolParams.shadowsocks = {
+                    method: values.method,
+                    password: values.password,
+                    udpSupport: values.udpSupport || false,
+                    tcpFastOpen: values.tcpFastOpen || false,
+                    otherParams: values.otherParams || '{}',
+                };
+            } else if (values.protocol === Protocol.PROTOCOL_SNELL) {
+                protocolParams.snell = {
+                    version: values.snellVersion,
+                    psk: values.password || values.psk,
+                    udpSupport: values.udpSupport || false,
+                    tcpFastOpen: values.tcpFastOpen || false,
+                    otherParams: values.otherParams || '{}',
+                };
+            }
+            
+            const updateData: UpdateRouteData = {
+                routeId: values.routeId,
+                routeName: values.routeName,
+                entryPoint: values.entryPoint,
+                port: values.port,
+                protocol: values.protocol,
+                protocolParams: protocolParams,
+                description: values.description,
             };
-        } else if (values.protocol === Protocol.PROTOCOL_SNELL) {
-            protocolParams.snell = {
-                version: values.snellVersion,
-                psk: values.password || values.psk,
-                udpSupport: values.udpSupport || false,
-                tcpFastOpen: values.tcpFastOpen || false,
-                otherParams: values.otherParams || '{}',
-            };
-        }
-        
-        const updatedRoute: RouteItem = {
-            ...editingRecord,
-            routeId: values.routeId,
-            routeName: values.routeName,
-            entryPoint: values.entryPoint,
-            port: values.port,
-            protocol: values.protocol,
-            protocolParams: protocolParams,
-            description: values.description,
-        };
 
-        setCustomDataSource(customDataSource.map(item => 
-            item.id === editingRecord.id ? updatedRoute : item
-        ));
-        
-                    handleDataResponse.userAction('线路更新', true);
-        setEditingRecord(null);
-        return true;
+            const response = await routeService.updateRoute(editingRecord.id, updateData);
+            if (response.success) {
+                handleDataResponse.userAction('线路更新', true);
+                setEditingRecord(null);
+                // 重新拉取数据
+                await loadRoutes();
+                return true;
+            } else {
+                handleDataResponse.error('线路更新失败', response.message);
+                return false;
+            }
+        } catch (error) {
+            handleDataResponse.error('线路更新', error);
+            return false;
+        }
     };
 
     // 处理创建线路提交
     const handleCreateRoute = async (values: any) => {
         console.log('创建线路表单提交:', values);
         
-        // 构建协议参数
-        const protocolParams: ProtocolParams = {};
-        
-        if (values.protocol === Protocol.PROTOCOL_SHADOWSOCKS) {
-            protocolParams.shadowsocks = {
-                method: values.method,
-                password: values.password,
-                udpSupport: values.udpSupport || false,
-                tcpFastOpen: values.tcpFastOpen || false,
-                otherParams: values.otherParams || '{}',
+        try {
+            // 构建协议参数
+            const protocolParams: ProtocolParams = {};
+            
+            if (values.protocol === Protocol.PROTOCOL_SHADOWSOCKS) {
+                protocolParams.shadowsocks = {
+                    method: values.method,
+                    password: values.password,
+                    udpSupport: values.udpSupport || false,
+                    tcpFastOpen: values.tcpFastOpen || false,
+                    otherParams: values.otherParams || '{}',
+                };
+            } else if (values.protocol === Protocol.PROTOCOL_SNELL) {
+                protocolParams.snell = {
+                    version: values.snellVersion,
+                    psk: values.password, // 在表单中统一使用password字段
+                    udpSupport: values.udpSupport || false,
+                    tcpFastOpen: values.tcpFastOpen || false,
+                    otherParams: values.otherParams || '{}',
+                };
+            }
+
+            const createData: CreateRouteData = {
+                routeId: values.routeId,
+                routeName: values.routeName,
+                entryPoint: values.entryPoint,
+                port: values.port || (values.protocol === Protocol.PROTOCOL_SHADOWSOCKS ? 8388 : 6333),
+                protocol: values.protocol,
+                protocolParams: protocolParams,
+                description: values.description,
             };
-        } else if (values.protocol === Protocol.PROTOCOL_SNELL) {
-            protocolParams.snell = {
-                version: values.snellVersion,
-                psk: values.password, // 在表单中统一使用password字段
-                udpSupport: values.udpSupport || false,
-                tcpFastOpen: values.tcpFastOpen || false,
-                otherParams: values.otherParams || '{}',
-            };
+
+            const response = await routeService.createRoute(createData);
+            if (response.success) {
+                message.success('线路创建成功');
+                // 重新拉取数据
+                await loadRoutes();
+                return true;
+            } else {
+                handleDataResponse.error('线路创建失败', response.message);
+                return false;
+            }
+        } catch (error) {
+            handleDataResponse.error('线路创建', error);
+            return false;
         }
-
-        const newRoute: RouteItem = {
-            id: Date.now(),
-            routeId: values.routeId || `route${Date.now()}`,
-            routeName: values.routeName,
-            entryPoint: values.entryPoint,
-            port: values.port || (values.protocol === Protocol.PROTOCOL_SHADOWSOCKS ? 8388 : 6333),
-            protocol: values.protocol,
-            protocolParams: protocolParams,
-            description: values.description,
-        };
-
-        setCustomDataSource([...customDataSource, newRoute]);
-        message.success('线路创建成功');
-        return true;
     };
 
     // 生成表格列配置

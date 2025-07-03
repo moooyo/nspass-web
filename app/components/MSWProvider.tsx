@@ -1,194 +1,276 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import { httpClient } from '@/utils/http-client';
-import { MSWContext, MSWContextType } from './types';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { Switch, Card, Typography, Alert, Space, Button, Spin } from 'antd';
+import { ApiOutlined, CheckCircleOutlined, ExclamationCircleOutlined, LoadingOutlined, ReloadOutlined } from '@ant-design/icons';
+import { initMSW } from '@/init-msw';
+import { forceRestartMSW } from '@/mocks/browser';
+import { useTheme } from './hooks/useTheme';
 
-// localStorage键名
-const MOCK_ENABLED_KEY = 'nspass-mock-enabled';
+const { Text } = Typography;
 
-// 全局标志，防止重复初始化
-let mswInitialized = false;
-let mswInitializing = false;
+// MSW 上下文
+interface MSWContextType {
+  enabled: boolean;
+  loading: boolean;
+  error: string | null;
+  toggle: () => Promise<void>;
+  forceRestart: () => Promise<void>;
+  status: 'idle' | 'starting' | 'running' | 'stopped' | 'error' | 'restarting';
+}
 
-// MockToggle组件
-const MockToggle = () => {
-  if (typeof window === 'undefined' || process.env.NODE_ENV !== 'development') {
-    return null;
+const MSWContext = createContext<MSWContextType | null>(null);
+
+export const useMSW = () => {
+  const context = useContext(MSWContext);
+  if (!context) {
+    throw new Error('useMSW must be used within MSWProvider');
   }
-
-  // 动态导入MockToggle组件
-  const [ToggleComponent, setToggleComponent] = useState<React.ComponentType | null>(null);
-
-  useEffect(() => {
-    import('./MockToggle').then(({ MockToggle }) => {
-      setToggleComponent(() => MockToggle);
-    });
-  }, []);
-
-  return ToggleComponent ? <ToggleComponent /> : null;
+  return context;
 };
 
-export function MSWProvider({ children }: { children: React.ReactNode }) {
-  const [isClient, setIsClient] = useState(false);
-  const [mswStatus, setMswStatus] = useState<'loading' | 'success' | 'error'>('loading');
-  const [mockEnabled, setMockEnabled] = useState<boolean>(true);
-  const initializationAttempted = useRef(false);
+interface MSWProviderProps {
+  children: React.ReactNode;
+}
 
+export const MSWProvider: React.FC<MSWProviderProps> = ({ children }) => {
+  const { theme: currentTheme } = useTheme();
+  const [enabled, setEnabled] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<'idle' | 'starting' | 'running' | 'stopped' | 'error' | 'restarting'>('idle');
+
+  const toggle = async () => {
+    if (loading) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      if (!enabled) {
+        console.log('🚀 启动 MSW...');
+        setStatus('starting');
+        
+        const success = await initMSW();
+        if (success) {
+          setEnabled(true);
+          setStatus('running');
+          console.log('✅ MSW 启动成功');
+        } else {
+          throw new Error('MSW 启动失败');
+        }
+      } else {
+        console.log('⏹️ 停止 MSW...');
+        // 这里可以添加停止 MSW 的逻辑
+        setEnabled(false);
+        setStatus('stopped');
+        console.log('⏹️ MSW 已停止');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'MSW 操作失败';
+      setError(errorMessage);
+      setStatus('error');
+      console.error('MSW 操作失败:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const forceRestart = async () => {
+    if (loading) return;
+    
+    setLoading(true);
+    setError(null);
+    setStatus('restarting');
+    
+    try {
+      console.log('🔄 强制重启 MSW...');
+      
+      const success = await forceRestartMSW();
+      if (success) {
+        setEnabled(true);
+        setStatus('running');
+        console.log('✅ MSW 强制重启成功');
+      } else {
+        throw new Error('MSW 强制重启失败');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'MSW 强制重启失败';
+      setError(errorMessage);
+      setStatus('error');
+      console.error('MSW 强制重启失败:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 组件挂载时的自动初始化 - 使用强制重启确保清理旧的Service Worker
   useEffect(() => {
-    setIsClient(true);
+    // 只在开发环境自动启动
+    if (process.env.NODE_ENV === 'development' && !enabled && !loading && status === 'idle') {
+      console.log('🚀 开发环境自动启动 MSW（强制重启模式）...');
+      forceRestart();
+    }
   }, []);
 
-  useEffect(() => {
-    if (!isClient || initializationAttempted.current) {
-      return;
-    }
-
-    initializationAttempted.current = true;
-
-    const initializeMSW = async () => {
-      if (process.env.NODE_ENV !== 'development') {
-        setMswStatus('success');
-        return;
-      }
-
-      if (mswInitialized) {
-        setMswStatus('success');
-        return;
-      }
-
-      if (mswInitializing) {
-        let attempts = 0;
-        while (mswInitializing && attempts < 30) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-          attempts++;
-        }
-        setMswStatus(mswInitialized ? 'success' : 'error');
-        return;
-      }
-
-      try {
-        mswInitializing = true;
-        setMswStatus('loading');
-
-        const storedMockEnabled = localStorage.getItem(MOCK_ENABLED_KEY);
-        const shouldEnableMock = storedMockEnabled !== null ? storedMockEnabled === 'true' : true;
-        
-        setMockEnabled(shouldEnableMock);
-        
-        if (shouldEnableMock) {
-          // 动态导入MSW初始化函数
-          const { initMSW } = await import('../init-msw');
-          const success = await initMSW();
-          
-          if (success) {
-            mswInitialized = true;
-            // MSW启用时，使用空字符串让请求被MSW拦截
-            httpClient.updateBaseURL('');
-            console.log('🚀 MSW已启动，API请求将被Mock拦截');
-            console.log('🔧 httpClient baseURL已更新为空字符串:', httpClient.getCurrentBaseURL());
-            
-            // 验证baseURL确实被更新了
-            const currentBaseURL = httpClient.getCurrentBaseURL();
-            if (currentBaseURL !== '') {
-              console.error('❌ 警告：httpClient baseURL更新失败，当前值:', currentBaseURL);
-              // 强制再次更新
-              httpClient.updateBaseURL('');
-              console.log('🔄 强制更新后的baseURL:', httpClient.getCurrentBaseURL());
-            }
-          } else {
-            console.error('❌ MSW启动失败');
-            setMswStatus('error');
-            return;
-          }
-        } else {
-          mswInitialized = true;
-          // MSW未启用时，使用真实后端地址
-          const realApiUrl = process.env.NEXT_PUBLIC_REAL_API_URL || 'http://localhost:8080';
-          httpClient.updateBaseURL(realApiUrl);
-          console.log(`⏹️ MSW未启用，API请求将发送到: ${realApiUrl}`);
-        }
-        
-        setMswStatus('success');
-      } catch (error) {
-        console.error('MSW 启动失败:', error);
-        setMswStatus('error');
-        // 错误时使用真实后端地址
-        const realApiUrl = process.env.NEXT_PUBLIC_REAL_API_URL || 'http://localhost:8080';
-        httpClient.updateBaseURL(realApiUrl);
-      } finally {
-        mswInitializing = false;
-      }
-    };
-
-    initializeMSW();
-  }, [isClient]);
-
-  useEffect(() => {
-    if (isClient && mswStatus !== 'loading') {
-      localStorage.setItem(MOCK_ENABLED_KEY, String(mockEnabled));
-    }
-  }, [mockEnabled, mswStatus, isClient]);
-
-  if (!isClient) {
-    return (
-      <MSWContext.Provider value={{ enabled: true, setEnabled: () => {} }}>
-        {children}
-      </MSWContext.Provider>
-    );
-  }
-
-  if (process.env.NODE_ENV === 'development' && mswStatus === 'loading') {
-    return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        fontSize: '16px',
-        color: '#666'
-      }}>
-        🔄 正在初始化 Mock Service Worker...
-      </div>
-    );
-  }
-
-  if (process.env.NODE_ENV === 'development' && mswStatus === 'error') {
-    return (
-      <div style={{ 
-        display: 'flex', 
-        flexDirection: 'column',
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        fontSize: '16px',
-        color: '#666'
-      }}>
-        ❌ Mock Service Worker 初始化失败
-        <div style={{ marginTop: '20px' }}>
-          <button 
-            onClick={() => setMswStatus('success')} 
-            style={{
-              padding: '8px 16px',
-              background: '#1677ff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            继续使用应用
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const contextValue: MSWContextType = {
+    enabled,
+    loading,
+    error,
+    toggle,
+    forceRestart,
+    status,
+  };
 
   return (
-    <MSWContext.Provider value={{ enabled: mockEnabled, setEnabled: setMockEnabled }}>
+    <MSWContext.Provider value={contextValue}>
       {children}
-      {/* 仅在开发模式下显示Mock开关按钮 */}
-      {process.env.NODE_ENV === 'development' && <MockToggle />}
     </MSWContext.Provider>
   );
-} 
+};
+
+// MSW 控制组件
+export const MSWToggle: React.FC = () => {
+  const { enabled, loading, error, toggle, forceRestart, status } = useMSW();
+  const { theme: currentTheme } = useTheme();
+
+  // 获取状态图标
+  const getStatusIcon = () => {
+    switch (status) {
+      case 'starting':
+        return <LoadingOutlined spin style={{ color: '#1890ff' }} />;
+      case 'restarting':
+        return <ReloadOutlined spin style={{ color: '#faad14' }} />;
+      case 'running':
+        return <CheckCircleOutlined style={{ color: '#52c41a' }} />;
+      case 'error':
+        return <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />;
+      case 'stopped':
+        return <ApiOutlined style={{ color: '#8c8c8c' }} />;
+      default:
+        return <ApiOutlined style={{ color: '#8c8c8c' }} />;
+    }
+  };
+
+  // 获取状态文本
+  const getStatusText = () => {
+    switch (status) {
+      case 'starting':
+        return '启动中...';
+      case 'restarting':
+        return '🔄 重启中...';
+      case 'running':
+        return '✅ 运行中';
+      case 'error':
+        return '❌ 错误';
+      case 'stopped':
+        return '⏹️ 已停止';
+      default:
+        return '💤 空闲';
+    }
+  };
+
+  // 获取状态颜色
+  const getStatusColor = () => {
+    switch (status) {
+      case 'running':
+        return '#52c41a';
+      case 'error':
+        return '#ff4d4f';
+      case 'starting':
+        return '#1890ff';
+      case 'restarting':
+        return '#faad14';
+      default:
+        return '#8c8c8c';
+    }
+  };
+
+  return (
+    <Card 
+      size="small" 
+      style={{ 
+        background: currentTheme === 'light' ? '#fff' : 'rgba(255, 255, 255, 0.04)',
+        border: currentTheme === 'light' ? '1px solid #d9d9d9' : '1px solid rgba(255, 255, 255, 0.12)',
+        minWidth: '240px'
+      }}
+    >
+      <Space direction="vertical" size="small" style={{ width: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Space>
+            {getStatusIcon()}
+            <Text strong style={{ color: currentTheme === 'light' ? '#333' : '#fff' }}>
+              Mock API
+            </Text>
+          </Space>
+          <Switch
+            checked={enabled}
+            loading={loading}
+            onChange={toggle}
+            checkedChildren="开"
+            unCheckedChildren="关"
+            size="small"
+          />
+        </div>
+        
+        <div style={{ fontSize: '12px', color: getStatusColor() }}>
+          状态: {getStatusText()}
+        </div>
+        
+        {error && (
+          <Alert
+            message="MSW 错误"
+            description={error}
+            type="error"
+            showIcon
+            action={
+              <Space>
+                <Button size="small" onClick={toggle} loading={loading}>
+                  重试
+                </Button>
+                <Button 
+                  size="small" 
+                  onClick={forceRestart} 
+                  loading={loading}
+                  type="primary"
+                  danger
+                >
+                  强制重启
+                </Button>
+              </Space>
+            }
+            style={{ marginTop: '8px' }}
+          />
+        )}
+        
+        {status === 'running' && (
+          <div style={{ fontSize: '11px', color: '#52c41a', marginTop: '4px' }}>
+            🎯 正在拦截API请求，静态资源已被智能过滤
+          </div>
+        )}
+        
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          marginTop: '8px'
+        }}>
+          <div style={{ fontSize: '11px', color: '#999' }}>
+            💡 自动启动仅在开发环境生效
+          </div>
+          <Button 
+            size="small" 
+            type="text" 
+            icon={<ReloadOutlined />}
+            onClick={forceRestart}
+            loading={loading}
+            title="强制重启MSW（清理Service Worker缓存）"
+            style={{ fontSize: '12px', padding: '2px 6px' }}
+          >
+            强制重启
+          </Button>
+        </div>
+      </Space>
+    </Card>
+  );
+}; 

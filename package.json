@@ -3,16 +3,31 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "npm run clean && npm run proto:clean && npm run proto:generate && next dev",
+    "dev": "npm run proto:check && next dev",
+    "dev:fast": "next dev",
+    "dev:clean": "npm run clean && npm run proto:clean && npm run proto:generate && next dev",
+    "dev:proto": "npm run proto:generate && next dev",
+    "dev:turbo": "npm run proto:check && next dev --turbopack",
     "build": "npm run proto:clean && npm run proto:generate && next build",
+    "build:analyze": "ANALYZE=true npm run build",
     "start": "next start",
     "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "type-check": "tsc --noEmit",
     "clean": "rm -rf .next && rm -rf node_modules/.cache && npm cache clean --force",
     "clean:all": "npm run clean && rm -rf node_modules && npm install",
+    "msw:init": "npx msw init public/ --save",
+    "msw:clean": "rm -f public/mockServiceWorker.js",
+    "msw:reset": "npm run msw:clean && npm run msw:init",
+    "msw:force-reset": "npm run msw:reset && echo '🔄 请刷新浏览器页面以清理Service Worker缓存'",
+    "fix:msw": "npm run msw:reset && npm run dev:fast",
     "proto:clean": "rm -rf ./app/types/generated",
     "proto:generate": "mkdir -p ./app/types/generated && protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./app/types/generated --ts_proto_opt=stringEnums=true,snakeToCamel=true,useOptionals=all,onlyTypes=true --proto_path=./proto $(find proto -name '*.proto')",
     "proto:watch": "chokidar \"proto/**/*.proto\" -c \"npm run proto:generate\"",
-    "proto:dev": "npm run proto:clean && npm run proto:generate && npm run proto:watch"
+    "proto:dev": "npm run proto:clean && npm run proto:generate && npm run proto:watch",
+    "proto:check": "[ -d ./app/types/generated ] && [ -n \"$(ls -A ./app/types/generated 2>/dev/null)\" ] || npm run proto:generate",
+    "predev": "npm run proto:check",
+    "prebuild": "npm run type-check"
   },
   "dependencies": {
     "@ant-design/charts": "^2.3.0",
@@ -32,7 +47,8 @@
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^19.0.0",
-    "react-leaflet": "^5.0.0"
+    "react-leaflet": "^5.0.0",
+    "react-simple-maps": "^3.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

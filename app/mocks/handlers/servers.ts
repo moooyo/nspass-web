@@ -16,7 +16,7 @@ const mockServers: ServerItem[] = [
     ipv4: '123.45.67.89',
     ipv6: '2001:db8::1',
     country: 'China',
-    group: '主要服务器',
+    group: 'IX',
     registerTime: '2024-01-01T00:00:00Z',
     uploadTraffic: 1250.8,
     downloadTraffic: 2467.3,
@@ -27,7 +27,7 @@ const mockServers: ServerItem[] = [
     name: '洛杉矶服务器-01',
     ipv4: '234.56.78.90',
     country: 'United States',
-    group: '主要服务器',
+    group: 'Azure',
     registerTime: '2024-01-02T00:00:00Z',
     uploadTraffic: 856.4,
     downloadTraffic: 1923.7,
@@ -38,7 +38,7 @@ const mockServers: ServerItem[] = [
     name: '东京服务器-01',
     ipv4: '345.67.89.01',
     country: 'Japan',
-    group: '备用服务器',
+    group: 'IX',
     registerTime: '2024-01-03T00:00:00Z',
     uploadTraffic: 425.6,
     downloadTraffic: 789.2,
@@ -47,23 +47,80 @@ const mockServers: ServerItem[] = [
   {
     id: '4',
     name: '法兰克福服务器-01',
+    ipv4: '445.67.89.02',
     country: 'Germany',
-    group: '测试服务器',
+    group: 'Azure',
     registerTime: '2024-01-04T00:00:00Z',
-    uploadTraffic: 0,
-    downloadTraffic: 0,
-    status: ServerStatus.SERVER_STATUS_PENDING_INSTALL
+    uploadTraffic: 320.4,
+    downloadTraffic: 580.1,
+    status: ServerStatus.SERVER_STATUS_ONLINE
   },
   {
     id: '5',
     name: '新加坡服务器-01',
     ipv4: '456.78.90.12',
     country: 'Singapore',
-    group: '备用服务器',
+    group: 'IX',
     registerTime: '2024-01-05T00:00:00Z',
     uploadTraffic: 125.5,
     downloadTraffic: 234.8,
     status: ServerStatus.SERVER_STATUS_UNKNOWN
+  },
+  {
+    id: '6',
+    name: '香港服务器-01',
+    ipv4: '567.89.01.23',
+    ipv6: '2001:db8::6',
+    country: 'Hong Kong',
+    group: 'Premium',
+    registerTime: '2024-01-06T00:00:00Z',
+    uploadTraffic: 892.3,
+    downloadTraffic: 1456.7,
+    status: ServerStatus.SERVER_STATUS_ONLINE
+  },
+  {
+    id: '7',
+    name: '伦敦服务器-01',
+    ipv4: '678.90.12.34',
+    country: 'United Kingdom',
+    group: 'Azure',
+    registerTime: '2024-01-07T00:00:00Z',
+    uploadTraffic: 678.9,
+    downloadTraffic: 1123.4,
+    status: ServerStatus.SERVER_STATUS_ONLINE
+  },
+  {
+    id: '8',
+    name: '多伦多服务器-01',
+    ipv4: '789.01.23.45',
+    country: 'Canada',
+    group: 'Premium',
+    registerTime: '2024-01-08T00:00:00Z',
+    uploadTraffic: 543.2,
+    downloadTraffic: 876.5,
+    status: ServerStatus.SERVER_STATUS_OFFLINE
+  },
+  {
+    id: '9',
+    name: '悉尼服务器-01',
+    ipv4: '890.12.34.56',
+    country: 'Australia',
+    group: 'IX',
+    registerTime: '2024-01-09T00:00:00Z',
+    uploadTraffic: 234.5,
+    downloadTraffic: 445.8,
+    status: ServerStatus.SERVER_STATUS_PENDING_INSTALL
+  },
+  {
+    id: '10',
+    name: '首尔服务器-01',
+    ipv4: '901.23.45.67',
+    country: 'South Korea',
+    group: 'Premium',
+    registerTime: '2024-01-10T00:00:00Z',
+    uploadTraffic: 567.8,
+    downloadTraffic: 890.1,
+    status: ServerStatus.SERVER_STATUS_ONLINE
   }
 ];
 

@@ -24,34 +24,25 @@ function findRoute(id: string): RouteItem | undefined {
 }
 
 export const routeHandlers = [
-  // 获取线路列表
-  http.get('/api/routes', ({ request }) => {
+  // 获取线路列表 - 匹配swagger接口 GET /v1/routes
+  http.get('/v1/routes', ({ request }) => {
     const url = new URL(request.url);
-    const page = parseInt(url.searchParams.get('page') || '1');
-    const pageSize = parseInt(url.searchParams.get('pageSize') || '10');
-    const routeId = url.searchParams.get('routeId');
-    const routeName = url.searchParams.get('routeName');
+    const page = parseInt(url.searchParams.get('pagination.page') || '1');
+    const pageSize = parseInt(url.searchParams.get('pagination.pageSize') || '10');
     const type = url.searchParams.get('type');
+    const status = url.searchParams.get('status');
     const protocol = url.searchParams.get('protocol');
 
     let filteredRoutes = getRoutesByType(type || undefined);
 
-    // 按线路ID筛选
-    if (routeId) {
-      filteredRoutes = filteredRoutes.filter(route => 
-        route.routeId?.toLowerCase().includes(routeId.toLowerCase())
-      );
-    }
-
-    // 按线路名筛选
-    if (routeName) {
-      filteredRoutes = filteredRoutes.filter(route => 
-        route.routeName?.toLowerCase().includes(routeName.toLowerCase())
-      );
+    // 按状态筛选
+    if (status && status !== 'ROUTE_STATUS_UNSPECIFIED') {
+      // 这里可以添加状态筛选逻辑
+      // filteredRoutes = filteredRoutes.filter(route => route.status === status);
     }
 
     // 按协议筛选
-    if (protocol) {
+    if (protocol && protocol !== 'PROTOCOL_UNSPECIFIED') {
       filteredRoutes = filteredRoutes.filter(route => route.protocol === protocol);
     }
 
@@ -64,15 +55,17 @@ export const routeHandlers = [
       success: true,
       message: '获取线路列表成功',
       data: paginatedRoutes,
-      total: filteredRoutes.length,
-      page,
-      pageSize,
-      totalPages: Math.ceil(filteredRoutes.length / pageSize)
+      pagination: {
+        current: page,
+        pageSize,
+        total: filteredRoutes.length,
+        totalPages: Math.ceil(filteredRoutes.length / pageSize)
+      }
     });
   }),
 
-  // 创建线路
-  http.post('/api/routes', async ({ request }) => {
+  // 创建线路 - 匹配swagger接口 POST /v1/routes
+  http.post('/v1/routes', async ({ request }) => {
     const body = await request.json() as CreateRouteData;
 
     // 验证必填字段
@@ -138,8 +131,8 @@ export const routeHandlers = [
     });
   }),
 
-  // 获取单个线路
-  http.get('/api/routes/:id', ({ params }) => {
+  // 获取单个线路 - 匹配swagger接口 GET /v1/routes/{id}
+  http.get('/v1/routes/:id', ({ params }) => {
     const id = params.id as string;
     const route = findRoute(id);
 
@@ -158,8 +151,8 @@ export const routeHandlers = [
     });
   }),
 
-  // 更新线路
-  http.put('/api/routes/:id', async ({ params, request }) => {
+  // 更新线路 - 匹配swagger接口 PUT /v1/routes/{id}
+  http.put('/v1/routes/:id', async ({ params, request }) => {
     const id = params.id as string;
     const body = await request.json() as UpdateRouteData;
     
@@ -197,8 +190,8 @@ export const routeHandlers = [
     });
   }),
 
-  // 删除线路
-  http.delete('/api/routes/:id', ({ params }) => {
+  // 删除线路 - 匹配swagger接口 DELETE /v1/routes/{id}
+  http.delete('/v1/routes/:id', ({ params }) => {
     const id = params.id as string;
     
     // 只能删除自定义线路
@@ -220,8 +213,8 @@ export const routeHandlers = [
     });
   }),
 
-  // 批量删除线路
-  http.post('/api/routes/batch-delete', async ({ request }) => {
+  // 批量删除线路 - 匹配swagger接口 POST /v1/routes/batch/delete
+  http.post('/v1/routes/batch/delete', async ({ request }) => {
     const body = await request.json() as { ids: string[] };
     let deletedCount = 0;
     const deletedRoutes: string[] = [];
@@ -230,7 +223,7 @@ export const routeHandlers = [
       const index = customRoutes.findIndex(r => r.id === id || r.routeId === id);
       if (index !== -1) {
         const deletedRoute = customRoutes.splice(index, 1)[0];
-        deletedRoutes.push(deletedRoute.routeName);
+        deletedRoutes.push(deletedRoute.routeName ?? 'Unknown Route');
         deletedCount++;
       }
     });
@@ -241,38 +234,73 @@ export const routeHandlers = [
     });
   }),
 
-  // 测试线路连接
-  http.post('/api/routes/:id/test', ({ params }) => {
-    const id = params.id as string;
-    const route = findRoute(id);
+  // 批量更新线路状态 - 匹配swagger接口 POST /v1/routes/batch/status
+  http.post('/v1/routes/batch/status', async ({ request }) => {
+    const body = await request.json() as { ids: string[]; status: string };
+    const updatedRoutes: RouteItem[] = [];
 
-    if (!route) {
-      return HttpResponse.json({
-        success: false,
-        message: '线路不存在',
-        errorCode: 'ROUTE_NOT_FOUND'
-      }, { status: 404 });
-    }
-
-    // 模拟测试结果
-    const isReachable = Math.random() > 0.3; // 70%的成功率
-    const latency = isReachable ? Math.floor(Math.random() * 200) + 50 : 0; // 50-250ms延迟
+    body.ids.forEach(id => {
+      const index = customRoutes.findIndex(r => r.id === id || r.routeId === id);
+      if (index !== -1) {
+        // 这里可以添加状态更新逻辑
+        // customRoutes[index].status = body.status;
+        updatedRoutes.push(customRoutes[index]);
+      }
+    });
 
     return HttpResponse.json({
       success: true,
-      message: '测试完成',
-      data: {
-        success: isReachable,
-        latency,
-        error: isReachable ? undefined : '连接超时'
+      message: `成功更新 ${updatedRoutes.length} 个线路状态`,
+      data: updatedRoutes
+    });
+  }),
+
+  // 搜索线路 - 匹配swagger接口 GET /v1/routes/search
+  http.get('/v1/routes/search', ({ request }) => {
+    const url = new URL(request.url);
+    const query = url.searchParams.get('query');
+    const fields = url.searchParams.getAll('fields');
+    const page = parseInt(url.searchParams.get('pagination.page') || '1');
+    const pageSize = parseInt(url.searchParams.get('pagination.pageSize') || '10');
+    const type = url.searchParams.get('type');
+
+    let filteredRoutes = getRoutesByType(type || undefined);
+
+    // 搜索逻辑
+    if (query && query.trim()) {
+      const searchQuery = query.toLowerCase();
+      filteredRoutes = filteredRoutes.filter(route => {
+        const searchTarget = fields.length > 0 ? fields : ['routeName', 'entryPoint'];
+        return searchTarget.some(field => {
+          const value = route[field as keyof RouteItem];
+          return value !== undefined && value !== null && String(value).toLowerCase().includes(searchQuery);
+        });
+      });
+    }
+
+    // 分页
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize;
+    const paginatedRoutes = filteredRoutes.slice(start, end);
+
+    return HttpResponse.json({
+      success: true,
+      message: '搜索完成',
+      data: paginatedRoutes,
+      pagination: {
+        current: page,
+        pageSize,
+        total: filteredRoutes.length,
+        totalPages: Math.ceil(filteredRoutes.length / pageSize)
       }
     });
   }),
 
-  // 生成线路配置
-  http.post('/api/routes/:id/config', async ({ params, request }) => {
+  // 生成线路配置 - 匹配swagger接口 GET /v1/routes/{id}/config
+  http.get('/v1/routes/:id/config', ({ params, request }) => {
     const id = params.id as string;
-    const body = await request.json() as { format: string };
+    const url = new URL(request.url);
+    const format = url.searchParams.get('format') || 'json';
     const route = findRoute(id);
 
     if (!route) {
@@ -283,7 +311,6 @@ export const routeHandlers = [
       }, { status: 404 });
     }
 
-    const format = body.format || 'json';
     let config = '';
 
     try {
@@ -322,8 +349,33 @@ export const routeHandlers = [
     }
   }),
 
-  // 验证线路连通性
-  http.post('/api/routes/:id/connectivity', async ({ params, request }) => {
+  // 更新线路状态 - 匹配swagger接口 PUT /v1/routes/{id}/status
+  http.put('/v1/routes/:id/status', async ({ params, request }) => {
+    const id = params.id as string;
+    const body = await request.json() as { status: string };
+    
+    const routeIndex = customRoutes.findIndex(r => r.id === id || r.routeId === id);
+
+    if (routeIndex === -1) {
+      return HttpResponse.json({
+        success: false,
+        message: '线路不存在',
+        errorCode: 'ROUTE_NOT_FOUND'
+      }, { status: 404 });
+    }
+
+    // 这里可以添加状态更新逻辑
+    // customRoutes[routeIndex].status = body.status;
+
+    return HttpResponse.json({
+      success: true,
+      message: '线路状态更新成功',
+      data: customRoutes[routeIndex]
+    });
+  }),
+
+  // 验证线路连通性 - 匹配swagger接口 POST /v1/routes/{id}/validate
+  http.post('/v1/routes/:id/validate', async ({ params, request }) => {
     const id = params.id as string;
     const body = await request.json() as { timeoutSeconds?: number };
     const route = findRoute(id);
@@ -356,7 +408,7 @@ export const routeHandlers = [
   }),
 
   // 重置mock数据（开发用）
-  http.post('/api/routes/reset-mock', () => {
+  http.post('/v1/routes/reset-mock', () => {
     customRoutes = [...mockCustomRoutes];
     systemRoutes = [...mockSystemRoutes];
     nextId = 200;

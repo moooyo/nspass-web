@@ -20,8 +20,7 @@ import {
     DeleteOutlined,
     ThunderboltOutlined,
 } from '@ant-design/icons';
-import { egressService } from '@/services/egress';
-import type { EgressItem } from '@/services/egress';
+import { egressService, EgressItem, CreateEgressData, UpdateEgressData, EgressMode, ForwardType } from '@/services/egress';
 import { useApiOnce } from '@/components/hooks/useApiOnce';
 
 // 服务器选项
@@ -31,55 +30,93 @@ const serverOptions = [
     { label: '服务器03', value: 'server03' },
 ];
 
-// 出口模式选项
+// 出口模式选项 - 使用新的枚举
 const egressModeOptions = [
-    { label: '直出', value: 'direct' },
-    { label: 'iptables', value: 'iptables' },
-    { label: 'shadowsocks-2022', value: 'ss2022' },
+    { label: '直出', value: EgressMode.EGRESS_MODE_DIRECT },
+    { label: 'iptables', value: EgressMode.EGRESS_MODE_IPTABLES },
+    { label: 'shadowsocks-2022', value: EgressMode.EGRESS_MODE_SS2022 },
 ];
 
-// 转发类型选项
+// 转发类型选项 - 使用新的枚举
 const forwardTypeOptions = [
-    { label: 'TCP', value: 'tcp' },
-    { label: 'UDP', value: 'udp' },
-    { label: '全部', value: 'all' },
+    { label: 'TCP', value: ForwardType.FORWARD_TYPE_TCP },
+    { label: 'UDP', value: ForwardType.FORWARD_TYPE_UDP },
+    { label: '全部', value: ForwardType.FORWARD_TYPE_ALL },
 ];
 
-type LocalEgressItem = {
-    id: React.Key;
-    egressId: string;
-    serverId: string;
-    egressMode: 'direct' | 'iptables' | 'ss2022';
-    egressConfig: string;
-    
-    // 直出模式字段
-    targetAddress?: string;
-    
-    // iptables模式字段
-    forwardType?: 'tcp' | 'udp' | 'all';
-    destAddress?: string;
-    destPort?: string;
-    
-    // shadowsocks-2022模式字段
-    password?: string;
-    supportUdp?: boolean;
+// 使用服务中定义的EgressItem类型，添加display字段
+interface LocalEgressItem extends EgressItem {
+    displayConfig?: string; // 用于显示的配置字符串
+}
+
+// 将API数据转换为显示数据格式
+const convertEgressToLocalItem = (egress: EgressItem): LocalEgressItem => {
+    // 生成显示用的配置字符串
+    let displayConfig = '';
+    switch (egress.egressMode) {
+        case EgressMode.EGRESS_MODE_DIRECT:
+            displayConfig = `直出到: ${egress.targetAddress || 'N/A'}`;
+            break;
+        case EgressMode.EGRESS_MODE_IPTABLES:
+            displayConfig = `${egress.forwardType || 'N/A'} -> ${egress.destAddress || 'N/A'}:${egress.destPort || 'N/A'}`;
+            break;
+        case EgressMode.EGRESS_MODE_SS2022:
+            displayConfig = `SS2022, UDP: ${egress.supportUdp ? '是' : '否'}`;
+            break;
+        default:
+            displayConfig = '未配置';
+    }
+
+    return {
+        ...egress,
+        displayConfig,
+    };
 };
 
-// 将API数据转换为组件数据格式
-const convertEgressToLocalItem = (egress: EgressItem): LocalEgressItem => {
-    return {
-        id: egress.id,
-        egressId: egress.egressId,
-        serverId: egress.serverId,
-        egressMode: egress.egressMode,
-        egressConfig: egress.egressConfig,
-        targetAddress: egress.targetAddress,
-        forwardType: egress.forwardType,
-        destAddress: egress.destAddress,
-        destPort: egress.destPort,
-        password: egress.password,
-        supportUdp: egress.supportUdp,
+// 转换前端表单数据为API请求数据
+const convertFormToCreateData = (values: any): CreateEgressData => {
+    const data: CreateEgressData = {
+        egressId: values.egressId,
+        serverId: values.serverId,
+        egressMode: values.egressMode,
     };
+
+    // 根据模式添加对应字段
+    if (values.egressMode === EgressMode.EGRESS_MODE_DIRECT) {
+        data.targetAddress = values.targetAddress;
+    } else if (values.egressMode === EgressMode.EGRESS_MODE_IPTABLES) {
+        data.forwardType = values.forwardType;
+        data.destAddress = values.destAddress;
+        data.destPort = values.destPort;
+    } else if (values.egressMode === EgressMode.EGRESS_MODE_SS2022) {
+        data.password = values.password;
+        data.supportUdp = values.supportUdp;
+    }
+
+    return data;
+};
+
+// 转换前端表单数据为更新API请求数据
+const convertFormToUpdateData = (values: any): UpdateEgressData => {
+    const data: UpdateEgressData = {
+        egressId: values.egressId,
+        serverId: values.serverId,
+        egressMode: values.egressMode,
+    };
+
+    // 根据模式添加对应字段
+    if (values.egressMode === EgressMode.EGRESS_MODE_DIRECT) {
+        data.targetAddress = values.targetAddress;
+    } else if (values.egressMode === EgressMode.EGRESS_MODE_IPTABLES) {
+        data.forwardType = values.forwardType;
+        data.destAddress = values.destAddress;
+        data.destPort = values.destPort;
+    } else if (values.egressMode === EgressMode.EGRESS_MODE_SS2022) {
+        data.password = values.password;
+        data.supportUdp = values.supportUdp;
+    }
+
+    return data;
 };
 
 const Egress: React.FC = () => {
@@ -151,7 +188,8 @@ const Egress: React.FC = () => {
         try {
             const response = await egressService.deleteEgress(record.id);
             if (response.success) {
-                setDataSource(dataSource.filter(item => item.id !== record.id));
+                // 重新拉取数据
+                await loadEgressData();
                 handleDataResponse.userAction('删除出口', true, response);
             } else {
                 handleDataResponse.userAction('删除出口', false, response);
@@ -170,13 +208,13 @@ const Egress: React.FC = () => {
             serverId: record.serverId,
             egressMode: record.egressMode,
             // 根据模式设置对应字段
-            ...(record.egressMode === 'direct' && { targetAddress: record.targetAddress }),
-            ...(record.egressMode === 'iptables' && { 
+            ...(record.egressMode === EgressMode.EGRESS_MODE_DIRECT && { targetAddress: record.targetAddress }),
+            ...(record.egressMode === EgressMode.EGRESS_MODE_IPTABLES && { 
                 forwardType: record.forwardType,
                 destAddress: record.destAddress,
                 destPort: record.destPort,
             }),
-            ...(record.egressMode === 'ss2022' && { 
+            ...(record.egressMode === EgressMode.EGRESS_MODE_SS2022 && { 
                 password: record.password,
                 supportUdp: record.supportUdp,
             }),
@@ -191,7 +229,7 @@ const Egress: React.FC = () => {
         if (!editingRecord) return false;
         
         try {
-            const response = await egressService.updateEgress(editingRecord.id, values);
+            const response = await egressService.updateEgress(editingRecord.id, convertFormToUpdateData(values));
             if (response.success) {
                 // 重新加载数据
                 const listResponse = await egressService.getEgressList();
@@ -218,7 +256,7 @@ const Egress: React.FC = () => {
         console.log('创建出口表单提交:', values);
         
         try {
-            const response = await egressService.createEgress(values);
+            const response = await egressService.createEgress(convertFormToCreateData(values));
             if (response.success) {
                 // 重新加载数据
                 const listResponse = await egressService.getEgressList();
@@ -276,27 +314,27 @@ const Egress: React.FC = () => {
             width: '20%',
             valueType: 'select',
             valueEnum: {
-                direct: { text: '直出', status: 'Success' },
-                iptables: { text: 'iptables', status: 'Processing' },
-                ss2022: { text: 'shadowsocks-2022', status: 'Warning' },
+                [EgressMode.EGRESS_MODE_DIRECT]: { text: '直出', status: 'Success' },
+                [EgressMode.EGRESS_MODE_IPTABLES]: { text: 'iptables', status: 'Processing' },
+                [EgressMode.EGRESS_MODE_SS2022]: { text: 'shadowsocks-2022', status: 'Warning' },
             },
             render: (_, record) => (
                 <Tag color={
-                    record.egressMode === 'direct' ? 'green' : 
-                    record.egressMode === 'iptables' ? 'blue' : 
-                    record.egressMode === 'ss2022' ? 'purple' :
+                    record.egressMode === EgressMode.EGRESS_MODE_DIRECT ? 'green' : 
+                    record.egressMode === EgressMode.EGRESS_MODE_IPTABLES ? 'blue' : 
+                    record.egressMode === EgressMode.EGRESS_MODE_SS2022 ? 'purple' :
                     'default'
                 }>
-                    {record.egressMode === 'direct' ? '直出' : 
-                     record.egressMode === 'iptables' ? 'iptables' : 
-                     record.egressMode === 'ss2022' ? 'shadowsocks-2022' :
+                    {record.egressMode === EgressMode.EGRESS_MODE_DIRECT ? '直出' : 
+                     record.egressMode === EgressMode.EGRESS_MODE_IPTABLES ? 'iptables' : 
+                     record.egressMode === EgressMode.EGRESS_MODE_SS2022 ? 'shadowsocks-2022' :
                      record.egressMode}
                 </Tag>
             ),
         },
         {
             title: '出口配置',
-            dataIndex: 'egressConfig',
+            dataIndex: 'displayConfig',
             width: '30%',
             formItemProps: {
                 rules: [{ required: true, message: '出口配置为必填项' }],
@@ -352,9 +390,9 @@ const Egress: React.FC = () => {
                     label="出口模式" 
                     colProps={{ span: 8 }}
                     valueEnum={{
-                        direct: { text: '直出' },
-                        iptables: { text: 'iptables' },
-                        ss2022: { text: 'shadowsocks-2022' },
+                        [EgressMode.EGRESS_MODE_DIRECT]: { text: '直出' },
+                        [EgressMode.EGRESS_MODE_IPTABLES]: { text: 'iptables' },
+                        [EgressMode.EGRESS_MODE_SS2022]: { text: 'shadowsocks-2022' },
                     }}
                 />
             </QueryFilter>
@@ -439,7 +477,7 @@ const Egress: React.FC = () => {
                 <ProFormDependency name={['egressMode']}>
                     {({ egressMode }) => {
                         // 直出模式
-                        if (egressMode === 'direct') {
+                        if (egressMode === EgressMode.EGRESS_MODE_DIRECT) {
                             return (
                                 <ProFormText
                                     name="targetAddress"
@@ -451,7 +489,7 @@ const Egress: React.FC = () => {
                         }
                         
                         // iptables模式
-                        if (egressMode === 'iptables') {
+                        if (egressMode === EgressMode.EGRESS_MODE_IPTABLES) {
                             return (
                                 <ProFormGroup>
                                     <ProFormSelect
@@ -477,7 +515,7 @@ const Egress: React.FC = () => {
                         }
                         
                         // shadowsocks-2022模式
-                        if (egressMode === 'ss2022') {
+                        if (egressMode === EgressMode.EGRESS_MODE_SS2022) {
                             return (
                                 <ProFormGroup>
                                     <ProFormText.Password
@@ -552,7 +590,7 @@ const Egress: React.FC = () => {
                 <ProFormDependency name={['egressMode']}>
                     {({ egressMode }) => {
                         // 直出模式
-                        if (egressMode === 'direct') {
+                        if (egressMode === EgressMode.EGRESS_MODE_DIRECT) {
                             return (
                                 <ProFormText
                                     name="targetAddress"
@@ -564,7 +602,7 @@ const Egress: React.FC = () => {
                         }
                         
                         // iptables模式
-                        if (egressMode === 'iptables') {
+                        if (egressMode === EgressMode.EGRESS_MODE_IPTABLES) {
                             return (
                                 <ProFormGroup>
                                     <ProFormSelect
@@ -590,7 +628,7 @@ const Egress: React.FC = () => {
                         }
                         
                         // shadowsocks-2022模式
-                        if (egressMode === 'ss2022') {
+                        if (egressMode === EgressMode.EGRESS_MODE_SS2022) {
                             return (
                                 <ProFormGroup>
                                     <ProFormText.Password
