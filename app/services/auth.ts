@@ -1,7 +1,6 @@
 // 认证相关的API服务
 import { httpClient } from '@/utils/http-client';
 import { LoginType } from '@/types/generated/api/users/user_auth';
-import type { LoginRequest as ProtoLoginRequest, LoginResponse as ProtoLoginResponse } from '@/types/generated/api/users/user_auth';
 
 export interface LoginRequest {
   loginType?: LoginType;

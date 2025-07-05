@@ -282,7 +282,9 @@ const Dashboard: React.FC = () => {
                   alignItems: 'center', 
                   height: '300px' 
                 }}>
-                  <Spin tip="正在加载图表..." />
+                  <Spin tip="正在加载图表...">
+                    <div style={{ minHeight: '200px' }} />
+                  </Spin>
                 </div>
               }>
                 <DynamicColumn {...chartConfig} />

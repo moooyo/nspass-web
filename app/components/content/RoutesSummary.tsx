@@ -7,6 +7,7 @@ import { routeService, RouteItem } from '@/services/routes';
 import { egressService, EgressItem } from '@/services/egress';
 
 // 导入国家数据
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const countryFlagEmoji = require('country-flag-emoji');
 
 const { Title, Text } = Typography;
@@ -79,7 +80,7 @@ const RoutesSummary: React.FC<RoutesSummaryProps> = ({ style, onRouteStatsChange
   const [egresses, setEgresses] = useState<EgressItem[]>([]);
 
   // 根据国家名称获取国旗组件
-  const getFlagByCountryName = (countryName?: string) => {
+  const _getFlagByCountryName = (countryName?: string) => {
     if (!countryName) return <span style={{ marginRight: '6px' }}>🌍</span>;
     
     const countryCode = getCountryCodeByName(countryName);
@@ -376,7 +377,7 @@ const RoutesSummary: React.FC<RoutesSummaryProps> = ({ style, onRouteStatsChange
         }}>
           <List
             dataSource={countryRouteStats}
-            renderItem={(stats, index) => (
+            renderItem={(stats, _index) => (
               <div
                 key={`${stats.fromCountry}-${stats.toCountry}`}
                 style={{

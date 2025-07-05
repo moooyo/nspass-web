@@ -4,6 +4,7 @@ export async function initMockServiceWorker() {
   if (typeof window === 'undefined') {
     // 服务器端环境
     if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { server } = require('./server');
       server.listen();
     }

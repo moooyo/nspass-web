@@ -4,9 +4,7 @@ import {
     ProTable,
     ProColumns,
     ProFormSelect,
-    ProFormSegmented,
     ProFormText,
-    QueryFilter,
     ModalForm,
     ProFormDigit,
     ProFormDatePicker,
@@ -16,19 +14,20 @@ import { PlusOutlined, EditOutlined, CopyOutlined, DeleteOutlined, CheckOutlined
 import ReactCountryFlag from 'react-country-flag';
 import { message } from '@/utils/message';
 import { 
-  ServerService, 
+  serverService, 
   statusToString,
-  stringToStatus,
-  type ServerListParams,
-  type CreateServerParams,
-  type UpdateServerParams
-} from '@/services/servers';
+  type ServerQueryParams,
+  type ServerCreateData,
+  type ServerUpdateData
+} from '@/services/server';
 import type { ServerItem } from '@/types/generated/api/servers/server_management';
+import { ServerStatus } from '@/types/generated/api/servers/server_management';
 
 const { TextArea } = Input;
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 // 导入国家数据
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const countryFlagEmoji = require('country-flag-emoji');
 
 // 从第三方库获取所有国家数据
@@ -126,7 +125,7 @@ const Servers: React.FC = () => {
     const [copySuccess, setCopySuccess] = useState<boolean>(false);
 
     // 获取当前服务器中存在的国家（去重）
-    const getAvailableCountries = () => {
+    const _getAvailableCountries = () => {
         return [...new Set(
             currentServers
                 .map(server => server.country)
@@ -190,27 +189,27 @@ const Servers: React.FC = () => {
     const handleModalSubmit = async (values: any) => {
         try {
             if (modalMode === 'create') {
-                const createData: CreateServerParams = {
+                const createData: ServerCreateData = {
                     name: values.name,
                     country: values.country,
                     group: values.group,
                     registerTime: values.registerTime || new Date().toISOString(),
                     uploadTraffic: values.uploadTraffic || 0,
                     downloadTraffic: values.downloadTraffic || 0,
-                    status: 'pending_install', // 新建服务器默认状态为等待安装
+                    status: ServerStatus.SERVER_STATUS_PENDING_INSTALL, // 新建服务器默认状态为等待安装
                 };
                 
-                await ServerService.createServer(createData);
+                await serverService.createServer(createData);
                 message.success('服务器创建成功');
             } else {
                 if (!currentRecord) return false;
                 
-                const updateData: UpdateServerParams = {
+                const updateData: ServerUpdateData = {
                     ...values,
                     status: values.status // 保持字符串格式，服务层会转换
                 };
                 
-                await ServerService.updateServer(currentRecord.id!, updateData);
+                await serverService.updateServer(currentRecord.id!, updateData);
                 message.success('服务器更新成功');
             }
 
@@ -228,7 +227,7 @@ const Servers: React.FC = () => {
     // 删除服务器
     const deleteServer = useCallback(async (record: ServerItem) => {
         try {
-            await ServerService.deleteServer(record.id!);
+            await serverService.deleteServer(record.id!);
             message.success('删除成功');
             actionRef.current?.reload();
         } catch (error) {
@@ -483,7 +482,7 @@ const Servers: React.FC = () => {
                 {modalMode === 'create' && (
                     <div style={{ background: '#e6f7ff', padding: '12px', borderRadius: '4px', marginBottom: '16px', border: '1px solid #91d5ff' }}>
                         <p style={{ margin: 0, color: '#0050b3', fontSize: '14px' }}>
-                            💡 新建服务器时状态默认为"等待安装"，IPV4和IPV6地址将在服务器安装后自动上报
+                            💡 新建服务器时状态默认为&quot;等待安装&quot;，IPV4和IPV6地址将在服务器安装后自动上报
                         </p>
                     </div>
                 )}
@@ -554,7 +553,7 @@ const Servers: React.FC = () => {
                         message="注意事项"
                         description={
                             <div>
-                                <p>安装完成后，服务器状态将自动更新为"在线"状态。如果安装失败，请检查：</p>
+                                <p>安装完成后，服务器状态将自动更新为&quot;在线&quot;状态。如果安装失败，请检查：</p>
                                 <ul>
                                     <li>网络连接是否正常</li>
                                     <li>是否有足够的系统权限</li>
@@ -586,7 +585,7 @@ const Servers: React.FC = () => {
                 columns={columns}
                 request={async (params) => {
                     try {
-                        const serverParams: ServerListParams = {
+                        const serverParams: ServerQueryParams = {
                             current: params.current,
                             pageSize: params.pageSize,
                             name: params.name,
@@ -595,10 +594,10 @@ const Servers: React.FC = () => {
                             group: params.group
                         };
                         
-                        const result = await ServerService.getServers(serverParams);
+                        const result = await serverService.getServers(serverParams);
                         
                         // 更新当前服务器数据，用于动态生成筛选选项
-                        setCurrentServers(result.data);
+                        setCurrentServers(result.data || []);
                         
                         return {
                             data: result.data,

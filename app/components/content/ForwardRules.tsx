@@ -7,7 +7,6 @@ import {
     ProFormSelect,
     ProFormText,
     QueryFilter,
-    ModalForm,
 } from '@ant-design/pro-components';
 import { 
     PlusOutlined, 
@@ -28,7 +27,7 @@ import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { ServerItem } from './LeafletWrapper';
 import { forwardRulesService } from '@/services/forwardRules';
-import type { ForwardRule, RuleStatus } from '@/services/forwardRules';
+import type { ForwardRule } from '@/services/forwardRules';
 import 'leaflet/dist/leaflet.css';
 import { useApiOnce } from '@/components/hooks/useApiOnce';
 
@@ -274,7 +273,6 @@ const DraggableServerItem: FC<DraggableServerItemProps> = ({ server, index, move
 const ForwardRules: React.FC = () => {
     const [dataSource, setDataSource] = useState<ForwardRuleItem[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
-    const [hasLoadedData, setHasLoadedData] = useState<boolean>(false);
     
     // 统一的Modal状态管理
     const [modalVisible, setModalVisible] = useState(false);
@@ -283,6 +281,17 @@ const ForwardRules: React.FC = () => {
     const [selectedPath, setSelectedPath] = useState<ServerItem[]>([]);
     const [exitServer, setExitServer] = useState<ServerItem | null>(null);
     const [form] = Form.useForm();
+    
+    // 确保 form 实例在需要时才被使用
+    useEffect(() => {
+        if (modalVisible && form) {
+            if (modalMode === 'create') {
+                form.resetFields();
+            } else if (modalMode === 'edit' && currentRecord) {
+                form.setFieldsValue(currentRecord);
+            }
+        }
+    }, [modalVisible, modalMode, currentRecord, form]);
     
     // 地图缓存相关状态
     const mapContainerRef = useRef<HTMLDivElement | null>(null);
@@ -297,18 +306,18 @@ const ForwardRules: React.FC = () => {
                 const rulesData = response.data?.data || [];
                 const convertedRules = rulesData.map(convertForwardRuleToItem);
                 setDataSource(convertedRules);
-                setHasLoadedData(true);
+                // Data loaded successfully
                 handleDataResponse.success('获取转发规则', response);
             } else {
                 // 失败时清空数据，避免显示过期缓存
                 setDataSource([]);
-                setHasLoadedData(false);
+                // Error loading data
                 handleDataResponse.error('获取转发规则', undefined, response);
             }
         } catch (error) {
             // 失败时清空数据，避免显示过期缓存
             setDataSource([]);
-            setHasLoadedData(false);
+            // Error loading data
             handleDataResponse.error('获取转发规则', error);
         } finally {
             setLoading(false);

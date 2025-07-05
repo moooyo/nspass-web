@@ -1,8 +1,6 @@
 import { httpClient, ApiResponse } from '@/utils/http-client';
 import type {
   ForwardRule,
-  ForwardRuleType,
-  EgressMode,
   RuleStatus,
   RuleTrafficStats,
   GetRulesRequest,
@@ -13,16 +11,7 @@ import type {
   BatchDeleteRulesRequest,
   ToggleRuleRequest,
   GetRuleTrafficStatsRequest,
-  GetRulesResponse,
-  CreateRuleResponse,
-  GetRuleResponse,
-  UpdateRuleResponse,
-  DeleteRuleResponse,
-  BatchDeleteRulesResponse,
-  ToggleRuleResponse,
-  GetRuleTrafficStatsResponse
 } from '@/types/generated/api/rules/rule_management';
-import type { ApiResponse as CommonApiResponse } from '@/types/generated/common';
 
 // 入口类型
 export type EntryType = 'HTTP' | 'SOCKS5' | 'SHADOWSOCKS' | 'TROJAN';

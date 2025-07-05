@@ -85,7 +85,7 @@ export async function initMSW(retries = 0, forceRestart = false): Promise<boolea
           await worker.stop();
           console.log('已停止先前的 worker');
         }
-      } catch (e) {
+      } catch {
         console.log('没有正在运行的 worker 需要停止');
       }
       

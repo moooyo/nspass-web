@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Button, Tag, Popconfirm, Tooltip, Space } from 'antd';
+import React, { useState, useCallback, useEffect } from 'react';
+import { Button, Tag, Popconfirm, Tooltip } from 'antd';
 import { handleDataResponse, message } from '@/utils/message';
 import {
     EditableProTable,
@@ -12,7 +12,7 @@ import {
     ModalForm,
     QueryFilter,
 } from '@ant-design/pro-components';
-import { Form, FormInstance } from 'antd';
+import { Form } from 'antd';
 import { 
     PlusOutlined, 
     ReloadOutlined,
@@ -122,12 +122,24 @@ const convertFormToUpdateData = (values: any): UpdateEgressData => {
 const Egress: React.FC = () => {
     const [dataSource, setDataSource] = useState<LocalEgressItem[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
-    const [hasLoadedData, setHasLoadedData] = useState<boolean>(false);
     const [createModalVisible, setCreateModalVisible] = useState<boolean>(false);
     const [editModalVisible, setEditModalVisible] = useState<boolean>(false);
     const [editingRecord, setEditingRecord] = useState<LocalEgressItem | null>(null);
     const [form] = Form.useForm();
     const [editForm] = Form.useForm();
+
+    // 确保 form 实例在需要时才被使用
+    useEffect(() => {
+        if (createModalVisible && form) {
+            form.resetFields();
+        }
+    }, [createModalVisible, form]);
+
+    useEffect(() => {
+        if (editModalVisible && editForm && editingRecord) {
+            editForm.setFieldsValue(editingRecord);
+        }
+    }, [editModalVisible, editForm, editingRecord]);
 
     // 加载出口配置数据
     const loadEgressData = useCallback(async () => {
@@ -139,18 +151,18 @@ const Egress: React.FC = () => {
                 const egressData = response.data || [];
                 const convertedData = egressData.map(convertEgressToLocalItem);
                 setDataSource(convertedData);
-                setHasLoadedData(true);
+                // Data loaded successfully
                 handleDataResponse.success('获取出口配置', response);
             } else {
                 // 失败时清空数据，避免显示过期缓存
                 setDataSource([]);
-                setHasLoadedData(false);
+                // Error loading data
                 handleDataResponse.error('获取出口配置', undefined, response);
             }
         } catch (error) {
             // 失败时清空数据，避免显示过期缓存
             setDataSource([]);
-            setHasLoadedData(false);
+            // Error loading data
             handleDataResponse.error('获取出口配置', error);
         } finally {
             setLoading(false);

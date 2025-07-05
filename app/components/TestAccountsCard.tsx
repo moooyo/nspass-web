@@ -4,7 +4,7 @@ import { Card, Typography, Tag, Divider, Space } from 'antd';
 import { UserOutlined, MailOutlined, KeyOutlined } from '@ant-design/icons';
 import { mockLoginUsers } from '@/mocks/data/users';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface TestAccountsCardProps {
   style?: React.CSSProperties;

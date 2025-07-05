@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Row, Col, Typography, Badge, Tag, Progress, Spin } from 'antd';
+import { Row, Col, Typography, Badge, Tag, Progress, Spin } from 'antd';
 import { CloudServerOutlined } from '@ant-design/icons';
 import { useTheme } from '../../hooks/useTheme';
 import { ServerStatus } from '@/types/generated/api/servers/server_management';
@@ -69,7 +69,7 @@ const ServerStatusCards: React.FC<ServerStatusCardsProps> = ({
 
   return (
     <Row gutter={[16, 16]}>
-      {servers.map((server, index) => (
+      {servers.map((server, _index) => (
         <Col xs={24} lg={12} key={server.id}>
           <div
             className="server-card hover-lift"

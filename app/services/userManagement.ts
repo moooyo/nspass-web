@@ -2,19 +2,13 @@ import { httpClient, ApiResponse } from '@/utils/http-client';
 
 // Local type definitions
 interface RegisterRequest { username: string; email: string; password: string; }
-interface RegisterResponse extends ApiResponse<any> {}
 interface LoginRequest { username: string; password: string; }
-interface LoginResponse extends ApiResponse<any> {}
 interface UserProfile { id: string; username: string; email: string; avatar?: string; }
-interface GetCurrentUserInfoResponse extends ApiResponse<UserProfile> {}
 interface UpdateUserInfoRequest { username?: string; email?: string; }
-interface UpdateCurrentUserInfoResponse extends ApiResponse<UserProfile> {}
 interface ChangePasswordRequest { currentPassword: string; newPassword: string; }
-interface ChangePasswordResponse extends ApiResponse<void> {}
 interface DeleteAccountRequest { password: string; }
-interface DeleteAccountResponse extends ApiResponse<void> {}
 interface UploadAvatarData { avatar: any; }
-interface UploadAvatarResponse extends ApiResponse<{avatarUrl: string}> {}
+type UploadAvatarResponse = ApiResponse<{avatarUrl: string}>;
 interface TrafficStats { uploadTraffic: number; downloadTraffic: number; totalTraffic: number; }
 interface LoginHistoryItem { id: string; ip: string; userAgent: string; loginTime: string; }
 interface GetLoginHistoryRequest { page?: number; pageSize?: number; }
@@ -49,7 +43,7 @@ class UserManagementService {
   /**
    * 用户注册
    */
-  async register(request: RegisterRequest): Promise<RegisterResponse> {
+  async register(request: RegisterRequest): Promise<ApiResponse<any>> {
     const response = await httpClient.post<{
       userId: string;
       username: string;
@@ -61,7 +55,7 @@ class UserManagementService {
   /**
    * 用户登录
    */
-  async login(request: LoginRequest): Promise<LoginResponse> {
+  async login(request: LoginRequest): Promise<ApiResponse<any>> {
     const response = await httpClient.post<{
       token: string;
       refreshToken: string;
@@ -83,7 +77,7 @@ class UserManagementService {
   /**
    * 更新用户信息
    */
-  async updateUserInfo(request: UpdateUserInfoRequest): Promise<UpdateCurrentUserInfoResponse> {
+  async updateUserInfo(request: UpdateUserInfoRequest): Promise<ApiResponse<UserProfile>> {
     const response = await httpClient.put<UserProfile>(`${this.usersEndpoint}/me`, request);
     return response;
   }

@@ -3,7 +3,6 @@ import type {
   UserConfigData, 
   BanUserData, 
   BatchOperationData, 
-  ServerResponse 
 } from '@mock/types';
 import { mockUserConfigs } from '@mock/data/userConfigs';
 

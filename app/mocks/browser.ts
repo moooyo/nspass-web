@@ -13,13 +13,10 @@ export const worker = typeof window !== 'undefined' ? setupWorker(...handlers) :
 
 console.log(`Worker创建结果: ${worker ? '成功' : '失败（可能在服务器端）'}`);
 
-// 最大重试次数
-const MAX_RETRIES = 3;
-
 // worker的状态
 let workerStarted = false;
 let workerStarting = false;
-let lastStartTime = 0;
+let _lastStartTime = 0;
 
 // 强制清理所有Service Worker的函数
 async function clearAllServiceWorkers(): Promise<void> {
@@ -160,7 +157,7 @@ export const startMSW = async (
     console.log('MSW: 强制重启模式，先停止现有服务...');
     await worker.stop();
     workerStarted = false;
-    lastStartTime = 0;
+    _lastStartTime = 0;
     
     // 清理所有Service Workers
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
@@ -265,7 +262,7 @@ export const startMSW = async (
     console.log('✅ 已启用静态资源智能过滤');
     console.log('🎯 只拦截API请求，忽略所有静态资源');
     workerStarted = true;
-    lastStartTime = Date.now();
+    _lastStartTime = Date.now();
     return true;
   } catch (error) {
     console.error('MSW 启动失败:', error);

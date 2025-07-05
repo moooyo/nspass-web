@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Card, Typography, Row, Col, Tooltip } from 'antd';
 import { GlobalOutlined } from '@ant-design/icons';
 import RoutesSummary, { type CountryRouteStats } from './RoutesSummary';
-// @ts-ignore - react-simple-maps类型兼容性问题
+// @ts-expect-error - react-simple-maps类型兼容性问题
 import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup, Line } from 'react-simple-maps';
 import { useTheme } from '../hooks/useTheme';
 import type { ServerItem } from '@/types/generated/api/servers/server_management';
@@ -104,7 +104,7 @@ const calculateOptimalPath = (
   toLng = normalizeLng(toLng);
   
   // 计算经度差
-  let diff = toLng - fromLng;
+  const diff = toLng - fromLng;
   
   // 特殊处理：识别跨太平洋的连线（亚洲<->美洲）
   const asianCountries = ['China', 'Japan', 'Hong Kong', 'Singapore'];
@@ -264,7 +264,7 @@ const ProfessionalWorldMap: React.FC<ProfessionalWorldMapProps> = ({ servers, st
             >
               <ZoomableGroup>
                 <Geographies geography="https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json">
-                  {({ geographies }: any) =>
+                  {({ geographies }: { geographies: any[] }) =>
                     geographies.map((geo: any) => (
                       <Geography
                         key={geo.rsmKey}
@@ -311,7 +311,7 @@ const ProfessionalWorldMap: React.FC<ProfessionalWorldMapProps> = ({ servers, st
                   const hasOnlineRoutes = route.onlineRoutes > 0;
                   
                   return (
-                    <>
+                    <React.Fragment key={`route-${route.fromCountry}-${route.toCountry}-${index}`}>
                       {/* 分段连线 */}
                       {optimalPath.shouldSplit && optimalPath.segments ? (
                         optimalPath.segments.map((segment, segIndex) => (
@@ -341,7 +341,7 @@ const ProfessionalWorldMap: React.FC<ProfessionalWorldMapProps> = ({ servers, st
                           style={{ pointerEvents: 'none' }}
                         />
                       )}
-                    </>
+                    </React.Fragment>
                   );
                 })}
 

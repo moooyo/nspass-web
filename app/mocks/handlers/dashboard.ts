@@ -12,7 +12,6 @@ import type {
   LogSummary,
   TrafficByRegion,
   SystemHealth,
-  SystemComponent
 } from '@/types/generated/api/dashboard/dashboard_service';
 import {
   ComponentStatus,
@@ -21,7 +20,7 @@ import {
 } from '@/types/generated/api/dashboard/dashboard_service';
 
 // Local mock types to avoid conflicts with generated types
-interface MockSystemOverview {
+interface _MockSystemOverview {
   totalUsers: number;
   activeUsers: number;
   totalServers: number;
@@ -30,7 +29,7 @@ interface MockSystemOverview {
   monthlyTraffic: string;
 }
 
-interface MockSystemHealth {
+interface _MockSystemHealth {
   status: 'healthy' | 'warning' | 'error';
   services: Array<{
     name: string;
@@ -42,25 +41,25 @@ interface MockSystemHealth {
   disk: number;
 }
 
-interface MockTrafficTrendItem {
+interface _MockTrafficTrendItem {
   date: string;
   upload: number;
   download: number;
 }
 
-interface MockTrafficByRegion {
+interface _MockTrafficByRegion {
   region: string;
   traffic: number;
   percentage: number;
 }
 
-interface MockRealTimeTraffic {
+interface _MockRealTimeTraffic {
   timestamp: string;
   upload: number;
   download: number;
 }
 
-interface MockSystemPerformance {
+interface _MockSystemPerformance {
   cpu: {
     usage: number;
     cores: number;
@@ -84,7 +83,7 @@ interface MockSystemPerformance {
   };
 }
 
-interface MockSystemAlert {
+interface _MockSystemAlert {
   id: string;
   level: 'info' | 'warning' | 'error' | 'critical';
   message: string;
@@ -92,7 +91,7 @@ interface MockSystemAlert {
   acknowledged: boolean;
 }
 
-interface MockLogSummary {
+interface _MockLogSummary {
   total: number;
   info: number;
   warning: number;
@@ -104,28 +103,28 @@ interface MockLogSummary {
   }>;
 }
 
-interface MockTopRule {
+interface _MockTopRule {
   ruleId: string;
   ruleName: string;
   traffic: number;
   connections: number;
 }
 
-interface MockRuleStatusStats {
+interface _MockRuleStatusStats {
   active: number;
   paused: number;
   error: number;
   total: number;
 }
 
-interface MockServerStatusItem {
+interface _MockServerStatusItem {
   region: string;
   online: number;
   offline: number;
   total: number;
 }
 
-interface MockUserTrafficItem {
+interface _MockUserTrafficItem {
   user: string;
   value: number;
   traffic: number;

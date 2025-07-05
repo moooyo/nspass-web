@@ -3,44 +3,33 @@ import { httpClient, ApiResponse } from '@/utils/http-client';
 import type {
   UserInfo,
   UpdateUserInfoRequest,
-  GetCurrentUserInfoResponse,
-  UpdateCurrentUserInfoResponse
 } from '@/types/generated/api/users/user_profile';
 import type {
   ChangePasswordRequest,
-  ChangePasswordResponse
 } from '@/types/generated/api/users/user_password';
 import type {
   TrafficStats,
-  GetTrafficStatsResponse,
-  ResetTrafficResponse
 } from '@/types/generated/api/users/user_traffic';
 import type {
   LoginHistoryItem,
   GetLoginHistoryRequest,
-  GetLoginHistoryResponse
 } from '@/types/generated/api/users/user_login_history';
 import type {
   ActivityLogItem,
   GetActivityLogsRequest,
-  GetActivityLogsResponse
 } from '@/types/generated/api/users/user_activity';
 import type {
   TwoFactorAuthData,
   VerifyTwoFactorAuthData,
   ToggleTwoFactorAuthRequest,
   VerifyTwoFactorAuthRequest,
-  ToggleTwoFactorAuthResponse,
-  VerifyTwoFactorAuthResponse
 } from '@/types/generated/api/users/user_two_factor';
 import type {
   UploadAvatarResponse
 } from '@/types/generated/api/users/user_avatar';
 import type {
   DeleteAccountRequest,
-  DeleteAccountResponse
 } from '@/types/generated/api/users/user_account';
-import type { ApiResponse as CommonApiResponse } from '@/types/generated/common';
 
 // 注释掉不再使用的toProtoResponse函数
 // function toProtoResponse<T>(response: ApiResponse<T>): { base?: CommonApiResponse; data?: T } {

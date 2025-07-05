@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Spin, Result, Button } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 import { OAuth2Service, OAuth2Factory, OAuth2User } from '@/utils/oauth2';
 import { useAuth } from '@/components/hooks/useAuth';
 
-export default function OAuth2CallbackPage() {
+function OAuth2CallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login: authLogin } = useAuth();
@@ -88,7 +88,7 @@ export default function OAuth2CallbackPage() {
     };
 
     handleCallback();
-  }, [searchParams, router]);
+  }, [searchParams, router, authLogin]);
 
   if (loading) {
     return (
@@ -156,4 +156,29 @@ export default function OAuth2CallbackPage() {
   }
 
   return null;
+}
+
+export default function OAuth2CallbackPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        flexDirection: 'column',
+        gap: '16px'
+      }}>
+        <Spin 
+          indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />} 
+          size="large" 
+        />
+        <div style={{ fontSize: '16px', color: '#666' }}>
+          正在加载...
+        </div>
+      </div>
+    }>
+      <OAuth2CallbackContent />
+    </Suspense>
+  );
 } 

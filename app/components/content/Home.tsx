@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Row, Col, Statistic, Typography, Space, Progress, Avatar, List, Timeline, Badge, Spin, Alert, Button, Tag, Tooltip } from 'antd';
+import { Card, Row, Col, Statistic, Typography, Progress, Badge, Spin, Alert, Button, Tag } from 'antd';
 import { 
   UserOutlined, 
   GlobalOutlined, 
@@ -8,29 +8,20 @@ import {
   RiseOutlined,
   FallOutlined,
   CheckCircleOutlined,
-  ClockCircleOutlined,
   ExclamationCircleOutlined,
   ReloadOutlined,
   WarningOutlined,
-  UploadOutlined,
-  DownloadOutlined,
-  HddOutlined,
-  WifiOutlined,
   AlertOutlined
 } from '@ant-design/icons';
 import { useTheme } from '../hooks/useTheme';
 import { useMSW } from '../MSWProvider';
 import { dashboardService } from '@/services/dashboard';
-import { ServerService } from '@/services/servers';
+import { serverService } from '@/services/server';
 import ProfessionalWorldMap, { type ExtendedServerItem } from './ProfessionalWorldMap';
 import type { 
   SystemOverview, 
-  SystemHealth, 
-  SystemAlert,
-  SystemPerformance
 } from '@/services/dashboard';
 import type { ServerItem } from '@/types/generated/api/servers/server_management';
-import { AlertType } from '@/types/generated/api/dashboard/dashboard_service';
 import { ServerStatus } from '@/types/generated/api/servers/server_management';
 import { message } from '@/utils/message';
 import { httpClient } from '@/utils/http-client';
@@ -70,7 +61,6 @@ const HomeContent: React.FC = () => {
   
   // 数据状态
   const [systemOverview, setSystemOverview] = useState<SystemOverview | null>(null);
-  const [systemAlerts, setSystemAlerts] = useState<SystemAlert[]>([]);
   const [servers, setServers] = useState<ServerStatusData[]>([]);
   const [serviceAlerts, setServiceAlerts] = useState<ServiceAlert[]>([]);
 
@@ -163,7 +153,7 @@ const HomeContent: React.FC = () => {
       const [overviewRes, alertsRes, serversRes] = await Promise.all([
         dashboardService.getSystemOverview(),
         dashboardService.getSystemAlerts(),
-        ServerService.getServers()
+        serverService.getServers()
       ]);
 
       // 检查响应状态并设置数据
@@ -173,7 +163,7 @@ const HomeContent: React.FC = () => {
       }
       
       if (alertsRes.success) {
-        setSystemAlerts(alertsRes.data || []);
+        // System alerts loaded
         console.log('首页 - 系统警报数据:', alertsRes.data);
       }
 
@@ -385,8 +375,8 @@ const HomeContent: React.FC = () => {
 
       {/* 统计卡片 */}
       <Row gutter={[24, 24]} style={{ marginBottom: 32 }}>
-        {stats.map((stat, index) => (
-          <Col xs={24} sm={12} lg={6} key={index}>
+        {stats.map((stat, _index) => (
+          <Col xs={24} sm={12} lg={6} key={_index}>
             <Card 
               className="stat-card hover-lift"
               style={{ 
@@ -495,7 +485,7 @@ const HomeContent: React.FC = () => {
               </div>
             ) : servers.length > 0 ? (
               <Row gutter={[16, 16]}>
-                {servers.map((server, index) => (
+                {servers.map((server, _index) => (
                   <Col xs={24} lg={12} key={server.id}>
                     <div
                       className="server-card hover-lift"
@@ -824,7 +814,7 @@ const HomeContent: React.FC = () => {
               </div>
             ) : serviceAlerts.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {serviceAlerts.map((alert, index) => (
+                {serviceAlerts.map((alert, _index) => (
                                                         <div
                      key={alert.id}
                      className="alert-card hover-lift"

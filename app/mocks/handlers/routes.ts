@@ -1,7 +1,7 @@
 import { http, HttpResponse } from 'msw';
 import { RouteItem, CreateRouteData, UpdateRouteData } from '@/services/routes';
-import { RouteType, Protocol, ShadowsocksMethod, SnellVersion } from '@/types/generated/model/route';
-import { mockCustomRoutes, mockSystemRoutes, mockAllRoutes, mockConfigs } from '@/mocks/data/routes';
+import { RouteType, Protocol } from '@/types/generated/model/route';
+import { mockCustomRoutes, mockSystemRoutes, mockConfigs } from '@/mocks/data/routes';
 
 // 创建可变的mock数据副本
 let customRoutes = [...mockCustomRoutes];
@@ -339,9 +339,8 @@ export const routeHandlers = [
           config,
           format
         }
-      });
-    } catch (error) {
-      return HttpResponse.json({
+      });      } catch {
+        return HttpResponse.json({
         success: false,
         message: '配置生成失败',
         errorCode: 'CONFIG_GENERATION_ERROR'
@@ -352,7 +351,7 @@ export const routeHandlers = [
   // 更新线路状态 - 匹配swagger接口 PUT /v1/routes/{id}/status
   http.put('/v1/routes/:id/status', async ({ params, request }) => {
     const id = params.id as string;
-    const body = await request.json() as { status: string };
+    const _body = await request.json() as { status: string };
     
     const routeIndex = customRoutes.findIndex(r => r.id === id || r.routeId === id);
 
@@ -377,7 +376,7 @@ export const routeHandlers = [
   // 验证线路连通性 - 匹配swagger接口 POST /v1/routes/{id}/validate
   http.post('/v1/routes/:id/validate', async ({ params, request }) => {
     const id = params.id as string;
-    const body = await request.json() as { timeoutSeconds?: number };
+    const _body = await request.json() as { timeoutSeconds?: number };
     const route = findRoute(id);
 
     if (!route) {

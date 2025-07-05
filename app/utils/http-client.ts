@@ -310,7 +310,7 @@ class HttpClient {
           }
           
           return normalizedError;
-        } catch (parseError) {
+        } catch {
           // 如果无法解析JSON，返回基本错误
           return {
             success: false,

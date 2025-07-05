@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
     ProForm,
     ProFormText,
-    ProCard,
   } from '@ant-design/pro-components';
   import { handleDataResponse } from '@/utils/message';
   import { Card, Row, Col, Avatar, Typography, Space, Tag, Divider, Progress, Statistic, Button } from 'antd';
@@ -21,9 +20,9 @@ import {
   import { userInfoService } from '@/services/userInfo';
   import type { UserInfo } from '@/services/userInfo';
 
-  const { Title, Text, Paragraph } = Typography;
+  const { Title, Text } = Typography;
 
-  const waitTime = (time: number = 100) => {
+  const _waitTime = (time: number = 100) => {
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve(true);
@@ -35,7 +34,7 @@ const UserInfo: React.FC = () => {
   const { theme: currentTheme } = useTheme();
   const [loading, setLoading] = useState<boolean>(true);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
-  const [hasLoadedData, setHasLoadedData] = useState<boolean>(false);
+  const [_hasLoadedData, setHasLoadedData] = useState<boolean>(false);
   
   // 加载用户信息
   const loadUserInfo = useCallback(async () => {

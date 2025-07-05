@@ -24,7 +24,7 @@ const UserGroups = React.lazy(() => import('./components/content/config/UserGrou
 const Servers = React.lazy(() => import('./components/content/config/Servers'));
 const DnsConfig = React.lazy(() => import('./components/content/config/DnsConfig'));
 
-const { Header, Sider, Content, Footer } = Layout;
+const { Header, Sider, Footer } = Layout;
 const { Text } = Typography;
 
 type MenuItem = Required<MenuProps>['items'][number];

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ApiOutlined } from '@ant-design/icons';
 import { useMSW } from './MSWProvider';
 import { message } from '@/utils/message';

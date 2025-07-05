@@ -7,7 +7,7 @@ function deepClone<T>(obj: T): T {
 }
 
 // 可变的数据源
-let dnsConfigs = deepClone(mockDnsConfigs);
+const dnsConfigs = deepClone(mockDnsConfigs);
 
 export const dnsConfigHandlers = [
   // 获取DNS配置列表

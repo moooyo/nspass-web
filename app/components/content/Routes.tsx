@@ -8,8 +8,6 @@ import {
   ShadowsocksMethod, 
   SnellVersion,
   ProtocolParams,
-  ShadowsocksParams,
-  SnellParams
 } from '@/types/generated/model/route';
 import {
     EditableProTable,
@@ -21,7 +19,6 @@ import {
     ProFormGroup,
     ProFormCheckbox,
     ModalForm,
-    QueryFilter,
     ProFormDigit,
 } from '@ant-design/pro-components';
 import { Form } from 'antd';
@@ -102,8 +99,23 @@ const Routes: React.FC = () => {
     const [editingRecord, setEditingRecord] = useState<RouteItem | null>(null);
     const [jsonViewVisible, setJsonViewVisible] = useState<boolean>(false);
     const [currentJsonData, setCurrentJsonData] = useState<string>('');
+
+    // 懒加载 Form 实例，避免 useForm 警告
     const [form] = Form.useForm();
     const [editForm] = Form.useForm();
+
+    // 确保 form 实例在需要时才被使用
+    useEffect(() => {
+        if (createModalVisible && form) {
+            form.resetFields();
+        }
+    }, [createModalVisible, form]);
+
+    useEffect(() => {
+        if (editModalVisible && editForm && editingRecord) {
+            editForm.setFieldsValue(editingRecord);
+        }
+    }, [editModalVisible, editForm, editingRecord]);
 
     // 使用useApiOnce防止重复API调用
     useApiOnce(() => {

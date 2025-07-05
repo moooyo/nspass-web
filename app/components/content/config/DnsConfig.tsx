@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Button, Modal, Typography } from 'antd';
+import { Button, Modal } from 'antd';
 import { message } from '@/utils/message';
 import {
     EditableProTable,
@@ -19,10 +19,8 @@ import {
     DnsConfigListParams 
 } from '../../../services/dnsConfig';
 
-const { Title, Text } = Typography;
-
 // DNS提供商枚举
-const dnsProviders = {
+const _dnsProviders = {
     CLOUDFLARE: { text: 'Cloudflare', value: 'CLOUDFLARE' },
 };
 
@@ -77,7 +75,7 @@ const DnsConfig: React.FC = () => {
     }, [loadDnsConfigs]);
 
     // 优化：缓存删除操作函数
-    const handleDelete = useCallback(async (id: React.Key) => {
+    const _handleDelete = useCallback(async (id: React.Key) => {
         try {
             const response = await dnsConfigService.deleteDnsConfig(id as number);
             if (response.success) {
@@ -168,7 +166,7 @@ const DnsConfig: React.FC = () => {
     ], [viewJsonConfig]);
 
     // 测试DNS配置
-    const testDnsConfig = async (record: DnsConfigItem) => {
+    const _testDnsConfig = async (record: DnsConfigItem) => {
         try {
             const response = await dnsConfigService.testDnsConfig(record.id);
             if (response.success) {

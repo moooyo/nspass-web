@@ -167,7 +167,7 @@ class UserGroupsService {
   /**
    * 创建新用户组 - 目前只是模拟操作，实际需要通过用户管理来实现
    */
-  async createUserGroup(groupData: CreateUserGroupData): Promise<ApiResponse<UserGroupItem>> {
+  async createUserGroup(_groupData: CreateUserGroupData): Promise<ApiResponse<UserGroupItem>> {
     // 注意：后端当前不支持独立的用户组管理
     // 这里返回一个说明性的错误
     return {
@@ -207,7 +207,7 @@ class UserGroupsService {
   /**
    * 更新用户组信息 - 目前只是模拟操作
    */
-  async updateUserGroup(id: React.Key, groupData: UpdateUserGroupData): Promise<ApiResponse<UserGroupItem>> {
+  async updateUserGroup(_id: React.Key, _groupData: UpdateUserGroupData): Promise<ApiResponse<UserGroupItem>> {
     return {
       success: false,
       message: '当前版本不支持直接更新用户组。请通过用户管理来修改用户的用户组属性。'
@@ -217,7 +217,7 @@ class UserGroupsService {
   /**
    * 删除用户组 - 目前只是模拟操作
    */
-  async deleteUserGroup(id: React.Key): Promise<ApiResponse<void>> {
+  async deleteUserGroup(_id: React.Key): Promise<ApiResponse<void>> {
     return {
       success: false,
       message: '当前版本不支持删除用户组。用户组会根据用户设置自动管理。'
@@ -227,7 +227,7 @@ class UserGroupsService {
   /**
    * 批量删除用户组 - 目前只是模拟操作
    */
-  async batchDeleteUserGroups(ids: React.Key[]): Promise<ApiResponse<void>> {
+  async batchDeleteUserGroups(_ids: React.Key[]): Promise<ApiResponse<void>> {
     return {
       success: false,
       message: '当前版本不支持批量删除用户组。'
@@ -294,7 +294,7 @@ class UserGroupsService {
   /**
    * 将用户添加到用户组 - 需要通过用户更新API实现
    */
-  async addUserToGroup(groupId: string, userIds: React.Key[]): Promise<ApiResponse<void>> {
+  async addUserToGroup(_groupId: string, _userIds: React.Key[]): Promise<ApiResponse<void>> {
     return {
       success: false,
       message: '请通过用户管理页面来修改用户的用户组设置。'
@@ -304,7 +304,7 @@ class UserGroupsService {
   /**
    * 从用户组中移除用户 - 需要通过用户更新API实现
    */
-  async removeUserFromGroup(groupId: string, userIds: React.Key[]): Promise<ApiResponse<void>> {
+  async removeUserFromGroup(_groupId: string, _userIds: React.Key[]): Promise<ApiResponse<void>> {
     return {
       success: false,
       message: '请通过用户管理页面来修改用户的用户组设置。'

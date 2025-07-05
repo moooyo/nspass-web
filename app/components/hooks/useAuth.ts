@@ -213,7 +213,7 @@ export const useAuthGuard = () => {
 export const usePermission = () => {
   const { user } = useAuth();
 
-  const hasPermission = useCallback((permission: string) => {
+  const hasPermission = useCallback((_permission: string) => {
     if (!user) return false;
     
     // 这里可以根据实际的权限系统进行扩展
@@ -221,7 +221,7 @@ export const usePermission = () => {
     return true;
   }, [user]);
 
-  const hasRole = useCallback((role: string) => {
+  const hasRole = useCallback((_role: string) => {
     if (!user) return false;
     
     // 这里可以根据实际的角色系统进行扩展

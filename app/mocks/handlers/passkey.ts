@@ -10,9 +10,6 @@ import {
 import type {
   PasskeyRegistrationRequest,
   PasskeyAuthenticationRequest,
-  GetPasskeyListRequest,
-  DeletePasskeyRequest,
-  RenamePasskeyRequest,
 } from '@/types/generated/api/users/user_passkey';
 
 /**
@@ -69,7 +66,7 @@ export const passkeyHandlers = [
         data: newCredential,
       });
 
-    } catch (error) {
+    } catch {
       return HttpResponse.json({
         result: {
           success: false,
@@ -161,7 +158,7 @@ export const passkeyHandlers = [
         data: loginData,
       });
 
-    } catch (error) {
+    } catch {
       return HttpResponse.json({
         result: {
           success: false,
@@ -310,7 +307,7 @@ export const passkeyHandlers = [
         data: mockPasskeyCredentials[credentialIndex],
       });
 
-    } catch (error) {
+    } catch {
       return HttpResponse.json({
         result: {
           success: false,

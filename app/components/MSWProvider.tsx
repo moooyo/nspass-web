@@ -28,6 +28,8 @@ interface MSWContextType {
 
 const MSWContext = createContext<MSWContextType | null>(null);
 
+export { MSWContext, type MSWContextType };
+
 export const useMSW = () => {
   const context = useContext(MSWContext);
   if (!context) {
@@ -85,7 +87,7 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const config = JSON.parse(savedBackendConfig);
         setBackendConfig(config);
         console.log('🔄 从 localStorage 恢复后端配置:', config);
-      } catch (e) {
+      } catch {
         console.warn('解析后端配置失败，使用默认配置');
         const defaultConfig = getDefaultBackendConfig();
         setBackendConfig(defaultConfig);

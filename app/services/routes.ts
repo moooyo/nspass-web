@@ -2,12 +2,8 @@ import { httpClient, ApiResponse } from '@/utils/http-client';
 import { 
   RouteType, 
   Protocol, 
-  ShadowsocksMethod, 
-  SnellVersion, 
   Route,
   ProtocolParams,
-  ShadowsocksParams,
-  SnellParams
 } from '@/types/generated/model/route';
 
 // 路由项类型 - 使用proto生成的类型

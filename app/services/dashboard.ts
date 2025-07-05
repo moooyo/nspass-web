@@ -17,23 +17,7 @@ import type {
   GetUserTrafficStatsRequest,
   GetTopRulesRequest,
   GetLogSummaryRequest,
-  GetSystemOverviewResponse,
-  GetTrafficTrendResponse,
-  GetUserTrafficStatsResponse,
-  GetServerStatusStatsResponse,
-  GetRuleStatusStatsResponse,
-  GetSystemPerformanceResponse,
-  GetRealTimeTrafficResponse,
-  GetSystemAlertsResponse,
-  GetTopRulesResponse,
-  GetLogSummaryResponse,
-  GetTrafficByRegionResponse,
-  GetSystemHealthResponse,
-  RefreshDashboardResponse,
-  TimePeriod,
-  LogLevel
 } from '@/types/generated/api/dashboard/dashboard_service';
-import type { ApiResponse as CommonApiResponse } from '@/types/generated/common';
 
 
 
