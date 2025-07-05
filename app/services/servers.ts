@@ -56,6 +56,7 @@ export interface CreateServerParams {
   uploadTraffic?: number;
   downloadTraffic?: number;
   status?: string;
+  token?: string;
 }
 
 // 更新服务器参数
@@ -69,6 +70,7 @@ export interface UpdateServerParams {
   uploadTraffic?: number;
   downloadTraffic?: number;
   status?: string;
+  token?: string;
 }
 
 // 服务器 API 服务
@@ -220,16 +222,11 @@ export class ServerService {
   }
 
   /**
-   * 安装服务器（模拟操作）
+   * 安装服务器（废弃 - 现在在前端直接生成安装命令）
+   * @deprecated 此方法已废弃，安装命令现在在前端直接生成
    */
   static async installServer(id: string): Promise<void> {
-    // 这里可以调用实际的安装 API
-    // 目前仅模拟操作
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    try {
-      await navigator.clipboard.writeText('安装成功');
-    } catch (error) {
-      console.error('复制到剪切板失败:', error);
-    }
+    console.warn('installServer 方法已废弃，请使用前端直接生成安装命令的方式');
+    // 保留此方法以兼容现有代码，但不执行任何操作
   }
 } 

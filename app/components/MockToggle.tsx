@@ -4,7 +4,6 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { ApiOutlined } from '@ant-design/icons';
 import { useMSW } from './MSWProvider';
 import { message } from '@/utils/message';
-import { httpClient } from '@/utils/http-client';
 
 export const MockToggle: React.FC = () => {
   // 使用新的MSWProvider中的useMSW hook
@@ -13,20 +12,7 @@ export const MockToggle: React.FC = () => {
   // 本地loading状态（用于按钮动画）
   const [isLoading, setIsLoading] = useState(false);
 
-  // 监听MSW状态变化，同步httpClient的baseURL
-  useEffect(() => {
-    if (mockEnabled) {
-      // MSW启用时使用当前域名作为baseURL，确保MSW能拦截完整路径
-      const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
-      httpClient.updateBaseURL(currentOrigin);
-      console.log(`🎯 MSW已启用，baseURL设置为: ${currentOrigin}`);
-    } else {
-      // MSW禁用时使用真实后端地址
-      const realApiUrl = process.env.NEXT_PUBLIC_REAL_API_URL || 'http://localhost:8080';
-      httpClient.updateBaseURL(realApiUrl);
-      console.log(`🎯 MSW已禁用，baseURL设置为: ${realApiUrl}`);
-    }
-  }, [mockEnabled]);
+  // 注意：baseURL的更新现在由MSWProvider统一管理，这里不需要重复处理
 
   // 同步本地loading状态
   useEffect(() => {

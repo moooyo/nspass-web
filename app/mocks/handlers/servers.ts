@@ -20,63 +20,73 @@ const mockServers: ServerItem[] = [
     registerTime: '2024-01-01T00:00:00Z',
     uploadTraffic: 1250.8,
     downloadTraffic: 2467.3,
-    status: ServerStatus.SERVER_STATUS_ONLINE
+    status: ServerStatus.SERVER_STATUS_ONLINE,
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiIxIiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wMSIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.abc123'
   },
   {
     id: '2',
     name: '洛杉矶服务器-01',
     ipv4: '234.56.78.90',
+    ipv6: '2001:0db8:85a3:0000:0000:8a2e:0370:7335',
     country: 'United States',
     group: 'Azure',
     registerTime: '2024-01-02T00:00:00Z',
     uploadTraffic: 856.4,
     downloadTraffic: 1923.7,
-    status: ServerStatus.SERVER_STATUS_ONLINE
+    status: ServerStatus.SERVER_STATUS_ONLINE,
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiIyIiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wMiIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.def456'
   },
   {
     id: '3',
     name: '东京服务器-01',
     ipv4: '345.67.89.01',
+    ipv6: '2001:0db8:85a3:0000:0000:8a2e:0370:7336',
     country: 'Japan',
     group: 'IX',
     registerTime: '2024-01-03T00:00:00Z',
     uploadTraffic: 425.6,
     downloadTraffic: 789.2,
-    status: ServerStatus.SERVER_STATUS_OFFLINE
+    status: ServerStatus.SERVER_STATUS_OFFLINE,
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiIzIiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wMyIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.ghi789'
   },
   {
     id: '4',
     name: '法兰克福服务器-01',
     ipv4: '445.67.89.02',
+    ipv6: '2001:0db8:85a3:0000:0000:8a2e:0370:7337',
     country: 'Germany',
     group: 'Azure',
     registerTime: '2024-01-04T00:00:00Z',
     uploadTraffic: 320.4,
     downloadTraffic: 580.1,
-    status: ServerStatus.SERVER_STATUS_ONLINE
+    status: ServerStatus.SERVER_STATUS_ONLINE,
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiI0IiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wNCIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.jkl012'
   },
   {
     id: '5',
     name: '新加坡服务器-01',
     ipv4: '456.78.90.12',
+    ipv6: '2001:0db8:85a3:0000:0000:8a2e:0370:7338',
     country: 'Singapore',
     group: 'IX',
     registerTime: '2024-01-05T00:00:00Z',
     uploadTraffic: 125.5,
     downloadTraffic: 234.8,
-    status: ServerStatus.SERVER_STATUS_UNKNOWN
+    status: ServerStatus.SERVER_STATUS_UNKNOWN,
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiI1IiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wNSIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.mno345'
   },
   {
     id: '6',
     name: '香港服务器-01',
     ipv4: '567.89.01.23',
-    ipv6: '2001:db8::6',
+    ipv6: '2001:0db8:85a3:0000:0000:8a2e:0370:7339',
     country: 'Hong Kong',
     group: 'Premium',
     registerTime: '2024-01-06T00:00:00Z',
     uploadTraffic: 892.3,
     downloadTraffic: 1456.7,
-    status: ServerStatus.SERVER_STATUS_ONLINE
+    status: ServerStatus.SERVER_STATUS_ONLINE,
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiI2IiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wNiIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.pqr678'
   },
   {
     id: '7',
@@ -87,7 +97,8 @@ const mockServers: ServerItem[] = [
     registerTime: '2024-01-07T00:00:00Z',
     uploadTraffic: 678.9,
     downloadTraffic: 1123.4,
-    status: ServerStatus.SERVER_STATUS_ONLINE
+    status: ServerStatus.SERVER_STATUS_ONLINE,
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiI3IiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wNyIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.stu901'
   },
   {
     id: '8',
@@ -98,7 +109,8 @@ const mockServers: ServerItem[] = [
     registerTime: '2024-01-08T00:00:00Z',
     uploadTraffic: 543.2,
     downloadTraffic: 876.5,
-    status: ServerStatus.SERVER_STATUS_OFFLINE
+    status: ServerStatus.SERVER_STATUS_OFFLINE,
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiI4IiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wOCIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.vwx234'
   },
   {
     id: '9',
@@ -109,7 +121,8 @@ const mockServers: ServerItem[] = [
     registerTime: '2024-01-09T00:00:00Z',
     uploadTraffic: 234.5,
     downloadTraffic: 445.8,
-    status: ServerStatus.SERVER_STATUS_PENDING_INSTALL
+    status: ServerStatus.SERVER_STATUS_PENDING_INSTALL,
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiI5IiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wOSIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.yza567'
   },
   {
     id: '10',
@@ -120,7 +133,8 @@ const mockServers: ServerItem[] = [
     registerTime: '2024-01-10T00:00:00Z',
     uploadTraffic: 567.8,
     downloadTraffic: 890.1,
-    status: ServerStatus.SERVER_STATUS_ONLINE
+    status: ServerStatus.SERVER_STATUS_ONLINE,
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiIxMCIsIm5hbWUiOiLkuJzkuqzmnI3liqHlmags65CsIiwiaWF0IjoxNzA0NTEyMDAwLCJleHAiOjE3MzYwNDgwMDB9.bcd890'
   }
 ];
 
@@ -186,6 +200,19 @@ export const serverHandlers = [
       }, { status: 400 });
     }
 
+    // 生成简单的 token（实际应用中应该使用更安全的方式）
+    const generateToken = (serverId: string) => {
+      const header = btoa(JSON.stringify({ "alg": "HS256", "typ": "JWT" }));
+      const payload = btoa(JSON.stringify({ 
+        "server_id": serverId, 
+        "name": body.name, 
+        "iat": Math.floor(Date.now() / 1000), 
+        "exp": Math.floor(Date.now() / 1000) + 31536000 // 1年后过期
+      }));
+      const signature = btoa(Math.random().toString(36).substring(2, 15));
+      return `${header}.${payload}.${signature}`;
+    };
+
     const newServer: ServerItem = {
       id: (nextId++).toString(),
       name: body.name,
@@ -194,7 +221,8 @@ export const serverHandlers = [
       registerTime: body.registerTime || new Date().toISOString(),
       uploadTraffic: body.uploadTraffic || 0,
       downloadTraffic: body.downloadTraffic || 0,
-      status: body.status || ServerStatus.SERVER_STATUS_PENDING_INSTALL // 使用传入的状态，默认为等待安装
+      status: body.status || ServerStatus.SERVER_STATUS_PENDING_INSTALL, // 使用传入的状态，默认为等待安装
+      token: generateToken((nextId - 1).toString())
     };
 
     mockServers.push(newServer);

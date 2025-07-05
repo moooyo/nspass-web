@@ -1,14 +1,19 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { Switch, Card, Typography, Alert, Space, Button, Popover } from 'antd';
-import { ApiOutlined, CheckCircleOutlined, ExclamationCircleOutlined, LoadingOutlined, ReloadOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { Switch, Card, Typography, Alert, Space, Button, Popover, Input, Form, Divider, message } from 'antd';
+import { ApiOutlined, CheckCircleOutlined, ExclamationCircleOutlined, LoadingOutlined, ReloadOutlined, InfoCircleOutlined, SettingOutlined, SaveOutlined } from '@ant-design/icons';
 import { useTheme } from './hooks/useTheme';
 import { httpClient } from '@/utils/http-client';
 
 const { Text } = Typography;
 
 type MSWStatus = 'idle' | 'starting' | 'running' | 'stopped' | 'error' | 'restarting';
+
+interface BackendConfig {
+  url: string;
+  port: string;
+}
 
 interface MSWContextType {
   enabled: boolean;
@@ -17,6 +22,8 @@ interface MSWContextType {
   toggle: () => Promise<void>;
   forceRestart: () => Promise<void>;
   status: MSWStatus;
+  backendConfig: BackendConfig;
+  updateBackendConfig: (config: BackendConfig) => void;
 }
 
 const MSWContext = createContext<MSWContextType | null>(null);
@@ -45,29 +52,77 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<MSWStatus>('idle');
+  const [backendConfig, setBackendConfig] = useState<BackendConfig>({
+    url: 'localhost',
+    port: '8080'
+  });
+
+  // 获取环境变量作为默认值
+  const getDefaultBackendConfig = useCallback((): BackendConfig => {
+    const envUrl = process.env.NEXT_PUBLIC_REAL_API_URL || 'http://localhost:8080';
+    try {
+      const url = new URL(envUrl);
+      return {
+        url: url.hostname,
+        port: url.port || (url.protocol === 'https:' ? '443' : '80')
+      };
+    } catch {
+      return {
+        url: 'localhost',
+        port: '8080'
+      };
+    }
+  }, []);
 
   // 客户端初始化并从 localStorage 读取状态
   useEffect(() => {
     setIsClient(true);
     
-    // 从 localStorage 读取之前保存的状态
-    const savedMockEnabled = localStorage.getItem('nspass-mock-enabled');
-    if (savedMockEnabled !== null) {
-      const shouldEnable = savedMockEnabled === 'true';
-      setEnabled(shouldEnable);
-      console.log('🔄 从 localStorage 恢复 MSW 状态:', shouldEnable ? '启用' : '禁用');
+    // 从 localStorage 读取后端配置
+    const savedBackendConfig = localStorage.getItem('nspass-backend-config');
+    if (savedBackendConfig) {
+      try {
+        const config = JSON.parse(savedBackendConfig);
+        setBackendConfig(config);
+        console.log('🔄 从 localStorage 恢复后端配置:', config);
+      } catch (e) {
+        console.warn('解析后端配置失败，使用默认配置');
+        const defaultConfig = getDefaultBackendConfig();
+        setBackendConfig(defaultConfig);
+      }
+    } else {
+      // 使用环境变量作为初始值
+      const defaultConfig = getDefaultBackendConfig();
+      setBackendConfig(defaultConfig);
+      console.log('🔄 使用环境变量作为初始后端配置:', defaultConfig);
     }
-  }, []);
+  }, [getDefaultBackendConfig]);
 
   // 更新httpClient baseURL
   const updateBaseURL = useCallback((enabled: boolean) => {
     const url = enabled 
       ? window.location.origin 
-      : process.env.NEXT_PUBLIC_REAL_API_URL || 'http://localhost:8080';
+      : `http://${backendConfig.url}:${backendConfig.port}`;
     
     httpClient.clearCache();
     httpClient.updateBaseURL(url);
-  }, []);
+  }, [backendConfig]);
+
+  // 更新后端配置
+  const updateBackendConfig = useCallback((config: BackendConfig) => {
+    setBackendConfig(config);
+    localStorage.setItem('nspass-backend-config', JSON.stringify(config));
+    console.log('💾 后端配置已保存:', config);
+    
+    // 立即应用新配置到httpClient（无论MSW是否启用）
+    const url = enabled 
+      ? window.location.origin 
+      : `http://${config.url}:${config.port}`;
+    
+    httpClient.clearCache();
+    httpClient.updateBaseURL(url);
+    console.log('🎯 HTTP客户端已更新为新的后端配置:', url);
+  }, [enabled]);
 
   // 同步httpClient配置
   useEffect(() => {
@@ -143,7 +198,7 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [isClient, loading, updateBaseURL]);
 
-  // 根据 localStorage 状态决定是否启动
+  // 根据 localStorage 状态决定是否启动（只在客户端初始化时执行一次）
   useEffect(() => {
     if (isClient && 
         process.env.NODE_ENV === 'development' && 
@@ -153,21 +208,61 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const savedMockEnabled = localStorage.getItem('nspass-mock-enabled');
       const shouldEnable = savedMockEnabled === null ? true : savedMockEnabled === 'true'; // 默认启用
       
-      if (shouldEnable && !enabled) {
+      console.log('🔄 从 localStorage 恢复 MSW 状态:', shouldEnable ? '启用' : '禁用');
+      
+      if (shouldEnable) {
         console.log('🚀 根据保存的状态启动 MSW...');
-        setTimeout(forceRestart, 100);
-      } else if (!shouldEnable && enabled) {
-        console.log('⏹️ 根据保存的状态停止 MSW...');
-        setTimeout(async () => {
-          const { worker } = await import('@/mocks/browser');
-          if (worker) await worker.stop();
-          setEnabled(false);
-          setStatus('stopped');
-          setTimeout(() => updateBaseURL(false), 100);
+        // 使用异步函数直接启动MSW，避免依赖toggle
+        const startMSW = async () => {
+          setLoading(true);
+          setError(null);
+          setStatus('starting');
+          
+          try {
+            const { initMSW } = await import('@/init-msw');
+            const success = await initMSW();
+            
+            if (success) {
+              setEnabled(true);
+              setStatus('running');
+              localStorage.setItem('nspass-mock-enabled', 'true');
+              // 更新baseURL为Mock模式
+              setTimeout(() => {
+                const url = window.location.origin;
+                httpClient.clearCache();
+                httpClient.updateBaseURL(url);
+                console.log('🎯 MSW自动启动，baseURL设置为:', url);
+              }, 100);
+              console.log('✅ MSW 自动启动成功');
+            } else {
+              throw new Error('MSW 自动启动失败');
+            }
+          } catch (err) {
+            const message = err instanceof Error ? err.message : 'MSW 自动启动失败';
+            setError(message);
+            setStatus('error');
+            console.error('❌ MSW 自动启动失败:', message);
+          } finally {
+            setLoading(false);
+          }
+        };
+        
+        startMSW();
+      } else {
+        // 如果不需要启动，设置为stopped状态
+        setEnabled(false);
+        setStatus('stopped');
+        // 更新baseURL为后端API模式
+        setTimeout(() => {
+          const url = `http://${backendConfig.url}:${backendConfig.port}`;
+          httpClient.clearCache();
+          httpClient.updateBaseURL(url);
+          console.log('🎯 MSW保持停止，baseURL设置为:', url);
         }, 100);
+        console.log('⏹️ 根据保存的状态保持 MSW 停止状态');
       }
     }
-  }, [isClient, enabled, loading, status, forceRestart, updateBaseURL]);
+  }, [isClient, loading, status, backendConfig]); // 添加backendConfig依赖
 
   const contextValue = useMemo(() => ({
     enabled,
@@ -176,7 +271,9 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     toggle,
     forceRestart,
     status,
-  }), [enabled, loading, error, toggle, forceRestart, status]);
+    backendConfig,
+    updateBackendConfig,
+  }), [enabled, loading, error, toggle, forceRestart, status, backendConfig, updateBackendConfig]);
 
   return (
     <MSWContext.Provider value={contextValue}>
@@ -186,13 +283,21 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 };
 
 export const MSWToggle: React.FC = () => {
-  const { enabled, loading, error, toggle, forceRestart, status } = useMSW();
+  const { enabled, loading, error, toggle, forceRestart, status, backendConfig, updateBackendConfig } = useMSW();
   const { theme } = useTheme();
   const [isClient, setIsClient] = useState(false);
+  const [configForm] = Form.useForm();
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  // 同步后端配置到表单
+  useEffect(() => {
+    if (isClient) {
+      configForm.setFieldsValue(backendConfig);
+    }
+  }, [isClient, backendConfig, configForm]);
 
   // 所有hooks必须在早期返回之前调用
   const apiInfo = useMemo(() => {
@@ -206,18 +311,28 @@ export const MSWToggle: React.FC = () => {
       };
     }
     return {
-      url: process.env.NEXT_PUBLIC_REAL_API_URL || 'http://localhost:8080',
+      url: `http://${backendConfig.url}:${backendConfig.port}`,
       type: '真实API'
     };
-  }, [enabled, isClient]);
+  }, [enabled, isClient, backendConfig]);
 
   if (!isClient) return null;
 
   const config = STATUS_CONFIG[status];
   const IconComponent = config.icon;
 
+  // 后端配置表单提交
+  const handleConfigSubmit = (values: BackendConfig) => {
+    updateBackendConfig(values);
+    const newUrl = enabled 
+      ? window.location.origin 
+      : `http://${values.url}:${values.port}`;
+    
+    message.success(`后端配置已保存，当前API地址：${newUrl}`);
+  };
+
   const popoverContent = (
-    <Card size="small" style={{ width: 300, borderRadius: '8px' }}>
+    <Card size="small" style={{ width: 320, borderRadius: '8px' }}>
       <Space direction="vertical" size={12} style={{ width: '100%' }}>
         {/* 状态 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -279,6 +394,106 @@ export const MSWToggle: React.FC = () => {
           }}>
             {apiInfo.url}
           </Text>
+        </div>
+
+        {/* 分割线 */}
+        <Divider style={{ margin: '8px 0' }} />
+
+        {/* 后端配置 */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <SettingOutlined style={{ color: '#1890ff' }} />
+            <Text strong style={{ fontSize: '13px' }}>后端配置</Text>
+          </div>
+          
+          <Form
+            form={configForm}
+            layout="vertical"
+            size="small"
+            initialValues={backendConfig}
+            onFinish={handleConfigSubmit}
+            style={{ marginBottom: 0 }}
+          >
+            <Form.Item
+              label="后端地址"
+              style={{ marginBottom: '8px' }}
+            >
+              <Input.Group compact>
+                <Form.Item
+                  name="url"
+                  rules={[{ required: true, message: '请输入域名或IP地址' }]}
+                  style={{ 
+                    width: 'calc(100% - 70px)', 
+                    marginBottom: 0
+                  }}
+                >
+                  <Input 
+                    placeholder="localhost" 
+                    size="small"
+                    style={{ 
+                      fontSize: '12px'
+                    }}
+                  />
+                </Form.Item>
+                <Form.Item
+                  name="port"
+                  rules={[
+                    { required: true, message: '请输入端口号' },
+                    { pattern: /^\d+$/, message: '端口号必须是数字' }
+                  ]}
+                  style={{ 
+                    width: '70px', 
+                    marginBottom: 0
+                  }}
+                >
+                  <Input 
+                    addonBefore={
+                      <span style={{ 
+                        fontSize: '14px',
+                        fontWeight: '500'
+                      }}>
+                        :
+                      </span>
+                    }
+                    placeholder="8080"
+                    size="small"
+                    style={{ 
+                      fontSize: '12px'
+                    }}
+                  />
+                </Form.Item>
+              </Input.Group>
+            </Form.Item>
+            
+            <Form.Item style={{ marginBottom: 0 }}>
+              <Button 
+                type="primary" 
+                htmlType="submit" 
+                size="small"
+                icon={<SaveOutlined />}
+                block
+                style={{ 
+                  fontSize: '12px',
+                  height: '28px',
+                  background: 'linear-gradient(135deg, #1890ff 0%, #096dd9 100%)',
+                  border: 'none',
+                  borderRadius: '6px',
+                  boxShadow: '0 2px 4px rgba(24,144,255,0.3)',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 4px 8px rgba(24,144,255,0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(24,144,255,0.3)';
+                }}
+              >
+                保存配置
+              </Button>
+            </Form.Item>
+          </Form>
         </div>
 
         {/* 操作区 */}

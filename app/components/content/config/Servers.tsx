@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo, useCallback } from 'react';
-import { Button, Tag } from 'antd';
+import { Button, Tag, Modal, Input, Typography, Space, Alert } from 'antd';
 import {
     ProTable,
     ProColumns,
@@ -12,7 +12,7 @@ import {
     ProFormDatePicker,
     ActionType
 } from '@ant-design/pro-components';
-import { PlusOutlined, EditOutlined, DownloadOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, CopyOutlined, DeleteOutlined, CheckOutlined } from '@ant-design/icons';
 import ReactCountryFlag from 'react-country-flag';
 import { message } from '@/utils/message';
 import { 
@@ -24,6 +24,9 @@ import {
   type UpdateServerParams
 } from '@/services/servers';
 import type { ServerItem } from '@/types/generated/api/servers/server_management';
+
+const { TextArea } = Input;
+const { Title, Text, Paragraph } = Typography;
 
 // 导入国家数据
 const countryFlagEmoji = require('country-flag-emoji');
@@ -117,6 +120,10 @@ const Servers: React.FC = () => {
     const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
     const [currentRecord, setCurrentRecord] = useState<ServerItem | null>(null);
     const [currentServers, setCurrentServers] = useState<ServerItem[]>([]);
+    const [installModalVisible, setInstallModalVisible] = useState<boolean>(false);
+    const [installCommand, setInstallCommand] = useState<string>('');
+    const [installServerInfo, setInstallServerInfo] = useState<ServerItem | null>(null);
+    const [copySuccess, setCopySuccess] = useState<boolean>(false);
 
     // 获取当前服务器中存在的国家（去重）
     const getAvailableCountries = () => {
@@ -233,14 +240,36 @@ const Servers: React.FC = () => {
     // 处理安装
     const handleInstall = useCallback(async (record: ServerItem) => {
         try {
-            await ServerService.installServer(record.id!);
-            message.success('安装成功');
-            actionRef.current?.reload();
+            if (!record.token) {
+                message.error('服务器缺少认证令牌，请重新创建服务器');
+                return;
+            }
+
+            // 生成安装命令 - 使用环境变量的方式传递参数
+            const command = `export NSPASS_SERVER_ID="${record.id}" && export NSPASS_TOKEN="${record.token}" && curl -sSL https://raw.githubusercontent.com/nspass/nspass-agent/main/scripts/install.sh | bash`;
+            
+            setInstallCommand(command);
+            setInstallServerInfo(record);
+            setInstallModalVisible(true);
+            setCopySuccess(false);
         } catch (error) {
-            console.error('安装失败:', error);
-            message.error(error instanceof Error ? error.message : '安装失败');
+            console.error('生成安装命令失败:', error);
+            message.error(error instanceof Error ? error.message : '生成安装命令失败');
         }
     }, []);
+
+    // 复制安装命令到剪贴板
+    const handleCopyInstallCommand = useCallback(async () => {
+        try {
+            await navigator.clipboard.writeText(installCommand);
+            setCopySuccess(true);
+            message.success('安装命令已复制到剪贴板');
+            setTimeout(() => setCopySuccess(false), 2000);
+        } catch (error) {
+            console.error('复制到剪贴板失败:', error);
+            message.error('复制失败，请手动复制命令');
+        }
+    }, [installCommand]);
 
     // 使用 useMemo 缓存表格列配置，避免每次渲染重新创建
     const columns: ProColumns<ServerItem>[] = useMemo(() => [
@@ -347,10 +376,10 @@ const Servers: React.FC = () => {
                             type="link"
                             size="small"
                             style={{ color: '#1890ff' }}
-                            icon={<DownloadOutlined />}
+                            icon={<CopyOutlined />}
                             onClick={() => handleInstall(record)}
                         >
-                            安装
+                            复制安装命令
                         </Button>
                     )}
                     <Button
@@ -459,6 +488,85 @@ const Servers: React.FC = () => {
                     </div>
                 )}
             </ModalForm>
+
+            {/* 安装命令模态框 */}
+            <Modal
+                title={<Title level={4}>安装 NSPass Agent</Title>}
+                open={installModalVisible}
+                onCancel={() => setInstallModalVisible(false)}
+                width={800}
+                footer={[
+                    <Button key="close" onClick={() => setInstallModalVisible(false)}>
+                        关闭
+                    </Button>,
+                    <Button 
+                        key="copy" 
+                        type="primary" 
+                        icon={copySuccess ? <CheckOutlined /> : <CopyOutlined />}
+                        onClick={handleCopyInstallCommand}
+                        style={{ backgroundColor: copySuccess ? '#52c41a' : undefined }}
+                    >
+                        {copySuccess ? '已复制' : '复制命令'}
+                    </Button>,
+                ]}
+            >
+                <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                    <Alert
+                        message="安装说明"
+                        description={
+                            <div>
+                                <p>请在目标服务器上执行以下命令来安装 NSPass Agent：</p>
+                                <ul>
+                                    <li>确保服务器有 root 权限</li>
+                                    <li>确保服务器可以访问 GitHub 和互联网</li>
+                                    <li>支持的系统：Linux (Ubuntu 16+, CentOS 7+, Debian 9+)</li>
+                                    <li>命令会自动设置服务器ID和认证令牌</li>
+                                </ul>
+                            </div>
+                        }
+                        type="info"
+                        showIcon
+                    />
+                    
+                    {installServerInfo && (
+                        <div>
+                            <Title level={5}>服务器信息</Title>
+                            <div style={{ background: '#f5f5f5', padding: '12px', borderRadius: '4px' }}>
+                                <Text strong>服务器名称：</Text>{installServerInfo.name}<br/>
+                                <Text strong>服务器ID：</Text>{installServerInfo.id}<br/>
+                                <Text strong>国家：</Text>{installServerInfo.country}<br/>
+                                <Text strong>组别：</Text>{installServerInfo.group}
+                            </div>
+                        </div>
+                    )}
+                    
+                    <div>
+                        <Title level={5}>安装命令</Title>
+                        <TextArea
+                            value={installCommand}
+                            rows={4}
+                            readOnly
+                            style={{ fontFamily: 'monospace' }}
+                        />
+                    </div>
+                    
+                    <Alert
+                        message="注意事项"
+                        description={
+                            <div>
+                                <p>安装完成后，服务器状态将自动更新为"在线"状态。如果安装失败，请检查：</p>
+                                <ul>
+                                    <li>网络连接是否正常</li>
+                                    <li>是否有足够的系统权限</li>
+                                    <li>防火墙设置是否阻止了必要的端口</li>
+                                </ul>
+                            </div>
+                        }
+                        type="warning"
+                        showIcon
+                    />
+                </Space>
+            </Modal>
 
             <ProTable<ServerItem>
                 rowKey="id"
