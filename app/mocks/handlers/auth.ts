@@ -42,9 +42,12 @@ export const authHandlers = [
       success: true, 
       message: '注册成功',
       data: {
-        userId: '2',
+        userId: '2', // 保持字符串类型
         username: body.name,
-        email: body.email
+        email: body.email,
+        // 添加其他可能需要的字段
+        id: 2, // 同时提供数字类型的id
+        role: 0 // 新注册用户默认为普通用户
       }
     });
   }),
@@ -72,9 +75,15 @@ export const authHandlers = [
         success: true, 
         message: '登录成功',
         data: {
+          id: parseInt(user.id), // 转换为数字类型
+          name: user.name,
+          email: user.email,
+          role: user.role === 'admin' ? 1 : 0, // 转换为数字类型，admin=1, user=0
           token: `mock-jwt-token-${user.id}`,
+          expires: Math.floor(Date.now() / 1000) + 3600, // 当前时间 + 1小时
           refreshToken: `mock-refresh-token-${user.id}`,
           expiresIn: 3600,
+          // 保留完整的用户信息以备后用
           user: {
             id: user.id,
             username: user.username,

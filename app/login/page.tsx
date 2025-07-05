@@ -73,10 +73,10 @@ const LoginPage = () => {
         
         // 使用 useAuth hook 更新登录状态
         const user = {
-          id: response.data.id.toString(),
-          name: response.data.name,
-          email: response.data.email,
-          role: response.data.role.toString(),
+          id: response.data.id?.toString() || 'unknown-id',
+          name: response.data.name || 'Unknown User',
+          email: response.data.email || '',
+          role: response.data.role?.toString() || 'user',
           provider: 'local'
         };
         console.log('user:', user);

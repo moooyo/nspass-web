@@ -78,91 +78,90 @@ interface ProfessionalWorldMapProps {
   style?: React.CSSProperties;
 }
 
-// 计算两点之间的最短路径（强制从大西洋方向连线）
+// 计算两点之间的最短路径（考虑地球是球体和地图投影）
 const calculateOptimalPath = (
   fromCoords: { longitude: number; latitude: number },
   toCoords: { longitude: number; latitude: number },
   fromCountry: string,
   toCountry: string
-): { 
-  from: [number, number]; 
-  to: [number, number]; 
-  shouldSplit: boolean;
-  segments?: { from: [number, number]; to: [number, number] }[];
-} => {
+): { from: [number, number]; to: [number, number] } => {
   let fromLng = fromCoords.longitude;
   let toLng = toCoords.longitude;
   
-  // 标准化经度到 [-180, 180] 范围
-  const normalizeLng = (lng: number): number => {
-    while (lng > 180) lng -= 360;
-    while (lng < -180) lng += 360;
-    return lng;
-  };
+  // 对于以大西洋为中心的地图，简化连线逻辑
   
-  fromLng = normalizeLng(fromLng);
-  toLng = normalizeLng(toLng);
+  // 计算经度差的绝对值
+  let directDiff = Math.abs(toLng - fromLng);
   
-  // 计算经度差
-  let diff = toLng - fromLng;
+  // 计算跨日期变更线的距离
+  let wrapDiff = 360 - directDiff;
   
-  // 特殊处理：识别跨太平洋的连线（亚洲<->美洲）
+  // 特殊处理：亚洲到美洲的连线应该通过太平洋
   const asianCountries = ['China', 'Japan', 'Hong Kong', 'Singapore'];
   const americanCountries = ['United States', 'Canada'];
+  
   const isAsiaToAmerica = asianCountries.includes(fromCountry) && americanCountries.includes(toCountry);
   const isAmericaToAsia = americanCountries.includes(fromCountry) && asianCountries.includes(toCountry);
+  const isEuropeToAmerica = europeanCountries.includes(fromCountry) && americanCountries.includes(toCountry);
+  const isAmericaToEurope = americanCountries.includes(fromCountry) && europeanCountries.includes(toCountry);
   
-  // 强制跨太平洋连线从大西洋方向通过
-  const shouldSplit = Math.abs(diff) > 120 || isAsiaToAmerica || isAmericaToAsia;
-  
-  if (shouldSplit) {
-    // 分段连线：强制从大西洋方向（0度经线附近）通过
-    const segments = [];
-    const midLat = (fromCoords.latitude + toCoords.latitude) / 2;
-    
-    // 使用大西洋中心作为中转点
-    const atlanticLng = 0; // 大西洋中心经线
-    
-    // 为了避免连线从地图边界直接跨越，我们使用更平滑的路径
-    // 第一段：从起点到大西洋中心
-    segments.push({
-      from: [fromLng, fromCoords.latitude] as [number, number],
-      to: [atlanticLng, midLat] as [number, number]
-    });
-    
-    // 第二段：从大西洋中心到终点
-    segments.push({
-      from: [atlanticLng, midLat] as [number, number],
-      to: [toLng, toCoords.latitude] as [number, number]
-    });
-    
-    console.log(`🔗 连线 ${fromCountry} -> ${toCountry} (大西洋路径):`, {
+  // 在以太平洋为中心的地图上的连线策略
+  if (isAsiaToAmerica || isAmericaToAsia) {
+    // 亚洲到美洲：在太平洋中心地图上应该是直线
+    console.log(`🌏 太平洋连线 ${fromCountry} -> ${toCountry}:`, {
       原始坐标: [fromCoords.longitude, toCoords.longitude],
-      标准化坐标: [fromLng, toLng],
-      经度差: diff.toFixed(1),
-      跨太平洋: isAsiaToAmerica || isAmericaToAsia,
-      中转点: [atlanticLng, midLat],
-      分段数量: segments.length
+      调整后: [adjustedFromLng, adjustedToLng],
+      路径: '太平洋直线'
     });
+  } else if (isEuropeToAmerica || isAmericaToEurope) {
+    // 欧洲到美洲：通过大西洋，需要环绕
+    if (wrapDiff < directDiff) {
+      if (adjustedFromLng > adjustedToLng) {
+        adjustedToLng += 360;
+      } else {
+        adjustedFromLng += 360;
+      }
+    }
     
-    return {
-      from: [fromLng, fromCoords.latitude],
-      to: [toLng, toCoords.latitude],
-      shouldSplit: true,
-      segments
-    };
+    console.log(`� 大西洋连线 ${fromCountry} -> ${toCountry}:`, {
+      原始坐标: [fromCoords.longitude, toCoords.longitude],
+      调整后: [adjustedFromLng, adjustedToLng],
+      路径: '大西洋环绕'
+    });
+  } else {
+    // 其他情况：选择最短路径
+    if (wrapDiff < directDiff) {
+      if (adjustedFromLng > adjustedToLng) {
+        adjustedToLng += 360;
+      } else {
+        adjustedFromLng += 360;
+      }
+      
+      console.log(`🌍 环绕连线 ${fromCountry} -> ${toCountry}:`, {
+        原始坐标: [fromCoords.longitude, toCoords.longitude],
+        直接距离: directDiff.toFixed(1),
+        环绕距离: wrapDiff.toFixed(1),
+        调整后: [adjustedFromLng, adjustedToLng],
+        路径: '最短路径（环绕）'
+      });
+    } else {
+      console.log(`🌍 直线连线 ${fromCountry} -> ${toCountry}:`, {
+        原始坐标: [fromCoords.longitude, toCoords.longitude],
+        直接距离: directDiff.toFixed(1),
+        环绕距离: wrapDiff.toFixed(1),
+        调整后: [adjustedFromLng, adjustedToLng],
+        路径: '直线路径'
+      });
+    }
   }
   
-  console.log(`🔗 连线 ${fromCountry} -> ${toCountry} (直连):`, {
-    原始坐标: [fromCoords.longitude, toCoords.longitude],
-    标准化坐标: [fromLng, toLng],
-    经度差: diff.toFixed(1)
-  });
+  // 将调整后的坐标转换回标准经度范围
+  const finalFromLng = adjustedFromLng > 180 ? adjustedFromLng - 360 : adjustedFromLng;
+  const finalToLng = adjustedToLng > 180 ? adjustedToLng - 360 : adjustedToLng;
   
   return {
-    from: [fromLng, fromCoords.latitude],
-    to: [toLng, toCoords.latitude],
-    shouldSplit: false
+    from: [finalFromLng, fromCoords.latitude],
+    to: [finalToLng, toCoords.latitude]
   };
 };
 
@@ -258,7 +257,7 @@ const ProfessionalWorldMap: React.FC<ProfessionalWorldMapProps> = ({ servers, st
               projection="geoMercator"
               projectionConfig={{
                 scale: 120,
-                center: [0, 20] // 以大西洋为中心，避免连线跨越边界
+                center: [0, 20] // 以大西洋为中心（经度0度，格林威治子午线）
               }}
               style={{ width: '100%', height: '100%' }}
             >
@@ -311,37 +310,17 @@ const ProfessionalWorldMap: React.FC<ProfessionalWorldMapProps> = ({ servers, st
                   const hasOnlineRoutes = route.onlineRoutes > 0;
                   
                   return (
-                    <>
-                      {/* 分段连线 */}
-                      {optimalPath.shouldSplit && optimalPath.segments ? (
-                        optimalPath.segments.map((segment, segIndex) => (
-                          <Line
-                            key={`${route.fromCountry}-${route.toCountry}-${index}-seg${segIndex}`}
-                            from={segment.from}
-                            to={segment.to}
-                            stroke={hasOnlineRoutes ? '#52c41a' : '#ff4d4f'}
-                            strokeWidth={Math.max(2, Math.min(6, route.totalRoutes * 1.5))}
-                            strokeOpacity={0.8}
-                            strokeDasharray={isFullyOnline ? undefined : '8,4'}
-                            strokeLinecap="round"
-                            style={{ pointerEvents: 'none' }}
-                          />
-                        ))
-                      ) : (
-                        // 单段连线
-                        <Line
-                          key={`${route.fromCountry}-${route.toCountry}-${index}`}
-                          from={optimalPath.from}
-                          to={optimalPath.to}
-                          stroke={hasOnlineRoutes ? '#52c41a' : '#ff4d4f'}
-                          strokeWidth={Math.max(2, Math.min(6, route.totalRoutes * 1.5))}
-                          strokeOpacity={0.8}
-                          strokeDasharray={isFullyOnline ? undefined : '8,4'}
-                          strokeLinecap="round"
-                          style={{ pointerEvents: 'none' }}
-                        />
-                      )}
-                    </>
+                    <Line
+                      key={`${route.fromCountry}-${route.toCountry}-${index}`}
+                      from={optimalPath.from}
+                      to={optimalPath.to}
+                      stroke={hasOnlineRoutes ? '#52c41a' : '#ff4d4f'}
+                      strokeWidth={Math.max(2, Math.min(6, route.totalRoutes * 1.5))}
+                      strokeOpacity={0.8}
+                      strokeDasharray={isFullyOnline ? undefined : '8,4'}
+                      strokeLinecap="round"
+                      style={{ pointerEvents: 'none' }}
+                    />
                   );
                 })}
 
@@ -543,15 +522,13 @@ const ProfessionalWorldMap: React.FC<ProfessionalWorldMapProps> = ({ servers, st
                         const isAsiaToAmerica = asianCountries.includes(route.fromCountry) && americanCountries.includes(route.toCountry);
                         const isAmericaToAsia = americanCountries.includes(route.fromCountry) && asianCountries.includes(route.toCountry);
                         
-                        // 使用与连线算法相同的逻辑
-                        const diff = Math.abs(toCoords.longitude - fromCoords.longitude);
-                        const shouldSplit = diff > 120 || isAsiaToAmerica || isAmericaToAsia;
-                        
-                        if (shouldSplit) {
-                          if (isAsiaToAmerica || isAmericaToAsia) {
-                            pathType = '🌍大西洋';
-                          } else {
-                            pathType = '🌍分段';
+                        if (isAsiaToAmerica || isAmericaToAsia) {
+                          pathType = '🌏太平洋';
+                        } else {
+                          const directDiff = Math.abs(toCoords.longitude - fromCoords.longitude);
+                          const wrapDiff = 360 - directDiff;
+                          if (wrapDiff < directDiff) {
+                            pathType = '🌍环绕';
                           }
                         }
                       }
@@ -581,7 +558,6 @@ const ProfessionalWorldMap: React.FC<ProfessionalWorldMapProps> = ({ servers, st
                 </>
               )}
             </div>
-
           </div>
         </Col>
       </Row>
@@ -589,4 +565,4 @@ const ProfessionalWorldMap: React.FC<ProfessionalWorldMapProps> = ({ servers, st
   );
 };
 
-export default ProfessionalWorldMap;
+export default ProfessionalWorldMap; 

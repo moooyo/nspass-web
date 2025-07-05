@@ -161,9 +161,9 @@ class AuthService {
       
       // 将API数据转换为前端期望的用户格式
       const user = {
-        id: authData.id.toString(),
-        username: authData.name,
-        email: authData.email,
+        id: authData.id?.toString() || 'unknown-id',
+        username: authData.name || 'Unknown User',
+        email: authData.email || '',
         avatar: '', // API没有返回avatar，使用默认值
         createdAt: new Date().toISOString(), // API没有返回，使用当前时间
         lastLoginAt: new Date().toISOString()
