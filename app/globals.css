@@ -97,7 +97,7 @@ body {
 body {
   background: linear-gradient(135deg, #f0f8ff 0%, #ffffff 50%, #e6f7ff 100%);
   background-size: 400% 400%;
-  animation: gentleShift 20s ease infinite;
+ 
 }
 
 /* 深色模式背景 */
@@ -520,24 +520,101 @@ html:not([data-theme="dark"]) .ant-menu-dark .ant-menu-item-divider {
   box-shadow: 0 4px 15px rgba(24, 144, 255, 0.3);
 }
 
-/* 适应小屏幕 */
-@media screen and (max-width: 768px) {
-  .ant-table {
-    width: 100%;
-    overflow-x: auto;
+/* 首页相关样式 */
+.home-welcome-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  box-shadow: var(--shadow-soft);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.home-welcome-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(24, 144, 255, 0.2);
+}
+
+.home-stat-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-card);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  position: relative;
+}
+
+.home-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #1890ff, #69c0ff, #91d5ff);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+.home-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 48px rgba(24, 144, 255, 0.25);
+}
+
+.home-action-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-card);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.home-action-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+  transition: transform 0.6s;
+  transform: translateX(-100%);
+}
+
+.home-action-card:hover::before {
+  transform: translateX(100%);
+}
+
+.home-action-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 20px 60px rgba(24, 144, 255, 0.3);
+}
+
+.home-status-indicator {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 24px;
+  transition: all 0.3s ease;
+}
+
+/* 动画效果 */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
   }
-  
-  .ant-layout .ant-layout-content {
-    margin: 20px !important;
-    border-radius: 16px !important;
-  }
-  
-  .stat-card {
-    padding: 16px;
+  100% {
+    background-position: 200% 0;
   }
 }
 
-/* 加载动画 */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -549,110 +626,48 @@ html:not([data-theme="dark"]) .ant-menu-dark .ant-menu-item-divider {
   }
 }
 
-.fade-in-up {
-  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* 悬浮效果 */
-.hover-lift {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.hover-lift:hover {
-  transform: translateY(-4px);
-}
-
-/* 自定义滚动条样式 */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(24, 144, 255, 0.2);
-  border-radius: 3px;
-  transition: all 0.3s ease;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(24, 144, 255, 0.4);
-}
-
-/* Firefox 滚动条样式 */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(24, 144, 255, 0.2) transparent;
-}
-
-/* MSW开关组件动画样式 */
 @keyframes pulse {
   0%, 100% {
     opacity: 1;
-    transform: scale(1);
   }
   50% {
-    opacity: 0.7;
-    transform: scale(1.1);
+    opacity: 0.8;
   }
 }
 
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%) translateY(-100%) rotate(45deg);
-  }
-  100% {
-    transform: translateX(100%) translateY(100%) rotate(45deg);
-  }
+.fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
 }
 
-/* MSW开关组件悬停效果 */
-.msw-toggle-card {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.msw-toggle-card:hover {
-  transform: translateY(-2px);
-}
-
-/* MSW开关组件状态指示器动画 */
-.msw-status-indicator {
-  transition: all 0.3s ease;
-}
-
-.msw-status-indicator.running {
+.pulse {
   animation: pulse 2s infinite;
 }
 
-.msw-status-indicator.loading {
-  animation: shimmer 2s infinite;
+/* 深色模式适配 */
+[data-theme="dark"] .home-welcome-card,
+[data-theme="dark"] .home-stat-card,
+[data-theme="dark"] .home-action-card,
+[data-theme="dark"] .home-status-indicator {
+  background: rgba(31, 31, 31, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* 确保动画在所有浏览器中都能正常工作 */
-@-webkit-keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-    -webkit-transform: scale(1);
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.7;
-    -webkit-transform: scale(1.1);
-    transform: scale(1.1);
-  }
+[data-theme="dark"] .home-stat-card::before {
+  background: linear-gradient(90deg, #13c2c2, #36cfc9, #5cdbd3);
 }
 
-@-webkit-keyframes shimmer {
-  0% {
-    -webkit-transform: translateX(-100%) translateY(-100%) rotate(45deg);
-    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+[data-theme="dark"] .home-action-card::before {
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.05) 50%, transparent 70%);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .home-welcome-card {
+    padding: 20px;
   }
-  100% {
-    -webkit-transform: translateX(100%) translateY(100%) rotate(45deg);
-    transform: translateX(100%) translateY(100%) rotate(45deg);
+  
+  .home-stat-card,
+  .home-action-card {
+    margin-bottom: 16px;
   }
 }
