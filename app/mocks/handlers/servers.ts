@@ -21,7 +21,8 @@ const mockServers: ServerItem[] = [
     uploadTraffic: 1250.8,
     downloadTraffic: 2467.3,
     status: ServerStatus.SERVER_STATUS_ONLINE,
-    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiIxIiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wMSIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.abc123'
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiIxIiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wMSIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.abc123',
+    availablePorts: '10000-20000;30001;30002'
   },
   {
     id: '2',
@@ -34,7 +35,8 @@ const mockServers: ServerItem[] = [
     uploadTraffic: 856.4,
     downloadTraffic: 1923.7,
     status: ServerStatus.SERVER_STATUS_ONLINE,
-    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiIyIiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wMiIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.def456'
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiIyIiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wMiIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.def456',
+    availablePorts: '8000-9000;40001'
   },
   {
     id: '3',
@@ -47,7 +49,8 @@ const mockServers: ServerItem[] = [
     uploadTraffic: 425.6,
     downloadTraffic: 789.2,
     status: ServerStatus.SERVER_STATUS_OFFLINE,
-    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiIzIiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wMyIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.ghi789'
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiIzIiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wMyIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.ghi789',
+    availablePorts: '15000-25000;35001;35002;35003'
   },
   {
     id: '4',
@@ -60,7 +63,8 @@ const mockServers: ServerItem[] = [
     uploadTraffic: 320.4,
     downloadTraffic: 580.1,
     status: ServerStatus.SERVER_STATUS_ONLINE,
-    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiI0IiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wNCIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.jkl012'
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiI0IiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wNCIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.jkl012',
+    availablePorts: '12000-22000'
   },
   {
     id: '5',
@@ -73,7 +77,8 @@ const mockServers: ServerItem[] = [
     uploadTraffic: 125.5,
     downloadTraffic: 234.8,
     status: ServerStatus.SERVER_STATUS_UNKNOWN,
-    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiI1IiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wNSIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.mno345'
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiI1IiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wNSIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.mno345',
+    // 没有设置 availablePorts，表示全部可用
   },
   {
     id: '6',
@@ -86,7 +91,8 @@ const mockServers: ServerItem[] = [
     uploadTraffic: 892.3,
     downloadTraffic: 1456.7,
     status: ServerStatus.SERVER_STATUS_ONLINE,
-    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiI2IiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wNiIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.pqr678'
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiI2IiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wNiIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.pqr678',
+    availablePorts: '5000-7000;25001;25002'
   },
   {
     id: '7',
@@ -98,7 +104,8 @@ const mockServers: ServerItem[] = [
     uploadTraffic: 678.9,
     downloadTraffic: 1123.4,
     status: ServerStatus.SERVER_STATUS_ONLINE,
-    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiI3IiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wNyIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.stu901'
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiI3IiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wNyIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.stu901',
+    // 没有设置 availablePorts，表示全部可用
   },
   {
     id: '8',
@@ -110,7 +117,8 @@ const mockServers: ServerItem[] = [
     uploadTraffic: 543.2,
     downloadTraffic: 876.5,
     status: ServerStatus.SERVER_STATUS_OFFLINE,
-    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiI4IiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wOCIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.vwx234'
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiI4IiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wOCIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.vwx234',
+    availablePorts: '16000-26000;36001'
   },
   {
     id: '9',
@@ -122,7 +130,8 @@ const mockServers: ServerItem[] = [
     uploadTraffic: 234.5,
     downloadTraffic: 445.8,
     status: ServerStatus.SERVER_STATUS_PENDING_INSTALL,
-    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiI5IiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wOSIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.yza567'
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiI5IiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wOSIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.yza567',
+    availablePorts: '14000-24000'
   },
   {
     id: '10',
@@ -134,7 +143,8 @@ const mockServers: ServerItem[] = [
     uploadTraffic: 567.8,
     downloadTraffic: 890.1,
     status: ServerStatus.SERVER_STATUS_ONLINE,
-    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiIxMCIsIm5hbWUiOiLkuJzkuqzmnI3liqHlmags65CsIiwiaWF0IjoxNzA0NTEyMDAwLCJleHAiOjE3MzYwNDgwMDB9.bcd890'
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiIxMCIsIm5hbWUiOiLkuJzkuqzmnI3liqHlmags65CsIiwiaWF0IjoxNzA0NTEyMDAwLCJleHAiOjE3MzYwNDgwMDB9.bcd890',
+    availablePorts: '11000-21000;31001;31002'
   }
 ];
 
@@ -222,7 +232,8 @@ export const serverHandlers = [
       uploadTraffic: body.uploadTraffic || 0,
       downloadTraffic: body.downloadTraffic || 0,
       status: body.status || ServerStatus.SERVER_STATUS_PENDING_INSTALL, // 使用传入的状态，默认为等待安装
-      token: generateToken((nextId - 1).toString())
+      token: generateToken((nextId - 1).toString()),
+      availablePorts: body.availablePorts || undefined // 空值保持为undefined，表示全部可用
     };
 
     mockServers.push(newServer);

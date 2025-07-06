@@ -197,6 +197,7 @@ const Servers: React.FC = () => {
                     uploadTraffic: values.uploadTraffic || 0,
                     downloadTraffic: values.downloadTraffic || 0,
                     status: ServerStatus.SERVER_STATUS_PENDING_INSTALL, // 新建服务器默认状态为等待安装
+                    availablePorts: values.availablePorts?.trim() || undefined, // 空值转为undefined
                 };
                 
                 await serverService.createServer(createData);
@@ -206,7 +207,8 @@ const Servers: React.FC = () => {
                 
                 const updateData: ServerUpdateData = {
                     ...values,
-                    status: values.status // 保持字符串格式，服务层会转换
+                    status: values.status, // 保持字符串格式，服务层会转换
+                    availablePorts: values.availablePorts?.trim() || undefined, // 空值转为undefined
                 };
                 
                 await serverService.updateServer(currentRecord.id!, updateData);
@@ -278,16 +280,48 @@ const Servers: React.FC = () => {
             width: '15%',
         },
         {
-            title: 'IPV4地址',
-            dataIndex: 'ipv4',
-            width: '15%',
-            hideInSearch: true,
-        },
-        {
-            title: 'IPV6地址',
-            dataIndex: 'ipv6',
+            title: 'IP地址',
+            dataIndex: 'ip',
             width: '20%',
             hideInSearch: true,
+            render: (_, record) => (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {record.ipv4 && (
+                        <div style={{ color: '#1890ff', fontSize: '12px' }}>
+                            <span style={{ marginRight: '4px', color: '#666' }}>IPv4:</span>
+                            {record.ipv4}
+                        </div>
+                    )}
+                    {record.ipv6 && (
+                        <div style={{ color: '#52c41a', fontSize: '12px' }}>
+                            <span style={{ marginRight: '4px', color: '#666' }}>IPv6:</span>
+                            {record.ipv6}
+                        </div>
+                    )}
+                    {!record.ipv4 && !record.ipv6 && (
+                        <div style={{ color: '#999', fontSize: '12px' }}>
+                            等待上报
+                        </div>
+                    )}
+                </div>
+            ),
+        },
+        {
+            title: '可用端口',
+            dataIndex: 'availablePorts',
+            width: '15%',
+            hideInSearch: true,
+            render: (_, record) => (
+                <div style={{ fontSize: '12px' }}>
+                    {record.availablePorts ? (
+                        <span style={{ color: '#1890ff', fontFamily: 'monospace' }}>
+                            {record.availablePorts}
+                        </span>
+                    ) : (
+                        <span style={{ color: '#52c41a' }}>全部可用</span>
+                    )}
+                </div>
+            ),
         },
         {
             title: '国家',
@@ -310,21 +344,21 @@ const Servers: React.FC = () => {
             title: '注册时间',
             dataIndex: 'registerTime',
             valueType: 'date',
-            width: '15%',
+            width: '10%',
             hideInSearch: true,
         },
         {
             title: '上传流量 (MB)',
             dataIndex: 'uploadTraffic',
             valueType: 'digit',
-            width: '12%',
+            width: '10%',
             hideInSearch: true,
         },
         {
             title: '下载流量 (MB)',
             dataIndex: 'downloadTraffic',
             valueType: 'digit',
-            width: '12%',
+            width: '10%',
             hideInSearch: true,
         },
         {
@@ -394,7 +428,7 @@ const Servers: React.FC = () => {
                 </div>
             ),
         },
-    ], [currentServers, openEditModal, handleInstall, deleteServer]);
+    ], [countryValueEnum, groupValueEnum, openEditModal, handleInstall, deleteServer]);
 
     return (
         <div>
@@ -451,6 +485,28 @@ const Servers: React.FC = () => {
                     name="group"
                     label="服务器组"
                     placeholder="请输入服务器组"
+                />
+                <ProFormText
+                    name="availablePorts"
+                    label="可用端口"
+                    placeholder="例如：10000-20000;30001;30002，留空表示全部可用"
+                    rules={[
+                        {
+                            validator: (_, value) => {
+                                // 如果为空，则通过验证（表示全部可用）
+                                if (!value || value.trim() === '') {
+                                    return Promise.resolve();
+                                }
+                                // 如果有值，则进行格式验证
+                                const pattern = /^(\d+(-\d+)?)(;\d+(-\d+)?)*$/;
+                                if (!pattern.test(value.trim())) {
+                                    return Promise.reject(new Error('端口格式错误，正确格式：10000-20000;30001;30002'));
+                                }
+                                return Promise.resolve();
+                            }
+                        }
+                    ]}
+                    help="端口格式：单个端口（如30001）或端口范围（如10000-20000），多个端口用分号分隔。留空表示全部端口可用"
                 />
                 <ProFormDatePicker
                     name="registerTime"
@@ -570,7 +626,7 @@ const Servers: React.FC = () => {
             <ProTable<ServerItem>
                 rowKey="id"
                 headerTitle="服务器列表"
-                scroll={{ x: 960 }}
+                scroll={{ x: 1200 }}
                 actionRef={actionRef}
                 toolBarRender={() => [
                     <Button

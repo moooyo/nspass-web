@@ -12,6 +12,7 @@ export const mockServers = [
     uploadTraffic: 1024,
     downloadTraffic: 2048,
     status: 'online',
+    availablePorts: '10000-20000;30001;30002',
   },
   {
     id: 2,
@@ -24,6 +25,7 @@ export const mockServers = [
     uploadTraffic: 512,
     downloadTraffic: 1024,
     status: 'offline',
+    availablePorts: '8000-9000;40001',
   },
   {
     id: 3,
@@ -36,6 +38,7 @@ export const mockServers = [
     uploadTraffic: 2048,
     downloadTraffic: 4096,
     status: 'online',
+    availablePorts: '15000-25000;35001;35002;35003',
   },
   {
     id: 4,
@@ -46,6 +49,7 @@ export const mockServers = [
     uploadTraffic: 0,
     downloadTraffic: 0,
     status: 'pending_install',
+    availablePorts: '12000-22000',
   },
   {
     id: 5,
@@ -57,5 +61,6 @@ export const mockServers = [
     uploadTraffic: 128,
     downloadTraffic: 256,
     status: 'unknown',
+    availablePorts: '9000-11000;28001',
   },
 ]; 

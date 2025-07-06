@@ -15,6 +15,7 @@ export interface ServerCreateData extends Omit<CreateServerRequest, 'id'> {
   country?: string;
   group?: string;
   status?: ServerStatus;
+  availablePorts?: string;
 }
 
 // 服务器更新参数
@@ -27,6 +28,7 @@ export interface ServerUpdateData extends Partial<Omit<UpdateServerRequest, 'id'
   status?: ServerStatus;
   uploadTraffic?: number;
   downloadTraffic?: number;
+  availablePorts?: string;
 }
 
 // 服务器组信息
