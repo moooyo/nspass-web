@@ -284,22 +284,129 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   );
 };
 
+// 配置表单组件 - 独立组件确保 useForm 正确绑定
+const ConfigForm: React.FC<{
+  backendConfig: BackendConfig;
+  updateBackendConfig: (config: BackendConfig) => void;
+  enabled: boolean;
+}> = ({ backendConfig, updateBackendConfig, enabled }) => {
+  const [form] = Form.useForm();
+
+  // 同步后端配置到表单
+  useEffect(() => {
+    form.setFieldsValue(backendConfig);
+  }, [backendConfig, form]);
+
+  // 后端配置表单提交
+  const handleConfigSubmit = (values: BackendConfig) => {
+    updateBackendConfig(values);
+    const newUrl = enabled 
+      ? window.location.origin 
+      : `http://${values.url}:${values.port}`;
+    
+    message.success(`后端配置已保存，当前API地址：${newUrl}`);
+  };
+
+  return (
+    <Form
+      form={form}
+      layout="vertical"
+      size="small"
+      initialValues={backendConfig}
+      onFinish={handleConfigSubmit}
+      style={{ marginBottom: 0 }}
+    >
+      <Form.Item
+        label="后端地址"
+        style={{ marginBottom: '8px' }}
+      >
+        <Input.Group compact>
+          <Form.Item
+            name="url"
+            rules={[{ required: true, message: '请输入域名或IP地址' }]}
+            style={{ 
+              width: 'calc(100% - 70px)', 
+              marginBottom: 0
+            }}
+          >
+            <Input 
+              placeholder="localhost" 
+              size="small"
+              style={{ 
+                fontSize: '12px'
+              }}
+            />
+          </Form.Item>
+          <Form.Item
+            name="port"
+            rules={[
+              { required: true, message: '请输入端口号' },
+              { pattern: /^\d+$/, message: '端口号必须是数字' }
+            ]}
+            style={{ 
+              width: '70px', 
+              marginBottom: 0
+            }}
+          >
+            <Input 
+              addonBefore={
+                <span style={{ 
+                  fontSize: '14px',
+                  fontWeight: '500'
+                }}>
+                  :
+                </span>
+              }
+              placeholder="8080"
+              size="small"
+              style={{ 
+                fontSize: '12px'
+              }}
+            />
+          </Form.Item>
+        </Input.Group>
+      </Form.Item>
+      
+      <Form.Item style={{ marginBottom: 0 }}>
+        <Button 
+          type="primary" 
+          htmlType="submit" 
+          size="small"
+          icon={<SaveOutlined />}
+          block
+          style={{ 
+            fontSize: '12px',
+            height: '28px',
+            background: 'linear-gradient(135deg, #1890ff 0%, #096dd9 100%)',
+            border: 'none',
+            borderRadius: '6px',
+            boxShadow: '0 2px 4px rgba(24,144,255,0.3)',
+            transition: 'all 0.3s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-1px)';
+            e.currentTarget.style.boxShadow = '0 4px 8px rgba(24,144,255,0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 2px 4px rgba(24,144,255,0.3)';
+          }}
+        >
+          保存配置
+        </Button>
+      </Form.Item>
+    </Form>
+  );
+};
+
 export const MSWToggle: React.FC = () => {
   const { enabled, loading, error, toggle, forceRestart, status, backendConfig, updateBackendConfig } = useMSW();
   const { theme } = useTheme();
   const [isClient, setIsClient] = useState(false);
-  const [configForm] = Form.useForm();
 
   useEffect(() => {
     setIsClient(true);
   }, []);
-
-  // 同步后端配置到表单
-  useEffect(() => {
-    if (isClient) {
-      configForm.setFieldsValue(backendConfig);
-    }
-  }, [isClient, backendConfig, configForm]);
 
   // 所有hooks必须在早期返回之前调用
   const apiInfo = useMemo(() => {
@@ -322,16 +429,6 @@ export const MSWToggle: React.FC = () => {
 
   const config = STATUS_CONFIG[status];
   const IconComponent = config.icon;
-
-  // 后端配置表单提交
-  const handleConfigSubmit = (values: BackendConfig) => {
-    updateBackendConfig(values);
-    const newUrl = enabled 
-      ? window.location.origin 
-      : `http://${values.url}:${values.port}`;
-    
-    message.success(`后端配置已保存，当前API地址：${newUrl}`);
-  };
 
   const popoverContent = (
     <Card size="small" style={{ width: 320, borderRadius: '8px' }}>
@@ -408,94 +505,11 @@ export const MSWToggle: React.FC = () => {
             <Text strong style={{ fontSize: '13px' }}>后端配置</Text>
           </div>
           
-          <Form
-            form={configForm}
-            layout="vertical"
-            size="small"
-            initialValues={backendConfig}
-            onFinish={handleConfigSubmit}
-            style={{ marginBottom: 0 }}
-          >
-            <Form.Item
-              label="后端地址"
-              style={{ marginBottom: '8px' }}
-            >
-              <Input.Group compact>
-                <Form.Item
-                  name="url"
-                  rules={[{ required: true, message: '请输入域名或IP地址' }]}
-                  style={{ 
-                    width: 'calc(100% - 70px)', 
-                    marginBottom: 0
-                  }}
-                >
-                  <Input 
-                    placeholder="localhost" 
-                    size="small"
-                    style={{ 
-                      fontSize: '12px'
-                    }}
-                  />
-                </Form.Item>
-                <Form.Item
-                  name="port"
-                  rules={[
-                    { required: true, message: '请输入端口号' },
-                    { pattern: /^\d+$/, message: '端口号必须是数字' }
-                  ]}
-                  style={{ 
-                    width: '70px', 
-                    marginBottom: 0
-                  }}
-                >
-                  <Input 
-                    addonBefore={
-                      <span style={{ 
-                        fontSize: '14px',
-                        fontWeight: '500'
-                      }}>
-                        :
-                      </span>
-                    }
-                    placeholder="8080"
-                    size="small"
-                    style={{ 
-                      fontSize: '12px'
-                    }}
-                  />
-                </Form.Item>
-              </Input.Group>
-            </Form.Item>
-            
-            <Form.Item style={{ marginBottom: 0 }}>
-              <Button 
-                type="primary" 
-                htmlType="submit" 
-                size="small"
-                icon={<SaveOutlined />}
-                block
-                style={{ 
-                  fontSize: '12px',
-                  height: '28px',
-                  background: 'linear-gradient(135deg, #1890ff 0%, #096dd9 100%)',
-                  border: 'none',
-                  borderRadius: '6px',
-                  boxShadow: '0 2px 4px rgba(24,144,255,0.3)',
-                  transition: 'all 0.3s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.boxShadow = '0 4px 8px rgba(24,144,255,0.4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(24,144,255,0.3)';
-                }}
-              >
-                保存配置
-              </Button>
-            </Form.Item>
-          </Form>
+          <ConfigForm
+            backendConfig={backendConfig}
+            updateBackendConfig={updateBackendConfig}
+            enabled={enabled}
+          />
         </div>
 
         {/* 操作区 */}
