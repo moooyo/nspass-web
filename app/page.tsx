@@ -1,7 +1,7 @@
 'use client'
 import React, { useState, useEffect, Suspense, useMemo, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { HomeOutlined, MenuFoldOutlined, MenuUnfoldOutlined, UnorderedListOutlined, UserOutlined, ApiOutlined, LogoutOutlined, DownOutlined, DashboardOutlined, SettingOutlined, TeamOutlined, UsergroupAddOutlined, CloudServerOutlined, CloudOutlined } from '@ant-design/icons';
+import { HomeOutlined, MenuFoldOutlined, MenuUnfoldOutlined, UnorderedListOutlined, UserOutlined, ApiOutlined, LogoutOutlined, DownOutlined, DashboardOutlined, SettingOutlined, TeamOutlined, UsergroupAddOutlined, CloudServerOutlined, CloudOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { Button, Layout, Menu, theme, Dropdown, Avatar, Space, Typography, Spin } from 'antd';
 import { message } from '@/utils/message';
@@ -16,6 +16,7 @@ const HomeContent = React.lazy(() => import('./components/content/Home'));
 const UserInfo = React.lazy(() => import('./components/content/UserInfo'));
 const ForwardRules = React.lazy(() => import('./components/content/ForwardRules'));
 const Egress = React.lazy(() => import('./components/content/Egress'));
+const Iptables = React.lazy(() => import('./components/content/Iptables'));
 const Routes = React.lazy(() => import('./components/content/Routes'));
 const Dashboard = React.lazy(() => import('./components/content/config/Dashboard'));
 const Website = React.lazy(() => import('./components/content/config/Website'));
@@ -50,6 +51,7 @@ const items: MenuItem[] = [
   getItem('用户信息', 'user', <UserOutlined />),
   getItem('转发规则', 'forward_rules', <UnorderedListOutlined />),
   getItem('出口配置', 'egress', <ApiOutlined />),
+  getItem('iptables 管理', 'iptables', <SafetyCertificateOutlined />),
   getItem('查看线路', 'routes', <UnorderedListOutlined />),
   
   // 分隔线，分隔基础功能和系统管理功能
@@ -87,6 +89,7 @@ export default function Home() {
     'forward': 'forward_rules',
     'forward_rules': 'forward_rules',
     'egress': 'egress',
+    'iptables': 'iptables',
     'routes': 'routes',
     // 系统配置简化映射
     'config': 'dashboard',
@@ -105,6 +108,7 @@ export default function Home() {
     'user': 'user',
     'forward_rules': 'rules',
     'egress': 'egress', 
+    'iptables': 'iptables',
     'routes': 'routes',
     'dashboard': 'config',
     'website': 'website',
@@ -120,6 +124,7 @@ export default function Home() {
     'user': 'NSPass - 用户信息',
     'forward_rules': 'NSPass - 转发规则',
     'egress': 'NSPass - 出口配置',
+    'iptables': 'NSPass - iptables 管理',
     'routes': 'NSPass - 查看线路',
     'dashboard': 'NSPass - 仪表盘',
     'website': 'NSPass - 网站配置',
@@ -135,6 +140,7 @@ export default function Home() {
     'user': '用户信息',
     'forward_rules': '转发规则',
     'egress': '出口配置',
+    'iptables': 'iptables 管理',
     'routes': '查看线路',
     'dashboard': '仪表盘',
     'website': '网站配置',
@@ -302,6 +308,9 @@ export default function Home() {
         break;
       case 'egress':
         component = <Egress key={`${key}-cached`} />;
+        break;
+      case 'iptables':
+        component = <Iptables key={`${key}-cached`} />;
         break;
       case 'routes':
         component = <Routes key={`${key}-cached`} />;

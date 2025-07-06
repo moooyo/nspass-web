@@ -14,7 +14,8 @@ import {
   miscHandlers,
   dnsConfigHandlers,
   passkeyHandlers,
-  egressHandlers
+  egressHandlers,
+  iptablesHandlers
 } from '@mock/handlers/index';
 
 // 合并所有handlers
@@ -25,6 +26,7 @@ export const handlers = [
   ...rulesHandlers,          // 规则管理 (/api/v1/rules)
   ...routeHandlers,          // 线路管理 (/api/routes)
   ...egressHandlers,         // 出口配置管理 (/api/v1/egress)
+  ...iptablesHandlers,       // iptables配置管理 (/api/v1/servers/:serverId/iptables, /api/v1/forward-path-rules/:ruleId/iptables)
   ...userManagementHandlers, // 用户管理 (/api/v1/user)
   ...userConfigHandlers,     // 用户配置管理 (/api/config/users)
   ...websiteConfigHandlers,  // 网站配置 (/api/config/website)

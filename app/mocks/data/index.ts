@@ -16,3 +16,10 @@ export { mockWebsiteConfig } from '@mock/data/websiteConfig';
 export { mockServers } from '@mock/data/servers';
 export { mockUserGroups } from '@mock/data/userGroups';
 export { mockUserInfo } from '@mock/data/userInfo'; 
+export { 
+  mockIptablesConfigs,
+  mockIptablesRebuildTasks,
+  getIptablesConfigsByServerId,
+  generateIptablesRebuildTask,
+  getIptablesStats
+} from '@mock/data/iptables';

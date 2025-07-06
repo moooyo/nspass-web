@@ -13,6 +13,7 @@ import { usersConfigService } from './usersConfig';
 import { websiteConfigService } from './websiteConfig';
 import { passkeyService } from './passkey';
 import { dnsConfigService } from './dnsConfig';
+import * as iptablesService from './iptables';
 
 /**
  * 服务注册中心
@@ -34,6 +35,7 @@ export function registerServices() {
   serviceManager.registerService('websiteConfig', websiteConfigService);
   serviceManager.registerService('passkey', passkeyService);
   serviceManager.registerService('dnsConfig', dnsConfigService);
+  serviceManager.registerService('iptables', iptablesService);
 }
 
 /**
@@ -115,7 +117,8 @@ export {
   usersConfigService,
   websiteConfigService,
   passkeyService,
-  dnsConfigService
+  dnsConfigService,
+  iptablesService
 };
 
 // 自动注册服务

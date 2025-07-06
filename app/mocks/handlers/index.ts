@@ -14,4 +14,5 @@ export { userManagementHandlers } from './userManagement';
 export { rulesHandlers } from './rules';
 export { routeHandlers } from './routes';
 export { dnsConfigHandlers } from './dnsConfig';
-export { egressHandlers } from './egress'; 
+export { egressHandlers } from './egress';
+export { iptablesHandlers } from './iptables';
