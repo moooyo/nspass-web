@@ -10,6 +10,7 @@
     "dev:turbo": "npm run proto:check && next dev --turbopack",
     "build": "npm run proto:clean && npm run proto:generate && next build",
     "build:analyze": "ANALYZE=true npm run build",
+    "build:cloudflare": "npm run proto:clean && npm run proto:generate && npx @cloudflare/next-on-pages",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
@@ -51,6 +52,7 @@
     "react-simple-maps": "^3.0.0"
   },
   "devDependencies": {
+    "@cloudflare/next-on-pages": "^1.13.12",
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/leaflet": "^1.9.17",
@@ -64,7 +66,8 @@
     "msw": "^2.9.0",
     "tailwindcss": "^4",
     "ts-proto": "^2.7.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^3.93.0"
   },
   "msw": {
     "workerDirectory": [

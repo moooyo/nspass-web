@@ -42,7 +42,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
   showLabel = false,
   placement = 'bottomRight',
 }) => {
-  const { theme, resolvedTheme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
 
   // 获取当前主题的图标
   const getCurrentIcon = () => {

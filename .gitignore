@@ -42,3 +42,12 @@ next-env.d.ts
 
 # generated files
 /app/types/generated/
+
+# Cloudflare Pages
+.wrangler/
+/.vercel/
+
+# Logs
+*.log
+dev-output.log
+startup.log

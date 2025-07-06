@@ -79,6 +79,9 @@ npm run dev:clean
 # 构建生产版本
 npm run build
 
+# 构建 Cloudflare Pages 版本
+npm run build:cloudflare
+
 # 构建并分析包大小
 npm run build:analyze
 
@@ -121,6 +124,7 @@ npm run fix:msw
 |------|------|
 | `npm run dev` | 启动开发服务器 |
 | `npm run build` | 构建生产版本 |
+| `npm run build:cloudflare` | 构建 Cloudflare Pages 版本 |
 | `npm run start` | 启动生产服务器 |
 | `npm run lint` | 代码检查 |
 | `npm run lint:fix` | 修复代码问题 |
@@ -252,3 +256,25 @@ NEXT_PUBLIC_ENABLE_DEV_TOOLS=true
 **开发者**: moooyo  
 **版本**: 0.1.0  
 **最后更新**: 2025-07-06
+
+## 🚀 部署
+
+### Cloudflare Pages 部署
+
+项目已配置支持 Cloudflare Pages 部署：
+
+```bash
+# 1. 安装 Wrangler CLI
+npm install -g wrangler
+
+# 2. 构建项目
+npm run build:cloudflare
+
+# 3. 部署到 Cloudflare Pages
+wrangler pages deploy .vercel/output/static --project-name your-project-name
+```
+
+配置说明：
+- 使用 `wrangler.toml` 文件配置项目设置
+- 支持 Edge Runtime 环境
+- 图片优化已配置为兼容 Cloudflare Pages
