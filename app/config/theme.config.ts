@@ -361,10 +361,11 @@ export const ThemeUtils = {
   getInitialTheme: (): Theme => {
     // 1. 优先使用存储的偏好
     const storedTheme = ThemeUtils.getStoredTheme();
-    if (storedTheme) return storedTheme;
+    if (storedTheme && storedTheme !== 'system') return storedTheme;
     
-    // 2. 使用系统偏好
-    return 'system';
+    // 2. 根据系统主题设置浅色或深色
+    const systemTheme = SYSTEM_DETECTION.getSystemTheme();
+    return systemTheme;
   },
   
   // 创建媒体查询监听器

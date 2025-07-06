@@ -5,12 +5,11 @@ import { Button, Dropdown, Tooltip } from 'antd';
 import { 
   SunOutlined, 
   MoonOutlined, 
-  DesktopOutlined,
   CheckOutlined 
 } from '@ant-design/icons';
 import { useTheme } from './hooks/useTheme';
 import type { MenuProps } from 'antd';
-import type { Theme } from '@/config/theme.config';
+import type { Theme, ResolvedTheme } from '@/config/theme.config';
 
 interface ThemeToggleProps {
   size?: 'small' | 'middle' | 'large';
@@ -19,7 +18,7 @@ interface ThemeToggleProps {
 }
 
 const THEME_OPTIONS: Array<{
-  key: Theme;
+  key: ResolvedTheme;
   label: string;
   icon: React.ReactNode;
   description: string;
@@ -28,19 +27,13 @@ const THEME_OPTIONS: Array<{
     key: 'light',
     label: '浅色模式',
     icon: <SunOutlined />,
-    description: '始终使用浅色主题',
+    description: '使用浅色主题',
   },
   {
     key: 'dark',
     label: '深色模式',
     icon: <MoonOutlined />,
-    description: '始终使用深色主题',
-  },
-  {
-    key: 'system',
-    label: '跟随系统',
-    icon: <DesktopOutlined />,
-    description: '自动跟随系统主题设置',
+    description: '使用深色主题',
   },
 ];
 
@@ -67,13 +60,13 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
   const menuItems: MenuProps['items'] = THEME_OPTIONS.map((option) => ({
     key: option.key,
     label: (
-      <div style={{ padding: '4px 0', minWidth: '180px' }}>
+      <div style={{ padding: '4px 0', minWidth: '120px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
           <span style={{ color: 'var(--primary-blue)', width: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {option.icon}
           </span>
           <span style={{ fontWeight: 500, flex: 1 }}>{option.label}</span>
-          {theme === option.key && (
+          {resolvedTheme === option.key && (
             <CheckOutlined style={{ color: 'var(--primary-blue)', fontSize: '12px' }} />
           )}
         </div>
@@ -82,15 +75,15 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
         </div>
       </div>
     ),
-    onClick: () => setTheme(option.key),
+    onClick: () => {
+      // 直接设置为对应的主题，不再使用system模式
+      setTheme(option.key as Theme);
+    },
   }));
 
-  // 如果在system模式下，显示实际解析的主题信息
+  // 获取tooltip标题
   const getTooltipTitle = () => {
-    if (theme === 'system') {
-      return `跟随系统主题 (当前: ${resolvedTheme === 'dark' ? '深色' : '浅色'})`;
-    }
-    return THEME_OPTIONS.find(opt => opt.key === theme)?.description || '';
+    return THEME_OPTIONS.find(opt => opt.key === resolvedTheme)?.description || '';
   };
 
   return (
@@ -116,10 +109,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
         >
           {showLabel && (
             <span>
-              {theme === 'system' 
-                ? `跟随系统 (${resolvedTheme === 'dark' ? '深色' : '浅色'})`
-                : THEME_OPTIONS.find(opt => opt.key === theme)?.label
-              }
+              {THEME_OPTIONS.find(opt => opt.key === resolvedTheme)?.label}
             </span>
           )}
         </Button>

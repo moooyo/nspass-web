@@ -96,21 +96,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // 主题切换函数
   const toggleTheme = useCallback(() => {
-    const newTheme: Theme = (() => {
-      switch (theme) {
-        case 'light':
-          return 'dark';
-        case 'dark':
-          return DEFAULT_THEME_CONFIG.enableSystemDetection ? 'system' : 'light';
-        case 'system':
-          // 从system切换到与当前系统主题相反的主题
-          const currentSystemTheme = SYSTEM_DETECTION.getSystemTheme();
-          return currentSystemTheme === 'light' ? 'dark' : 'light';
-        default:
-          return 'light';
-      }
-    })();
-    
+    const newTheme: Theme = theme === 'light' ? 'dark' : 'light';
     debugLog('Toggling theme:', { from: theme, to: newTheme });
     setTheme(newTheme);
   }, [theme, setTheme, debugLog]);
@@ -119,13 +105,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const handleSystemThemeChange = useCallback((systemTheme: ResolvedTheme) => {
     debugLog('System theme changed:', systemTheme);
     
-    // 只在用户选择了'system'时才跟随系统主题
-    if (theme === 'system') {
+    // 如果用户没有明确设置过主题偏好，跟随系统主题
+    const storedTheme = ThemeUtils.getStoredTheme();
+    if (!storedTheme || storedTheme === 'system') {
       debugLog('Following system theme change');
-      setResolvedTheme(systemTheme);
-      applyThemeToDOM(systemTheme);
+      setTheme(systemTheme);
     }
-  }, [theme, applyThemeToDOM, debugLog]);
+  }, [setTheme, debugLog]);
 
   // 初始化主题
   useEffect(() => {
@@ -192,7 +178,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // 页面可见性变化时重新检测系统主题
   useEffect(() => {
-    if (!isInitialized || !DEFAULT_THEME_CONFIG.enableSystemDetection || theme !== 'system') {
+    if (!isInitialized || !DEFAULT_THEME_CONFIG.enableSystemDetection) {
       return;
     }
 
@@ -200,7 +186,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (!document.hidden) {
         // 页面重新可见时，重新检测系统主题
         const currentSystemTheme = SYSTEM_DETECTION.getSystemTheme();
-        if (currentSystemTheme !== resolvedTheme) {
+        const storedTheme = ThemeUtils.getStoredTheme();
+        // 只有在用户没有明确设置过主题偏好时才跟随系统主题
+        if ((!storedTheme || storedTheme === 'system') && currentSystemTheme !== resolvedTheme) {
           debugLog('Page visible again, updating system theme:', currentSystemTheme);
           handleSystemThemeChange(currentSystemTheme);
         }
@@ -212,7 +200,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [isInitialized, theme, resolvedTheme, handleSystemThemeChange, debugLog]);
+  }, [isInitialized, resolvedTheme, handleSystemThemeChange, debugLog]);
 
   // 清理定时器
   useEffect(() => {
