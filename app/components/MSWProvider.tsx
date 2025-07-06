@@ -5,6 +5,7 @@ import { Switch, Card, Typography, Alert, Space, Button, Popover, Input, Form, D
 import { ApiOutlined, CheckCircleOutlined, ExclamationCircleOutlined, LoadingOutlined, ReloadOutlined, InfoCircleOutlined, SettingOutlined, SaveOutlined } from '@ant-design/icons';
 import { useTheme } from './hooks/useTheme';
 import { httpClient } from '@/utils/http-client';
+import { apiRefreshEventBus } from '@/utils/api-refresh-bus';
 
 const { Text } = Typography;
 
@@ -136,32 +137,32 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // MSW操作函数
   const toggle = useCallback(async () => {
     if (!isClient || loading) return;
-    
     setLoading(true);
     setError(null);
-    
     try {
       if (!enabled) {
         setStatus('starting');
         const { initMSW } = await import('@/init-msw');
         const success = await initMSW();
-        
         if (success) {
           setEnabled(true);
           setStatus('running');
           localStorage.setItem('nspass-mock-enabled', 'true');
           setTimeout(() => updateBaseURL(true), 100);
+          // 通知页面刷新
+          setTimeout(() => apiRefreshEventBus.emit('msw-toggled'), 200);
         } else {
           throw new Error('MSW 启动失败');
         }
       } else {
         const { worker } = await import('@/mocks/browser');
         if (worker) await worker.stop();
-        
         setEnabled(false);
         setStatus('stopped');
         localStorage.setItem('nspass-mock-enabled', 'false');
         setTimeout(() => updateBaseURL(false), 100);
+        // 通知页面刷新
+        setTimeout(() => apiRefreshEventBus.emit('msw-toggled'), 200);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'MSW 操作失败';
@@ -576,4 +577,4 @@ export const MSWToggle: React.FC = () => {
       </Popover>
     </Space>
   );
-}; 
+};

@@ -55,7 +55,7 @@ export interface RebuildServerIptablesResponse {
 
 // 获取服务器 iptables 配置
 export const getServerIptablesConfig = async (serverId: string): Promise<ApiResponse<IptablesConfigInfo[]>> => {
-  return httpClient.get<IptablesConfigInfo[]>(`/api/v1/servers/${serverId}/iptables`);
+  return httpClient.get<IptablesConfigInfo[]>(`/api/v1/servers/${serverId}/iptables/configs`);
 };
 
 // 重建服务器 iptables 配置

@@ -4,23 +4,49 @@ import {
   mockIptablesRebuildTasks,
   getIptablesConfigsByServerId,
   generateIptablesRebuildTask,
-  getIptablesStats
+  getIptablesStats,
+  type IptablesConfig
 } from '../data/iptables';
+import { type IptablesConfigInfo } from '@/services/iptables';
+
+// 转换 Mock 数据到服务接口格式
+const convertToIptablesConfigInfo = (config: IptablesConfig): IptablesConfigInfo => {
+  return {
+    serverId: config.serverId,
+    serverName: `服务器 ${config.serverId}`, // 这里可以根据实际情况映射
+    configName: config.configName,
+    tableName: config.tableName,
+    chainName: config.chainName,
+    ruleAction: config.ruleAction,
+    sourceIp: config.sourceIP || '',
+    sourcePort: config.sourcePort || '',
+    destIp: config.destinationIP || '',
+    destPort: config.destinationPort || '',
+    protocol: config.protocol || '',
+    ruleComment: config.ruleComment,
+    priority: config.ruleOrder,
+    isEnabled: config.isActive,
+    generatedRule: config.ruleContent,
+    createdAt: config.createdAt,
+    updatedAt: config.updatedAt,
+  };
+};
 
 // 用于追踪任务状态的全局变量
 const runningTasks = new Map<string, NodeJS.Timeout>();
 
 export const iptablesHandlers = [
   // 获取服务器 iptables 配置
-  http.get('/api/v1/servers/:serverId/iptables', ({ params }) => {
+  http.get('/api/v1/servers/:serverId/iptables/configs', ({ params }) => {
     const { serverId } = params;
     const configs = getIptablesConfigsByServerId(serverId as string);
+    const convertedConfigs = configs.map(convertToIptablesConfigInfo);
     
     return HttpResponse.json({
       success: true,
-      data: configs,
-      message: `获取服务器 ${serverId} 的 iptables 配置成功，共 ${configs.length} 条规则`,
-      total: configs.length
+      data: convertedConfigs,
+      message: `获取服务器 ${serverId} 的 iptables 配置成功，共 ${convertedConfigs.length} 条规则`,
+      total: convertedConfigs.length
     });
   }),
 
@@ -97,11 +123,13 @@ export const iptablesHandlers = [
       config.ruleAction === 'MASQUERADE'
     );
     
+    const convertedConfigs = configs.map(convertToIptablesConfigInfo);
+    
     return HttpResponse.json({
       success: true,
-      data: configs,
+      data: convertedConfigs,
       message: `获取转发路径规则 ${ruleId} 的 iptables 配置成功`,
-      total: configs.length
+      total: convertedConfigs.length
     });
   }),
 

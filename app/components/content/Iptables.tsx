@@ -32,6 +32,7 @@ import {
 } from '@/services/iptables';
 import { serverService } from '@/services/server';
 import { ServerItem } from '@/types/generated/api/servers/server_management';
+import { useApiRefresh } from '@/utils/api-refresh-bus';
 
 const { Title, Text } = Typography;
 
@@ -128,6 +129,13 @@ const IptablesManagement: React.FC<IptablesManagementProps> = () => {
   // 当选择的服务器变化时，重新加载配置
   React.useEffect(() => {
     if (selectedServer) {
+      loadIptablesConfig(selectedServer);
+    }
+  }, [selectedServer, loadIptablesConfig]);
+
+  // 监听 MSW 切换事件，自动刷新数据
+  useApiRefresh((event) => {
+    if (event.type === 'msw-toggled' && selectedServer) {
       loadIptablesConfig(selectedServer);
     }
   }, [selectedServer, loadIptablesConfig]);
