@@ -127,7 +127,7 @@ const Servers: React.FC = () => {
     // 获取当前服务器中存在的国家（去重）
     const _getAvailableCountries = () => {
         return [...new Set(
-            currentServers
+            (Array.isArray(currentServers) ? currentServers : [])
                 .map(server => server.country)
                 .filter(Boolean) // 过滤掉空值
         )] as string[];
@@ -136,7 +136,7 @@ const Servers: React.FC = () => {
     // 使用 useMemo 缓存国家valueEnum
     const countryValueEnum = useMemo(() => {
         const countries = [...new Set(
-            currentServers
+            (Array.isArray(currentServers) ? currentServers : [])
                 .map(server => server.country)
                 .filter(Boolean) // 过滤掉空值
         )] as string[];
@@ -155,7 +155,7 @@ const Servers: React.FC = () => {
     // 使用 useMemo 缓存服务器组valueEnum
     const groupValueEnum = useMemo(() => {
         const groups = [...new Set(
-            currentServers
+            (Array.isArray(currentServers) ? currentServers : [])
                 .map(server => server.group)
                 .filter(Boolean) // 过滤掉空值
         )] as string[];
@@ -653,7 +653,8 @@ const Servers: React.FC = () => {
                         const result = await serverService.getServers(serverParams);
                         
                         // 更新当前服务器数据，用于动态生成筛选选项
-                        setCurrentServers(result.data || []);
+                        // 确保 currentServers 始终是一个数组
+                        setCurrentServers(Array.isArray(result.data) ? result.data : []);
                         
                         return {
                             data: result.data,

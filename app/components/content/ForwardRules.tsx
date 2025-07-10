@@ -25,11 +25,22 @@ import {
 import dynamic from 'next/dynamic';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { ServerItem } from './LeafletWrapper';
+import { ServerItem as BaseServerItem } from './LeafletWrapper';
 import { forwardRulesService } from '@/services/forwardRules';
 import type { ForwardRule } from '@/services/forwardRules';
+import { serverService } from '@/services/server';
+import type { ServerItem as ApiServerItem } from '@/types/generated/api/servers/server_management';
+import { egressService } from '@/services/egress';
+import type { EgressItem } from '@/types/generated/model/egressItem';
 import 'leaflet/dist/leaflet.css';
 import { useApiOnce } from '@/components/hooks/useApiOnce';
+
+// 扩展ServerItem类型以支持调试信息
+interface ServerItem extends BaseServerItem {
+    _egressConfig?: EgressItem;
+    _matchedApiServer?: ApiServerItem;
+    _apiServer?: ApiServerItem;
+}
 
 // 动态导入LeafletWrapper组件，禁用SSR
 const DynamicLeafletWrapper = dynamic(() => import('./LeafletWrapper'), {
@@ -42,8 +53,6 @@ const serverTypeEnum = {
     NORMAL: { text: '普通服务器', color: 'blue' },
     EXIT: { text: '出口服务器', color: 'orange' },
 };
-
-// 服务器数据类型 - 使用从LeafletWrapper导入的类型
 
 // 入口类型
 const entryTypeEnum = {
@@ -94,75 +103,6 @@ const convertForwardRuleToItem = (rule: ForwardRule): ForwardRuleItem => {
         viaNodes: [], // API数据中可能没有这个字段
     };
 };
-
-// 模拟的服务器数据
-const sampleServers: ServerItem[] = [
-    { 
-        id: 'server001', 
-        name: '香港服务器', 
-        type: 'NORMAL',
-        ip: '203.0.113.1',
-        location: {
-            country: '中国香港',
-            latitude: 22.3193,
-            longitude: 114.1694,
-            x: 650,
-            y: 250
-        }
-    },
-    { 
-        id: 'server002', 
-        name: '东京服务器', 
-        type: 'NORMAL',
-        ip: '203.0.113.2',
-        location: {
-            country: '日本',
-            latitude: 35.6762,
-            longitude: 139.6503,
-            x: 700,
-            y: 220
-        }
-    },
-    { 
-        id: 'server003', 
-        name: '新加坡服务器', 
-        type: 'NORMAL',
-        ip: '203.0.113.3',
-        location: {
-            country: '新加坡',
-            latitude: 1.3521,
-            longitude: 103.8198,
-            x: 620,
-            y: 300
-        }
-    },
-    { 
-        id: 'exit001', 
-        name: '美国出口', 
-        type: 'EXIT',
-        ip: '198.51.100.1',
-        location: {
-            country: '美国',
-            latitude: 38.8951,
-            longitude: -77.0364,
-            x: 250,
-            y: 220
-        }
-    },
-    { 
-        id: 'exit002', 
-        name: '德国出口', 
-        type: 'EXIT',
-        ip: '198.51.100.2',
-        location: {
-            country: '德国',
-            latitude: 52.5200,
-            longitude: 13.4050,
-            x: 450,
-            y: 180
-        }
-    },
-];
 
 // 可拖拽的服务器项类型
 type DraggableServerItemProps = {
@@ -274,6 +214,14 @@ const ForwardRules: React.FC = () => {
     const [dataSource, setDataSource] = useState<ForwardRuleItem[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     
+    // 服务器数据状态
+    const [apiServers, setApiServers] = useState<ApiServerItem[]>([]);
+    const [serversLoading, setServersLoading] = useState<boolean>(false);
+    
+    // 出口配置数据状态
+    const [egressConfigs, setEgressConfigs] = useState<EgressItem[]>([]);
+    const [egressLoading, setEgressLoading] = useState<boolean>(false);
+    
     // 统一的Modal状态管理
     const [modalVisible, setModalVisible] = useState(false);
     const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
@@ -327,7 +275,45 @@ const ForwardRules: React.FC = () => {
     // 使用useApiOnce防止重复API调用
     useApiOnce(() => {
         loadRules();
+        loadServers(); // 同时加载服务器数据
+        loadEgressConfigs(); // 同时加载出口配置数据
     });
+
+    // 加载出口配置数据
+    const loadEgressConfigs = useCallback(async () => {
+        try {
+            setEgressLoading(true);
+            const response = await egressService.getEgressList({
+                pageSize: 1000 // 获取所有出口配置
+            });
+            
+            if (response.success && response.data) {
+                // 转换服务层返回的数据类型到组件期望的类型
+                const convertedData: EgressItem[] = response.data.map(item => ({
+                    id: item.id?.toString(),
+                    egressId: item.egressId,
+                    serverId: item.serverId,
+                    egressMode: item.egressMode,
+                    targetAddress: item.targetAddress,
+                    forwardType: item.forwardType,
+                    destAddress: item.destAddress,
+                    destPort: item.destPort,
+                    password: item.password,
+                    supportUdp: item.supportUdp
+                }));
+                setEgressConfigs(convertedData);
+                handleDataResponse.success('获取出口配置', response);
+            } else {
+                setEgressConfigs([]);
+                handleDataResponse.error('获取出口配置', undefined, response);
+            }
+        } catch (error) {
+            setEgressConfigs([]);
+            handleDataResponse.error('获取出口配置', error);
+        } finally {
+            setEgressLoading(false);
+        }
+    }, []);
 
     // 暂停/启动规则
     const toggleRuleStatus = async (record: ForwardRuleItem) => {
@@ -698,16 +684,80 @@ const ForwardRules: React.FC = () => {
     
     // 服务器选择组件
     const ServerSelection = () => {
+        if (serversLoading || egressLoading) {
+            return (
+                <div className="server-selection">
+                    <Typography.Title level={5}>可用服务器</Typography.Title>
+                    <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'center', 
+                        alignItems: 'center', 
+                        height: 200, 
+                        color: '#666' 
+                    }}>
+                        加载服务器数据和出口配置中...
+                    </div>
+                </div>
+            );
+        }
+
+        if (convertedServers.length === 0) {
+            return (
+                <div className="server-selection">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                        <Typography.Title level={5} style={{ margin: 0 }}>可用服务器</Typography.Title>
+                        <Button 
+                            size="small" 
+                            icon={<ReloadOutlined />} 
+                            onClick={loadServers}
+                            loading={serversLoading}
+                            title="刷新服务器列表"
+                        >
+                            刷新
+                        </Button>
+                    </div>
+                    <div style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        justifyContent: 'center', 
+                        alignItems: 'center', 
+                        height: 150, 
+                        color: '#666',
+                        border: '1px dashed #d9d9d9',
+                        borderRadius: 6,
+                        backgroundColor: '#fafafa'
+                    }}>
+                        <div style={{ marginBottom: 8, fontSize: 16 }}>📡</div>
+                        <div>暂无在线服务器</div>
+                        <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>
+                            请先在服务器管理页面创建并启动服务器
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         return (
-            <div className="server-selection">
-                <Typography.Title level={5}>可用服务器</Typography.Title>
+                <div className="server-selection">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                        <Typography.Title level={5} style={{ margin: 0 }}>可用服务器</Typography.Title>
+                        <Button 
+                            size="small" 
+                            icon={<ReloadOutlined />} 
+                            onClick={loadServers}
+                            loading={serversLoading}
+                            title="刷新服务器列表"
+                        >
+                            刷新
+                        </Button>
+                    </div>
                 <Row gutter={16}>
                     <Col span={12}>
                         <Card size="small" title="中继服务器" style={{ marginBottom: 16 }}>
                             <Row gutter={[8, 8]}>
-                                {sampleServers
-                                    .filter(server => server.type === 'NORMAL')
-                                    .map(server => (
+                                {convertedServers
+                                    .filter((server: ServerItem) => server.type === 'NORMAL')
+                                    .map((server: ServerItem) => (
                                         <Col span={12} key={server.id}>
                                             <Card 
                                                 hoverable 
@@ -717,7 +767,12 @@ const ForwardRules: React.FC = () => {
                                             >
                                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                                     <Typography.Text strong>{server.name}</Typography.Text>
-                                                    <Typography.Text type="secondary">ID: {server.id}</Typography.Text>
+                                                    <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+                                                        IP: {server.ip}
+                                                    </Typography.Text>
+                                                    <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+                                                        {server.location.country}
+                                                    </Typography.Text>
                                                 </div>
                                             </Card>
                                         </Col>
@@ -727,26 +782,63 @@ const ForwardRules: React.FC = () => {
                         </Card>
                     </Col>
                     <Col span={12}>
-                        <Card size="small" title="出口服务器" style={{ marginBottom: 16 }}>
+                        <Card 
+                            size="small" 
+                            title={
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span>出口服务器</span>
+                                    <Typography.Text type="secondary" style={{ fontSize: 11, fontWeight: 'normal' }}>
+                                        (来自出口配置)
+                                    </Typography.Text>
+                                </div>
+                            } 
+                            style={{ marginBottom: 16 }}
+                        >
                             <Row gutter={[8, 8]}>
-                                {sampleServers
-                                    .filter(server => server.type === 'EXIT')
-                                    .map(server => (
-                                        <Col span={12} key={server.id}>
-                                            <Card 
-                                                hoverable 
-                                                size="small"
-                                                onClick={() => handleServerSelect(server)}
-                                                style={{ cursor: 'pointer' }}
-                                            >
-                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                    <Typography.Text strong>{server.name}</Typography.Text>
-                                                    <Typography.Text type="secondary">ID: {server.id}</Typography.Text>
-                                                </div>
-                                            </Card>
-                                        </Col>
-                                    ))
-                                }
+                                {convertedServers.filter((server: ServerItem) => server.type === 'EXIT').length > 0 ? (
+                                    convertedServers
+                                        .filter((server: ServerItem) => server.type === 'EXIT')
+                                        .map((server: ServerItem) => (
+                                            <Col span={12} key={server.id}>
+                                                <Card 
+                                                    hoverable 
+                                                    size="small"
+                                                    onClick={() => handleServerSelect(server)}
+                                                    style={{ cursor: 'pointer' }}
+                                                >
+                                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                        <Typography.Text strong>{server.name}</Typography.Text>
+                                                        <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+                                                            IP: {server.ip}
+                                                        </Typography.Text>
+                                                        <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+                                                            {server.location.country}
+                                                        </Typography.Text>
+                                                    </div>
+                                                </Card>
+                                            </Col>
+                                        ))
+                                ) : (
+                                    <Col span={24}>
+                                        <div style={{ 
+                                            textAlign: 'center', 
+                                            padding: '20px', 
+                                            color: '#666',
+                                            border: '1px dashed #d9d9d9',
+                                            borderRadius: 4,
+                                            backgroundColor: '#fafafa'
+                                        }}>
+                                            <div style={{ marginBottom: 8, fontSize: 16 }}>🚪</div>
+                                            <div>暂无出口服务器</div>
+                                            <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>
+                                                请先在出口配置页面创建出口配置
+                                            </div>
+                                            <div style={{ fontSize: 11, color: '#ccc', marginTop: 2 }}>
+                                                已加载 {apiServers.length} 个服务器，{egressConfigs.length} 个出口配置
+                                            </div>
+                                        </div>
+                                    </Col>
+                                )}
                             </Row>
                         </Card>
                     </Col>
@@ -754,6 +846,177 @@ const ForwardRules: React.FC = () => {
             </div>
         );
     };
+
+    // 获取国家对应的大概坐标（简化版本）
+    const getCountryCoordinates = (country: string) => {
+        const coordinates: Record<string, { lat: number; lng: number; x: number; y: number }> = {
+            '中国': { lat: 39.9042, lng: 116.4074, x: 650, y: 250 },
+            '中国香港': { lat: 22.3193, lng: 114.1694, x: 650, y: 280 },
+            '日本': { lat: 35.6762, lng: 139.6503, x: 700, y: 220 },
+            '韩国': { lat: 37.5665, lng: 126.9780, x: 680, y: 210 },
+            '新加坡': { lat: 1.3521, lng: 103.8198, x: 620, y: 350 },
+            '美国': { lat: 39.8283, lng: -98.5795, x: 200, y: 220 },
+            '德国': { lat: 51.1657, lng: 10.4515, x: 450, y: 180 },
+            '英国': { lat: 55.3781, lng: -3.4360, x: 400, y: 160 },
+            '法国': { lat: 46.2276, lng: 2.2137, x: 420, y: 190 },
+            '荷兰': { lat: 52.1326, lng: 5.2913, x: 440, y: 170 },
+        };
+        
+        return coordinates[country] || { lat: 0, lng: 0, x: 300, y: 200 };
+    };
+
+    // 【核心修复】基于出口配置创建出口服务器列表
+    const createExitServersFromEgressConfigs = (): ServerItem[] => {
+        const exitServers: ServerItem[] = [];
+        
+        egressConfigs.forEach((egressConfig) => {
+            // 尝试找到对应的API服务器信息
+            const matchedApiServer = apiServers.find(apiServer => {
+                // 支持多种匹配方式，确保最大兼容性
+                return (
+                    egressConfig.serverId === apiServer.id ||
+                    egressConfig.serverId === apiServer.name ||
+                    (apiServer.id && egressConfig.serverId?.includes(apiServer.id.toString())) ||
+                    (apiServer.name && egressConfig.serverId?.includes(apiServer.name)) ||
+                    // 反向匹配：API服务器ID包含出口配置的serverId
+                    (apiServer.id?.toString().includes(egressConfig.serverId || '')) ||
+                    (apiServer.name?.includes(egressConfig.serverId || ''))
+                );
+            });
+
+            // 使用API服务器信息（如果存在），否则使用出口配置信息
+            const serverName = matchedApiServer?.name || `出口服务器-${egressConfig.serverId}`;
+            const serverIp = matchedApiServer?.ipv4 || matchedApiServer?.ipv6 || 
+                           egressConfig.targetAddress || '未知IP';
+            const serverCountry = matchedApiServer?.country || '未知';
+            
+            const coords = getCountryCoordinates(serverCountry);
+            
+            // 创建出口服务器项
+            const exitServer: ServerItem = {
+                id: egressConfig.id || `egress-${egressConfig.egressId}`,
+                name: serverName,
+                type: 'EXIT',
+                ip: serverIp,
+                location: {
+                    country: serverCountry,
+                    latitude: coords.lat,
+                    longitude: coords.lng,
+                    x: coords.x,
+                    y: coords.y
+                },
+                // 附加出口配置信息用于调试
+                _egressConfig: egressConfig,
+                _matchedApiServer: matchedApiServer
+            };
+            
+            exitServers.push(exitServer);
+        });
+
+        // 调试输出
+        console.log('出口服务器创建完成:', {
+            egressConfigsCount: egressConfigs.length,
+            apiServersCount: apiServers.length,
+            exitServersCount: exitServers.length,
+            exitServers: exitServers.map(s => ({ 
+                id: s.id, 
+                name: s.name, 
+                ip: s.ip,
+                hasApiServerMatch: !!s._matchedApiServer
+            }))
+        });
+
+        return exitServers;
+    };
+
+    // 创建中继服务器列表（排除已被用作出口的服务器）
+    const createRelayServersFromApiServers = (): ServerItem[] => {
+        // 获取所有被出口配置占用的服务器ID
+        const usedServerIds = new Set(egressConfigs.map(egress => egress.serverId));
+        
+        return apiServers
+            .filter(apiServer => {
+                // 排除被出口配置占用的服务器
+                return !usedServerIds.has(apiServer.id) && 
+                       !usedServerIds.has(apiServer.name) &&
+                       // 额外检查，防止ID格式不一致的情况
+                       !Array.from(usedServerIds).some(usedId => 
+                           usedId?.includes(apiServer.id || '') || 
+                           usedId?.includes(apiServer.name || '') ||
+                           apiServer.id?.toString().includes(usedId || '') ||
+                           apiServer.name?.includes(usedId || '')
+                       );
+            })
+            .map(apiServer => {
+                const coords = getCountryCoordinates(apiServer.country || '');
+                
+                return {
+                    id: apiServer.id || '',
+                    name: apiServer.name || '未命名服务器',
+                    type: 'NORMAL' as const,
+                    ip: apiServer.ipv4 || apiServer.ipv6 || '未知IP',
+                    location: {
+                        country: apiServer.country || '未知',
+                        latitude: coords.lat,
+                        longitude: coords.lng,
+                        x: coords.x,
+                        y: coords.y
+                    },
+                    _apiServer: apiServer
+                };
+            });
+    };
+
+    // 加载服务器数据
+    const loadServers = useCallback(async () => {
+        try {
+            setServersLoading(true);
+            const response = await serverService.getServers({
+                pageSize: 1000 // 获取所有服务器，不限制状态
+                // 移除状态过滤，获取所有服务器以便正确匹配出口配置
+            });
+            
+            if (response.success && response.data) {
+                setApiServers(response.data);
+                handleDataResponse.success('获取服务器列表', response);
+            } else {
+                setApiServers([]);
+                handleDataResponse.error('获取服务器列表', undefined, response);
+            }
+        } catch (error) {
+            setApiServers([]);
+            handleDataResponse.error('获取服务器列表', error);
+        } finally {
+            setServersLoading(false);
+        }
+    }, []);
+
+    // 将API服务器数据转换为地图格式 - 使用新的逻辑
+    const convertedServers = useMemo(() => {
+        // 如果数据还在加载中或者出口配置为空，返回空数组
+        if (serversLoading || egressLoading || egressConfigs.length === 0) {
+            return [];
+        }
+
+        // 创建出口服务器列表（基于出口配置）
+        const exitServers = createExitServersFromEgressConfigs();
+        
+        // 创建中继服务器列表（排除被出口配置占用的服务器）
+        const relayServers = createRelayServersFromApiServers();
+        
+        // 合并两个列表
+        const allServers = [...relayServers, ...exitServers];
+        
+        console.log('【转发规则】服务器列表已更新:', {
+            totalServers: allServers.length,
+            relayServers: relayServers.length,
+            exitServers: exitServers.length,
+            egressConfigs: egressConfigs.length,
+            apiServers: apiServers.length
+        });
+        
+        return allServers;
+    }, [apiServers, egressConfigs, serversLoading, egressLoading]); // 依赖所有相关数据
 
     // 使用 useMemo 缓存表格列配置，避免每次渲染重新创建
     const columns: ProColumns<ForwardRuleItem>[] = useMemo(() => [
@@ -946,6 +1209,16 @@ const ForwardRules: React.FC = () => {
         },
     ], [toggleRuleStatus, diagnoseRule, copyRule, openEditModal, deleteRule]); // 只依赖函数
 
+    // 添加调试信息来查看数据状态
+    useEffect(() => {
+        console.log('=== ForwardRules Debug Info ===');
+        console.log('API Servers:', apiServers);
+        console.log('Egress Configs:', egressConfigs);
+        console.log('Converted Servers Count:', convertedServers.length);
+        console.log('Exit Servers Count:', convertedServers.filter(s => s.type === 'EXIT').length);
+        console.log('=== End Debug Info ===');
+    }, [apiServers, egressConfigs, convertedServers]);
+
     return (
         <div>
 
@@ -1041,7 +1314,7 @@ const ForwardRules: React.FC = () => {
                                 <DynamicLeafletWrapper 
                                     key="map-instance"
                                     selectedPath={selectedPath}
-                                    sampleServers={sampleServers}
+                                    sampleServers={convertedServers as BaseServerItem[]}
                                     exitServer={exitServer}
                                     handleServerSelect={handleServerSelect}
                                     serverTypeEnum={serverTypeEnum}
@@ -1075,4 +1348,4 @@ const ForwardRules: React.FC = () => {
     );
 };
 
-export default React.memo(ForwardRules); 
+export default React.memo(ForwardRules);
