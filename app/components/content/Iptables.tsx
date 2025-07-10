@@ -120,6 +120,28 @@ const IptablesManagement: React.FC<IptablesManagementProps> = () => {
     }
   }, []);
 
+  // 显示重建确认对话框
+  const showRebuildConfirm = useCallback((serverId: string) => {
+    Modal.confirm({
+      title: '确认重建 iptables',
+      icon: <ExclamationCircleOutlined />,
+      content: (
+        <div>
+          <p>您确定要重建选中服务器的 iptables 配置吗？</p>
+          <p style={{ color: '#ff4d4f', marginBottom: 0 }}>
+            <strong>警告：</strong>重建操作将会重新生成并应用所有 iptables 规则，可能会暂时影响网络连接。
+          </p>
+        </div>
+      ),
+      okText: '确认重建',
+      cancelText: '取消',
+      okType: 'danger',
+      onOk: () => {
+        handleRebuildIptables(serverId);
+      },
+    });
+  }, [handleRebuildIptables]);
+
   // 查看配置详情
   const handleViewConfig = useCallback((config: IptablesConfigInfo) => {
     setSelectedConfig(config);
@@ -293,9 +315,10 @@ const IptablesManagement: React.FC<IptablesManagementProps> = () => {
             刷新配置
           </Button>
           <Button 
-            type="default" 
+            type="primary" 
+            danger
             icon={<SyncOutlined />}
-            onClick={() => handleRebuildIptables(selectedServer)}
+            onClick={() => showRebuildConfirm(selectedServer)}
             disabled={!selectedServer}
           >
             重建 iptables
