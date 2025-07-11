@@ -18,11 +18,11 @@ import {
 } from '@ant-design/icons';
 import { message } from '@/utils/message';
 import { 
-  getServerIptablesConfig,
+  getServerIptablesConfigs,
   rebuildServerIptables,
   getIptablesRebuildStatusText,
   getIptablesRebuildStatusColor,
-  type IptablesConfigInfo,
+  type IptablesConfig,
   type IptablesRebuildTask
 } from '@/services/iptables';
 import { serverService } from '@/services/server';
@@ -36,9 +36,9 @@ const IptablesManagement: React.FC = () => {
   const [rebuildModalVisible, setRebuildModalVisible] = useState(false);
   const [rebuildTask, setRebuildTask] = useState<IptablesRebuildTask | null>(null);
   const [configModalVisible, setConfigModalVisible] = useState(false);
-  const [selectedConfig, setSelectedConfig] = useState<IptablesConfigInfo | null>(null);
+  const [selectedConfig, setSelectedConfig] = useState<IptablesConfig | null>(null);
   const [loading, setLoading] = useState(false);
-  const [configs, setConfigs] = useState<IptablesConfigInfo[]>([]);
+  const [configs, setConfigs] = useState<IptablesConfig[]>([]);
   const [servers, setServers] = useState<ServerItem[]>([]);
   const [serversLoading, setServersLoading] = useState(false);
   
@@ -82,9 +82,9 @@ const IptablesManagement: React.FC = () => {
     
     setLoading(true);
     try {
-      const response = await getServerIptablesConfig(serverId);
+      const response = await getServerIptablesConfigs(serverId);
       if (response.success && response.data) {
-        setConfigs(response.data);
+        setConfigs(response.data.data);
       } else {
         message.error(response.message || '获取 iptables 配置失败');
       }
@@ -136,7 +136,7 @@ const IptablesManagement: React.FC = () => {
   }, [handleRebuildIptables]);
 
   // 查看配置详情
-  const handleViewConfig = useCallback((config: IptablesConfigInfo) => {
+  const handleViewConfig = useCallback((config: IptablesConfig) => {
     setSelectedConfig(config);
     setConfigModalVisible(true);
   }, []);
@@ -156,7 +156,7 @@ const IptablesManagement: React.FC = () => {
   }, [selectedServer, loadIptablesConfig]);
 
   // 表格列定义
-  const columns: ProColumns<IptablesConfigInfo>[] = [
+  const columns: ProColumns<IptablesConfig>[] = [
     {
       title: '配置名称',
       dataIndex: 'configName',
@@ -320,7 +320,7 @@ const IptablesManagement: React.FC = () => {
       </ProCard>
 
       {/* 配置表格 */}
-      <ProTable<IptablesConfigInfo>
+      <ProTable<IptablesConfig>
         headerTitle="iptables 配置规则"
         actionRef={actionRef}
         rowKey="configName"
