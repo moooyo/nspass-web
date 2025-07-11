@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react';
-import { Button, Tag, Modal, Space, Alert, Typography, Progress, Divider, Spin, Select } from 'antd';
+import { Button, Tag, Modal, Space, Typography, Progress, Divider, Select } from 'antd';
 import {
     ProTable,
     ProColumns,
@@ -8,9 +8,6 @@ import {
     ProCard
 } from '@ant-design/pro-components';
 import { 
-    PlusOutlined, 
-    EditOutlined, 
-    DeleteOutlined, 
     SyncOutlined,
     EyeOutlined,
     ExclamationCircleOutlined,
@@ -23,8 +20,6 @@ import { message } from '@/utils/message';
 import { 
   getServerIptablesConfig,
   rebuildServerIptables,
-  getForwardPathRuleIptables,
-  rebuildForwardPathRuleIptables,
   getIptablesRebuildStatusText,
   getIptablesRebuildStatusColor,
   type IptablesConfigInfo,
@@ -36,9 +31,7 @@ import { useApiRefresh } from '@/utils/api-refresh-bus';
 
 const { Title, Text } = Typography;
 
-interface IptablesManagementProps {}
-
-const IptablesManagement: React.FC<IptablesManagementProps> = () => {
+const IptablesManagement: React.FC = () => {
   const [selectedServer, setSelectedServer] = useState<string>('');
   const [rebuildModalVisible, setRebuildModalVisible] = useState(false);
   const [rebuildTask, setRebuildTask] = useState<IptablesRebuildTask | null>(null);
@@ -63,7 +56,7 @@ const IptablesManagement: React.FC<IptablesManagementProps> = () => {
           setSelectedServer(result.data[0].id);
         }
       }
-    } catch (error) {
+    } catch {
       message.error('获取服务器列表失败');
     } finally {
       setServersLoading(false);
@@ -95,7 +88,7 @@ const IptablesManagement: React.FC<IptablesManagementProps> = () => {
       } else {
         message.error(response.message || '获取 iptables 配置失败');
       }
-    } catch (error) {
+    } catch {
       message.error('获取 iptables 配置失败');
     } finally {
       setLoading(false);
@@ -115,7 +108,7 @@ const IptablesManagement: React.FC<IptablesManagementProps> = () => {
       } else {
         message.error(response.message || '启动 iptables 重建任务失败');
       }
-    } catch (error) {
+    } catch {
       message.error('启动 iptables 重建任务失败');
     }
   }, []);

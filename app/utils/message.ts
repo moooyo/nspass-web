@@ -26,6 +26,7 @@ export const message = {
   info: (content: string, duration?: number) => getInstance().info(content, duration),
   warning: (content: string, duration?: number) => getInstance().warning(content, duration),
   loading: (content: string, duration?: number) => getInstance().loading(content, duration),
+  destroy: () => getInstance().destroy(),
 };
 
 // 统一的数据加载处理函数

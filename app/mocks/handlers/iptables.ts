@@ -62,13 +62,13 @@ export const iptablesHandlers = [
     console.log(`[IPTABLES MOCK] 创建重建任务: ${task.taskId}`);
     
     // 模拟异步更新任务状态，更真实的时间模拟
-    const taskUpdateTimeout1 = setTimeout(() => {
+    setTimeout(() => {
       task.status = 'IPTABLES_REBUILD_STATUS_RUNNING';
       task.processedRules = Math.floor(task.totalRules * 0.3);
       console.log(`[IPTABLES MOCK] 任务 ${task.taskId} 进入运行状态，处理进度: ${task.processedRules}/${task.totalRules}`);
     }, 1000);
     
-    const taskUpdateTimeout2 = setTimeout(() => {
+    setTimeout(() => {
       task.processedRules = Math.floor(task.totalRules * 0.7);
       console.log(`[IPTABLES MOCK] 任务 ${task.taskId} 处理进度更新: ${task.processedRules}/${task.totalRules}`);
     }, 2000);
@@ -134,9 +134,8 @@ export const iptablesHandlers = [
   }),
 
   // 重建转发路径规则 iptables 配置
-  http.post('/api/v1/forward-path-rules/:ruleId/iptables/rebuild', async ({ params, request }) => {
+  http.post('/api/v1/forward-path-rules/:ruleId/iptables/rebuild', async ({ params }) => {
     const { ruleId } = params;
-    const body = await request.json() as { force?: boolean };
     
     // 模拟为转发规则重建创建任务，假设关联的是服务器01
     const task = generateIptablesRebuildTask('1');
@@ -144,12 +143,12 @@ export const iptablesHandlers = [
     task.totalRules = 3; // 转发规则通常涉及较少的 iptables 规则
     
     // 模拟异步更新任务状态（转发规则重建更快）
-    const taskUpdateTimeout1 = setTimeout(() => {
+    setTimeout(() => {
       task.status = 'IPTABLES_REBUILD_STATUS_RUNNING';
       task.processedRules = 1;
     }, 500);
     
-    const taskUpdateTimeout2 = setTimeout(() => {
+    const taskUpdateTimeout = setTimeout(() => {
       task.status = 'IPTABLES_REBUILD_STATUS_SUCCESS';
       task.processedRules = task.totalRules;
       task.completedAt = Math.floor(Date.now() / 1000).toString();
@@ -157,7 +156,7 @@ export const iptablesHandlers = [
       runningTasks.delete(task.taskId);
     }, 2000);
     
-    runningTasks.set(task.taskId, taskUpdateTimeout2);
+    runningTasks.set(task.taskId, taskUpdateTimeout);
     mockIptablesRebuildTasks.push(task);
     
     return HttpResponse.json({

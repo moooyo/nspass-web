@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Button, Tag, Popconfirm, Tooltip } from 'antd';
-import { handleDataResponse, message } from '@/utils/message';
+import { handleDataResponse } from '@/utils/message';
 import {
     EditableProTable,
     ProColumns,
@@ -22,6 +22,7 @@ import {
 } from '@ant-design/icons';
 import { egressService, EgressItem, CreateEgressData, UpdateEgressData, EgressMode, ForwardType } from '@/services/egress';
 import { useApiOnce } from '@/components/hooks/useApiOnce';
+import { securityUtils } from '@/shared/utils';
 
 // 服务器选项
 const serverOptions = [
@@ -174,25 +175,10 @@ const Egress: React.FC = () => {
         loadEgressData();
     });
 
-    // 生成随机密码函数
-    const generateRandomPassword = (minLength: number = 100, maxLength: number = 128): string => {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        const length = Math.floor(Math.random() * (maxLength - minLength + 1)) + minLength;
-        let result = '';
-        for (let i = 0; i < length; i++) {
-            result += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return result;
-    };
-
     // 生成并设置随机密码
     const generateAndSetPassword = (fieldName: string, minLength: number, maxLength: number, successMessage: string, targetForm?: any) => {
-        const randomPassword = generateRandomPassword(minLength, maxLength);
         const currentForm = targetForm || form;
-        if (currentForm) {
-            currentForm.setFieldsValue({ [fieldName]: randomPassword });
-            message.success(`${successMessage} (${randomPassword.length}位)`);
-        }
+        return securityUtils.generateAndSetFormPassword(currentForm, fieldName, minLength, maxLength, successMessage);
     };
 
     // 删除出口
