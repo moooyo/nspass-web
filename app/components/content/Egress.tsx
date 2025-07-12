@@ -6,6 +6,7 @@ import {
     ProColumns,
     ProFormSelect,
     ProFormText,
+    ProFormDigit,
     ProFormDependency,
     ProFormGroup,
     ProFormCheckbox,
@@ -23,6 +24,7 @@ import {
 import { egressService, EgressItem, CreateEgressData, UpdateEgressData, EgressMode, ForwardType } from '@/services/egress';
 import { useApiOnce } from '@/components/hooks/useApiOnce';
 import { securityUtils } from '@/shared/utils';
+import { generateRandomPort } from '@/utils/passwordUtils';
 
 // 服务器选项
 const serverOptions = [
@@ -62,7 +64,8 @@ const convertEgressToLocalItem = (egress: EgressItem): LocalEgressItem => {
             displayConfig = `${egress.forwardType || 'N/A'} -> ${egress.destAddress || 'N/A'}:${egress.destPort || 'N/A'}`;
             break;
         case EgressMode.EGRESS_MODE_SS2022:
-            displayConfig = `SS2022, UDP: ${egress.supportUdp ? '是' : '否'}`;
+            const portInfo = egress.port ? `:${egress.port}` : '';
+            displayConfig = `SS2022${portInfo}, UDP: ${egress.supportUdp ? '是' : '否'}`;
             break;
         default:
             displayConfig = '未配置';
@@ -128,6 +131,19 @@ const Egress: React.FC = () => {
     const [editingRecord, setEditingRecord] = useState<LocalEgressItem | null>(null);
     const [form] = Form.useForm();
     const [editForm] = Form.useForm();
+
+    // 监听表单字段变化，当选择shadowsocks-2022时自动生成端口
+    const handleEgressModeChange = useCallback((egressMode: EgressMode, formInstance: any) => {
+        if (egressMode === EgressMode.EGRESS_MODE_SS2022) {
+            // 检查是否已有端口值
+            const currentPort = formInstance.getFieldValue('port');
+            if (!currentPort) {
+                const randomPort = generateRandomPort(20000, 50000);
+                formInstance.setFieldValue('port', randomPort);
+                handleDataResponse.userAction(`已自动生成Shadowsocks端口: ${randomPort}`, true);
+            }
+        }
+    }, []);
 
     // 确保 form 实例在需要时才被使用
     useEffect(() => {
@@ -470,6 +486,9 @@ const Egress: React.FC = () => {
                     label="出口模式"
                     options={egressModeOptions}
                     rules={[{ required: true, message: '请选择出口模式' }]}
+                    fieldProps={{
+                        onChange: (value) => handleEgressModeChange(value as EgressMode, form)
+                    }}
                 />
                 
                 <ProFormDependency name={['egressMode']}>
@@ -535,6 +554,31 @@ const Egress: React.FC = () => {
                                         }}
                                         extra="建议使用生成的随机密码以确保安全性"
                                     />
+                                    <ProFormDigit
+                                        name="port"
+                                        label="端口"
+                                        placeholder="请输入端口"
+                                        rules={[{ required: true, message: '请输入端口' }]}
+                                        min={1}
+                                        max={65535}
+                                        fieldProps={{
+                                            addonAfter: (
+                                                <Tooltip title="生成20000-50000范围内的随机端口">
+                                                    <Button 
+                                                        type="text" 
+                                                        icon={<ThunderboltOutlined />}
+                                                        onClick={() => {
+                                                            const randomPort = generateRandomPort(20000, 50000);
+                                                            form.setFieldValue('port', randomPort);
+                                                            handleDataResponse.userAction(`已生成随机端口: ${randomPort}`, true);
+                                                        }}
+                                                        size="small"
+                                                    />
+                                                </Tooltip>
+                                            )
+                                        }}
+                                        extra="端口范围: 1-65535，建议使用20000-50000范围"
+                                    />
                                     <ProFormCheckbox name="supportUdp" label="支持UDP">
                                         启用UDP支持
                                     </ProFormCheckbox>
@@ -583,6 +627,9 @@ const Egress: React.FC = () => {
                     label="出口模式"
                     options={egressModeOptions}
                     rules={[{ required: true, message: '请选择出口模式' }]}
+                    fieldProps={{
+                        onChange: (value) => handleEgressModeChange(value as EgressMode, editForm)
+                    }}
                 />
                 
                 <ProFormDependency name={['egressMode']}>
@@ -648,6 +695,31 @@ const Egress: React.FC = () => {
                                         }}
                                         extra="建议使用生成的随机密码以确保安全性"
                                     />
+                                    <ProFormDigit
+                                        name="port"
+                                        label="端口"
+                                        placeholder="请输入端口"
+                                        rules={[{ required: true, message: '请输入端口' }]}
+                                        min={1}
+                                        max={65535}
+                                        fieldProps={{
+                                            addonAfter: (
+                                                <Tooltip title="生成20000-50000范围内的随机端口">
+                                                    <Button 
+                                                        type="text" 
+                                                        icon={<ThunderboltOutlined />}
+                                                        onClick={() => {
+                                                            const randomPort = generateRandomPort(20000, 50000);
+                                                            editForm.setFieldValue('port', randomPort);
+                                                            handleDataResponse.userAction(`已生成随机端口: ${randomPort}`, true);
+                                                        }}
+                                                        size="small"
+                                                    />
+                                                </Tooltip>
+                                            )
+                                        }}
+                                        extra="端口范围: 1-65535，建议使用20000-50000范围"
+                                    />
                                     <ProFormCheckbox name="supportUdp" label="支持UDP">
                                         启用UDP支持
                                     </ProFormCheckbox>
@@ -663,4 +735,4 @@ const Egress: React.FC = () => {
     );
 };
 
-export default Egress; 
+export default Egress;

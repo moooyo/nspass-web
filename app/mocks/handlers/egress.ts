@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw';
 import type { EgressItem } from '@/types/generated/model/egressItem';
 import { EgressMode, ForwardType } from '@/types/generated/model/egress';
+import { generateRandomPort } from '@/utils/passwordUtils';
 
 // 模拟出口配置数据
 const mockEgressData: EgressItem[] = [
@@ -37,9 +38,10 @@ const mockEgressData: EgressItem[] = [
         egressId: 'egress004',
         serverId: 'server03',
         egressMode: EgressMode.EGRESS_MODE_SS2022,
-        egressConfig: 'Shadowsocks-2022，支持UDP',
+        egressConfig: 'Shadowsocks-2022，端口: 25678，支持UDP',
         password: 'password123',
         supportUdp: true,
+        port: 25678,
     },
 ];
 
@@ -94,6 +96,19 @@ export const egressHandlers = [
             id: (nextId++).toString(),
             egressId: data.egressId || `egress${Date.now().toString().substr(-6)}`,
         };
+        
+        // 如果是shadowsocks-2022模式且没有提供端口，则生成随机端口
+        if (data.egressMode === EgressMode.EGRESS_MODE_SS2022 && !data.port) {
+            newEgress.port = generateRandomPort(20000, 50000);
+            console.log(`[EGRESS MOCK] 为Shadowsocks配置生成随机端口: ${newEgress.port}`);
+        }
+        
+        // 更新egressConfig以包含端口信息
+        if (newEgress.egressMode === EgressMode.EGRESS_MODE_SS2022) {
+            const portInfo = newEgress.port ? `，端口: ${newEgress.port}` : '';
+            const udpInfo = newEgress.supportUdp ? '，支持UDP' : '';
+            newEgress.egressConfig = `Shadowsocks-2022${portInfo}${udpInfo}`;
+        }
         
         mockEgressData.push(newEgress);
         

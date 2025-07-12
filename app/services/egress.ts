@@ -34,6 +34,7 @@ export interface EgressItem {
   // shadowsocks-2022模式字段
   password?: string;
   supportUdp?: boolean;
+  port?: number;  // shadowsocks端口
 }
 
 // 创建出口请求类型 - 匹配swagger CreateEgressRequest
@@ -53,6 +54,7 @@ export interface CreateEgressData {
   // shadowsocks-2022模式字段
   password?: string;
   supportUdp?: boolean;
+  port?: number;  // shadowsocks端口，默认从20000到50000之间随机生成
 }
 
 // 更新出口请求类型 - 匹配swagger UpdateEgressRequest
@@ -66,6 +68,7 @@ export interface UpdateEgressData {
   destPort?: string;
   password?: string;
   supportUdp?: boolean;
+  port?: number;  // shadowsocks端口
 }
 
 // 查询参数类型 - 匹配swagger GetEgressListRequest
