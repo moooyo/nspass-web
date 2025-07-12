@@ -67,7 +67,7 @@ export interface UpdateForwardPathRuleRequest {
 }
 
 class ForwardPathRulesService {
-  private readonly endpoint = '/api/v1/forward-path-rules';
+  private readonly endpoint = '/v1/forward-path-rules';
 
   /**
    * 获取转发路径规则列表

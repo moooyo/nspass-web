@@ -268,12 +268,12 @@ export const validateServerIptables = async (
 
 // 获取转发路径规则相关的 iptables 配置（保留旧的API用于兼容性）
 export const getForwardPathRuleIptables = async (ruleId: string): Promise<ApiResponse<IptablesConfig[]>> => {
-  return httpClient.get<IptablesConfig[]>(`/api/v1/forward-path-rules/${ruleId}/iptables`);
+  return httpClient.get<IptablesConfig[]>(`/v1/forward-path-rules/${ruleId}/iptables`);
 };
 
 // 重建转发路径规则 iptables 配置
 export const rebuildForwardPathRuleIptables = async (ruleId: string, options?: { force?: boolean }): Promise<ApiResponse<IptablesRebuildTask>> => {
-  return httpClient.post<IptablesRebuildTask>(`/api/v1/forward-path-rules/${ruleId}/iptables/rebuild`, options || {});
+  return httpClient.post<IptablesRebuildTask>(`/v1/forward-path-rules/${ruleId}/iptables/rebuild`, options || {});
 };
 
 // 获取 iptables 重建状态的中文描述

@@ -65,7 +65,7 @@ let nextId = 3;
 
 export const forwardPathRulesHandlers = [
   // 获取转发路径规则列表
-  http.get('/api/v1/forward-path-rules', ({ request }) => {
+  http.get('/v1/forward-path-rules', ({ request }) => {
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1');
     const pageSize = parseInt(url.searchParams.get('pageSize') || '10');
@@ -96,7 +96,7 @@ export const forwardPathRulesHandlers = [
   }),
 
   // 创建转发路径规则
-  http.post('/api/v1/forward-path-rules', async ({ request }) => {
+  http.post('/v1/forward-path-rules', async ({ request }) => {
     const body = await request.json() as CreateForwardPathRuleRequest;
 
     // 验证必填字段
@@ -148,7 +148,7 @@ export const forwardPathRulesHandlers = [
   }),
 
   // 获取单个转发路径规则
-  http.get('/api/v1/forward-path-rules/:id', ({ params }) => {
+  http.get('/v1/forward-path-rules/:id', ({ params }) => {
     const id = params.id as string;
     const rule = mockForwardPathRules.find(r => r.id === id);
 
@@ -174,7 +174,7 @@ export const forwardPathRulesHandlers = [
   }),
 
   // 更新转发路径规则
-  http.put('/api/v1/forward-path-rules/:id', async ({ params, request }) => {
+  http.put('/v1/forward-path-rules/:id', async ({ params, request }) => {
     const id = params.id as string;
     const body = await request.json() as Omit<UpdateForwardPathRuleRequest, 'id'>;
     const ruleIndex = mockForwardPathRules.findIndex(r => r.id === id);
@@ -211,7 +211,7 @@ export const forwardPathRulesHandlers = [
   }),
 
   // 删除转发路径规则
-  http.delete('/api/v1/forward-path-rules/:id', ({ params }) => {
+  http.delete('/v1/forward-path-rules/:id', ({ params }) => {
     const id = params.id as string;
     const ruleIndex = mockForwardPathRules.findIndex(r => r.id === id);
 
@@ -238,7 +238,7 @@ export const forwardPathRulesHandlers = [
   }),
 
   // 启用转发路径规则
-  http.post('/api/v1/forward-path-rules/:id/enable', ({ params }) => {
+  http.post('/v1/forward-path-rules/:id/enable', ({ params }) => {
     const id = params.id as string;
     const rule = mockForwardPathRules.find(r => r.id === id);
 
@@ -266,7 +266,7 @@ export const forwardPathRulesHandlers = [
   }),
 
   // 禁用转发路径规则
-  http.post('/api/v1/forward-path-rules/:id/disable', ({ params }) => {
+  http.post('/v1/forward-path-rules/:id/disable', ({ params }) => {
     const id = params.id as string;
     const rule = mockForwardPathRules.find(r => r.id === id);
 
@@ -294,7 +294,7 @@ export const forwardPathRulesHandlers = [
   }),
 
   // 获取转发路径规则流量统计
-  http.get('/api/v1/forward-path-rules/:id/traffic', ({ params, request }) => {
+  http.get('/v1/forward-path-rules/:id/traffic', ({ params, request }) => {
     const id = params.id as string;
     const url = new URL(request.url);
     const days = parseInt(url.searchParams.get('days') || '7');
@@ -337,7 +337,7 @@ export const forwardPathRulesHandlers = [
   }),
 
   // 获取转发路径规则iptables配置
-  http.get('/api/v1/forward-path-rules/:id/iptables', ({ params }) => {
+  http.get('/v1/forward-path-rules/:id/iptables', ({ params }) => {
     const id = params.id as string;
     const rule = mockForwardPathRules.find(r => r.id === id);
 
@@ -380,7 +380,7 @@ export const forwardPathRulesHandlers = [
   }),
 
   // 重建转发路径规则iptables配置
-  http.post('/api/v1/forward-path-rules/:ruleId/iptables/rebuild', async ({ params, request }) => {
+  http.post('/v1/forward-path-rules/:ruleId/iptables/rebuild', async ({ params, request }) => {
     const ruleId = params.ruleId as string;
     const body = await request.json() as { forceRebuild?: boolean; backupExisting?: boolean };
     
