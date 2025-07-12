@@ -32,6 +32,7 @@ import { serverService } from '@/services/server';
 import type { ServerItem as ApiServerItem } from '@/types/generated/api/servers/server_management';
 import { egressService } from '@/services/egress';
 import type { EgressItem } from '@/types/generated/model/egressItem';
+import { forwardPathRulesService, ForwardPathRuleType, ForwardPathRuleStatus } from '@/services/forwardPathRules';
 import 'leaflet/dist/leaflet.css';
 import { useApiOnce } from '@/components/hooks/useApiOnce';
 
@@ -485,7 +486,7 @@ const ForwardRules: React.FC = () => {
     }, []);
     
     // 提交配置
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         // 检查是否有出口服务器
         if (!exitServer) {
             message.error('请选择一个出口服务器');
@@ -494,23 +495,46 @@ const ForwardRules: React.FC = () => {
         
         // 处理提交逻辑
         const viaNodes = selectedPath.map(server => server.name);
+        const pathServerIds = selectedPath.map(server => server.id);
         
         if (modalMode === 'create') {
-            // 创建新规则
-            const newRule: ForwardRuleItem = {
-                id: (Math.random() * 1000000).toFixed(0),
-                ruleId: `rule${Date.now().toString().substr(-6)}`,
-                entryType: 'HTTP',
-                entryConfig: '0.0.0.0:8080', // 默认配置
-                trafficUsed: 0,
-                exitType: 'PROXY', // 固定使用代理类型
-                exitConfig: exitServer.ip, // 使用出口服务器的IP
-                status: 'PAUSED',
-                viaNodes: viaNodes,
-            };
-            
-            setDataSource([...dataSource, newRule]);
-            handleDataResponse.userAction('创建规则', true);
+            try {
+                // 调用真实的API创建转发路径规则
+                const createRequest = {
+                    name: `转发规则-${Date.now().toString().substr(-6)}`,
+                    type: ForwardPathRuleType.HTTP, // 默认使用HTTP类型
+                    pathServerIds: pathServerIds,
+                    egressServerId: exitServer.id
+                };
+
+                const response = await forwardPathRulesService.createForwardPathRule(createRequest);
+                
+                if (response.success) {
+                    // API调用成功，更新本地状态
+                    const createdRule = response.data;
+                    const newRule: ForwardRuleItem = {
+                        id: createdRule?.id || (Math.random() * 1000000).toFixed(0),
+                        ruleId: createdRule?.id || `rule${Date.now().toString().substr(-6)}`,
+                        entryType: 'HTTP',
+                        entryConfig: '0.0.0.0:8080', // 默认配置
+                        trafficUsed: 0,
+                        exitType: 'PROXY', // 固定使用代理类型
+                        exitConfig: exitServer.ip, // 使用出口服务器的IP
+                        status: 'PAUSED', // 新创建的规则默认为暂停状态
+                        viaNodes: viaNodes,
+                    };
+                    
+                    setDataSource([...dataSource, newRule]);
+                    handleDataResponse.userAction('创建转发路径规则', true, response);
+                    message.success('转发规则创建成功！');
+                } else {
+                    handleDataResponse.userAction('创建转发路径规则', false, response);
+                    message.error(response.message || '创建转发规则失败');
+                }
+            } catch (error) {
+                handleDataResponse.userAction('创建转发路径规则', false, undefined, error);
+                message.error('创建转发规则时发生错误');
+            }
         } else {
             // 编辑现有规则
             if (!currentRecord) {
@@ -518,18 +542,40 @@ const ForwardRules: React.FC = () => {
                 return;
             }
             
-            const updatedRule: ForwardRuleItem = {
-                ...currentRecord,
-                exitType: 'PROXY',
-                exitConfig: exitServer.ip,
-                viaNodes: viaNodes,
-            };
-            
-            const updatedDataSource = dataSource.map(item => 
-                item.id === currentRecord.id ? updatedRule : item
-            );
-            setDataSource(updatedDataSource);
-            message.success('更新规则成功');
+            try {
+                // 调用真实的API更新转发路径规则
+                const updateRequest = {
+                    id: currentRecord.id.toString(),
+                    name: `更新规则-${currentRecord.ruleId}`,
+                    pathServerIds: pathServerIds,
+                    egressServerId: exitServer.id
+                };
+
+                const response = await forwardPathRulesService.updateForwardPathRule(updateRequest);
+                
+                if (response.success) {
+                    // API调用成功，更新本地状态
+                    const updatedRule: ForwardRuleItem = {
+                        ...currentRecord,
+                        exitType: 'PROXY',
+                        exitConfig: exitServer.ip,
+                        viaNodes: viaNodes,
+                    };
+                    
+                    const updatedDataSource = dataSource.map(item => 
+                        item.id === currentRecord.id ? updatedRule : item
+                    );
+                    setDataSource(updatedDataSource);
+                    handleDataResponse.userAction('更新转发路径规则', true, response);
+                    message.success('转发规则更新成功！');
+                } else {
+                    handleDataResponse.userAction('更新转发路径规则', false, response);
+                    message.error(response.message || '更新转发规则失败');
+                }
+            } catch (error) {
+                handleDataResponse.userAction('更新转发路径规则', false, undefined, error);
+                message.error('更新转发规则时发生错误');
+            }
         }
         
         setModalVisible(false);

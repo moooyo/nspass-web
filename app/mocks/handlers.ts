@@ -17,6 +17,7 @@ import {
   egressHandlers,
   iptablesHandlers
 } from '@mock/handlers/index';
+import { forwardPathRulesHandlers } from '@mock/handlers/forwardPathRules';
 
 // 合并所有handlers
 export const handlers = [
@@ -24,6 +25,7 @@ export const handlers = [
   ...passkeyHandlers,        // Passkey认证 (/api/v1/auth/passkey, /api/v1/user/passkeys)
   ...dashboardHandlers,      // 仪表盘 (/api/v1/dashboard)
   ...rulesHandlers,          // 规则管理 (/api/v1/rules)
+  ...forwardPathRulesHandlers, // 转发路径规则管理 (/api/v1/forward-path-rules)
   ...routeHandlers,          // 线路管理 (/api/routes)
   ...egressHandlers,         // 出口配置管理 (/api/v1/egress)
   ...iptablesHandlers,       // iptables配置管理 (/api/v1/servers/:serverId/iptables/configs, /api/v1/forward-path-rules/:ruleId/iptables)
