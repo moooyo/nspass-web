@@ -95,6 +95,7 @@ const convertFormToCreateData = (values: any): CreateEgressData => {
     } else if (values.egressMode === EgressMode.EGRESS_MODE_SS2022) {
         data.password = values.password;
         data.supportUdp = values.supportUdp;
+        data.port = values.port;
     }
 
     return data;
@@ -118,6 +119,7 @@ const convertFormToUpdateData = (values: any): UpdateEgressData => {
     } else if (values.egressMode === EgressMode.EGRESS_MODE_SS2022) {
         data.password = values.password;
         data.supportUdp = values.supportUdp;
+        data.port = values.port;
     }
 
     return data;
@@ -231,6 +233,7 @@ const Egress: React.FC = () => {
             ...(record.egressMode === EgressMode.EGRESS_MODE_SS2022 && { 
                 password: record.password,
                 supportUdp: record.supportUdp,
+                port: record.port,
             }),
         });
         setEditModalVisible(true);
