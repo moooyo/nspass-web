@@ -8,7 +8,7 @@ const mockEgressData: EgressItem[] = [
     {
         id: '1',
         egressId: 'egress001',
-        serverId: 'server01',
+        serverId: '1', // 北京服务器-01
         egressMode: EgressMode.EGRESS_MODE_DIRECT,
         egressConfig: '目的地址: 203.0.113.1',
         targetAddress: '203.0.113.1',
@@ -16,7 +16,7 @@ const mockEgressData: EgressItem[] = [
     {
         id: '2',
         egressId: 'egress002',
-        serverId: 'server01',
+        serverId: '2', // 洛杉矶服务器-01
         egressMode: EgressMode.EGRESS_MODE_IPTABLES,
         egressConfig: 'TCP转发至 192.168.1.1:8080',
         forwardType: ForwardType.FORWARD_TYPE_TCP,
@@ -26,7 +26,7 @@ const mockEgressData: EgressItem[] = [
     {
         id: '3',
         egressId: 'egress003',
-        serverId: 'server02',
+        serverId: '3', // 东京服务器-01
         egressMode: EgressMode.EGRESS_MODE_IPTABLES,
         egressConfig: '全部转发至 10.0.0.1:443',
         forwardType: ForwardType.FORWARD_TYPE_ALL,
@@ -36,7 +36,7 @@ const mockEgressData: EgressItem[] = [
     {
         id: '4',
         egressId: 'egress004',
-        serverId: 'server03',
+        serverId: '4', // 法兰克福服务器-01
         egressMode: EgressMode.EGRESS_MODE_SS2022,
         egressConfig: 'Shadowsocks-2022，端口: 25678，支持UDP',
         password: 'password123',
@@ -286,17 +286,25 @@ export const egressHandlers = [
 
     // 获取可用服务器列表 - 匹配swagger接口 GET /v1/egress/available-servers
     http.get('/v1/egress/available-servers', () => {
+        // 导入服务器数据 - 这里应该使用与 /v1/servers 相同的数据源
+        // 但为了简化，我们直接重用服务器mock数据
+        const availableServers = [
+            { id: '1', name: '北京服务器-01', country: 'China', ipv4: '123.45.67.89' },
+            { id: '2', name: '洛杉矶服务器-01', country: 'United States', ipv4: '234.56.78.90' },
+            { id: '3', name: '东京服务器-01', country: 'Japan', ipv4: '345.67.89.01' },
+            { id: '4', name: '法兰克福服务器-01', country: 'Germany', ipv4: '445.67.89.02' },
+            { id: '5', name: '新加坡服务器-01', country: 'Singapore', ipv4: '456.78.90.12' },
+            { id: '6', name: '香港服务器-01', country: 'Hong Kong', ipv4: '567.89.01.23' },
+            { id: '7', name: '伦敦服务器-01', country: 'United Kingdom', ipv4: '678.90.12.34' },
+            { id: '8', name: '多伦多服务器-01', country: 'Canada', ipv4: '789.01.23.45' },
+            { id: '9', name: '悉尼服务器-01', country: 'Australia', ipv4: '890.12.34.56' },
+            { id: '10', name: '首尔服务器-01', country: 'South Korea', ipv4: '901.23.45.67' },
+        ];
+        
         return HttpResponse.json({
             success: true,
             message: '获取可用服务器列表成功',
-            data: [
-                { id: 'server01', name: '服务器01', country: 'CN' },
-                { id: 'server02', name: '服务器02', country: 'US' },
-                { id: 'server03', name: '服务器03', country: 'JP' },
-                { id: 'hk-server-01', name: '香港服务器', country: 'HK' },
-                { id: 'jp-server-01', name: '日本服务器', country: 'JP' },
-                { id: 'us-server-01', name: '美国服务器', country: 'US' },
-            ]
+            data: availableServers
         });
     }),
 ]; 

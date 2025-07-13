@@ -22,16 +22,11 @@ import {
     ThunderboltOutlined,
 } from '@ant-design/icons';
 import { egressService, EgressItem, CreateEgressData, UpdateEgressData, EgressMode, ForwardType } from '@/services/egress';
+import { serverService } from '@/services/server';
+import type { ServerItem } from '@/types/generated/api/servers/server_management';
 import { useApiOnce } from '@/components/hooks/useApiOnce';
 import { securityUtils } from '@/shared/utils';
 import { generateRandomPort } from '@/utils/passwordUtils';
-
-// 服务器选项
-const serverOptions = [
-    { label: '服务器01', value: 'server01' },
-    { label: '服务器02', value: 'server02' },
-    { label: '服务器03', value: 'server03' },
-];
 
 // 出口模式选项 - 使用新的枚举
 const egressModeOptions = [
@@ -133,6 +128,16 @@ const Egress: React.FC = () => {
     const [editingRecord, setEditingRecord] = useState<LocalEgressItem | null>(null);
     const [form] = Form.useForm();
     const [editForm] = Form.useForm();
+    
+    // 服务器数据状态
+    const [servers, setServers] = useState<ServerItem[]>([]);
+    const [serversLoading, setServersLoading] = useState<boolean>(false);
+    
+    // 转换服务器数据为选项格式
+    const serverOptions = servers.map(server => ({
+        label: `${server.name} (${server.ipv4 || server.ipv6 || 'N/A'})`,
+        value: server.id,
+    }));
 
     // 监听表单字段变化，当选择shadowsocks-2022时自动生成端口
     const handleEgressModeChange = useCallback((egressMode: EgressMode, formInstance: any) => {
@@ -188,9 +193,33 @@ const Egress: React.FC = () => {
         }
     }, []);
 
+    // 加载服务器数据
+    const loadServersData = useCallback(async () => {
+        try {
+            setServersLoading(true);
+            const response = await serverService.getServers({
+                pageSize: 1000 // 获取所有服务器
+            });
+            
+            if (response.success && response.data) {
+                setServers(response.data);
+                handleDataResponse.success('获取服务器列表', response);
+            } else {
+                setServers([]);
+                handleDataResponse.error('获取服务器列表', undefined, response);
+            }
+        } catch (error) {
+            setServers([]);
+            handleDataResponse.error('获取服务器列表', error);
+        } finally {
+            setServersLoading(false);
+        }
+    }, []);
+
     // 使用useApiOnce防止重复API调用
     useApiOnce(() => {
         loadEgressData();
+        loadServersData();
     });
 
     // 生成并设置随机密码
@@ -321,6 +350,9 @@ const Egress: React.FC = () => {
                     name="serverId"
                     placeholder="请选择服务器"
                     options={serverOptions}
+                    fieldProps={{
+                        loading: serversLoading,
+                    }}
                     rules={[{ required: true, message: '服务器ID为必填项' }]}
                 />
             ),
@@ -401,6 +433,9 @@ const Egress: React.FC = () => {
                     label="服务器ID" 
                     colProps={{ span: 8 }}
                     options={serverOptions}
+                    fieldProps={{
+                        loading: serversLoading,
+                    }}
                 />
                 <ProFormSelect 
                     name="egressMode" 
@@ -481,6 +516,9 @@ const Egress: React.FC = () => {
                     name="serverId"
                     label="服务器ID"
                     options={serverOptions}
+                    fieldProps={{
+                        loading: serversLoading,
+                    }}
                     rules={[{ required: true, message: '请选择服务器' }]}
                 />
                 
@@ -622,6 +660,9 @@ const Egress: React.FC = () => {
                     name="serverId"
                     label="服务器ID"
                     options={serverOptions}
+                    fieldProps={{
+                        loading: serversLoading,
+                    }}
                     rules={[{ required: true, message: '请选择服务器' }]}
                 />
                 
