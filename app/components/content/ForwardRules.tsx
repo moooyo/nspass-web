@@ -52,7 +52,7 @@ const DynamicLeafletWrapper = dynamic(() => import('./LeafletWrapper'), {
 // 服务器类型枚举
 const serverTypeEnum = {
     NORMAL: { text: '普通服务器', color: 'blue' },
-    EXIT: { text: '出口服务器', color: 'orange' },
+    EXIT: { text: '出口规则', color: 'orange' },
 };
 
 // 入口类型
@@ -417,7 +417,7 @@ const ForwardRules: React.FC = () => {
             // 添加普通服务器到路径
             setSelectedPath(prevPath => [...prevPath, server]);
         } else if (server.type === 'EXIT') {
-            // 替换出口服务器
+            // 替换出口规则
             setExitServer(server);
         }
     }, []);
@@ -480,16 +480,16 @@ const ForwardRules: React.FC = () => {
         setSelectedPath([]);
         setExitServer(null);
         // 不重置地图初始化状态，保持地图缓存
-        // 移除这些配置项，因为出口服务器是只读的
+        // 移除这些配置项，因为出口规则是只读的
         // setExitConfig('');
         // setSelectedExitType('PROXY');
     }, []);
     
     // 提交配置
     const handleSubmit = async () => {
-        // 检查是否有出口服务器
+        // 检查是否有出口规则
         if (!exitServer) {
-            message.error('请选择一个出口服务器');
+            message.error('请选择一个出口规则');
             return;
         }
         
@@ -502,9 +502,9 @@ const ForwardRules: React.FC = () => {
                 // 调用真实的API创建转发路径规则
                 const createRequest = {
                     name: `转发规则-${Date.now().toString().substr(-6)}`,
-                    type: ForwardPathRuleType.HTTP, // 默认使用HTTP类型
+                    type: ForwardPathRuleType.FORWARD_PATH_RULE_TYPE_HTTP, // 默认使用HTTP类型
                     pathServerIds: pathServerIds,
-                    egressServerId: exitServer.id
+                    egressId: exitServer.id
                 };
 
                 const response = await forwardPathRulesService.createForwardPathRule(createRequest);
@@ -519,7 +519,7 @@ const ForwardRules: React.FC = () => {
                         entryConfig: '0.0.0.0:8080', // 默认配置
                         trafficUsed: 0,
                         exitType: 'PROXY', // 固定使用代理类型
-                        exitConfig: exitServer.ip, // 使用出口服务器的IP
+                        exitConfig: exitServer.ip, // 使用出口规则的IP
                         status: 'PAUSED', // 新创建的规则默认为暂停状态
                         viaNodes: viaNodes,
                     };
@@ -548,7 +548,7 @@ const ForwardRules: React.FC = () => {
                     id: currentRecord.id.toString(),
                     name: `更新规则-${currentRecord.ruleId}`,
                     pathServerIds: pathServerIds,
-                    egressServerId: exitServer.id
+                    egressId: exitServer.id
                 };
 
                 const response = await forwardPathRulesService.updateForwardPathRule(updateRequest);
@@ -593,7 +593,7 @@ const ForwardRules: React.FC = () => {
             setSelectedPath(newPath);
         };
 
-        // 更新exitServer的信息，移除因为出口服务器是只读的
+        // 更新exitServer的信息，移除因为出口规则是只读的
         // React.useEffect(() => {
         //     if (exitServer) {
         //         setExitConfig(exitServer.name);
@@ -651,7 +651,7 @@ const ForwardRules: React.FC = () => {
                             title={
                                 <div style={{ display: 'flex', alignItems: 'center' }}>
                                     <ApiOutlined style={{ marginRight: 8 }} />
-                                    <span>出口服务器</span>
+                                    <span>出口规则</span>
                                 </div>
                             } 
                             style={{ 
@@ -708,7 +708,7 @@ const ForwardRules: React.FC = () => {
                                 </div>
                             ) : (
                                 <div style={{ textAlign: 'center', color: '#999', marginTop: 20 }}>
-                                    请选择出口服务器
+                                    请选择出口规则
                                 </div>
                             )}
                         </Card>
@@ -722,7 +722,7 @@ const ForwardRules: React.FC = () => {
                     fontSize: 12
                 }}>
                     <ArrowRightOutlined style={{ color: '#1890ff', marginRight: 8 }} /> 
-                    数据流向: 从左至右，依次经过所有中继服务器，最终到达出口服务器
+                    数据流向: 从左至右，依次经过所有中继服务器，最终到达出口规则
                 </div>
             </div>
         );
@@ -832,7 +832,7 @@ const ForwardRules: React.FC = () => {
                             size="small" 
                             title={
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span>出口服务器</span>
+                                    <span>出口规则</span>
                                     <Typography.Text type="secondary" style={{ fontSize: 11, fontWeight: 'normal' }}>
                                         (来自出口配置)
                                     </Typography.Text>
@@ -875,7 +875,7 @@ const ForwardRules: React.FC = () => {
                                             backgroundColor: '#fafafa'
                                         }}>
                                             <div style={{ marginBottom: 8, fontSize: 16 }}>🚪</div>
-                                            <div>暂无出口服务器</div>
+                                            <div>暂无出口规则</div>
                                             <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>
                                                 请先在出口配置页面创建出口配置
                                             </div>
@@ -911,7 +911,7 @@ const ForwardRules: React.FC = () => {
         return coordinates[country] || { lat: 0, lng: 0, x: 300, y: 200 };
     };
 
-    // 【核心修复】基于出口配置创建出口服务器列表
+    // 【核心修复】基于出口配置创建出口规则列表
     const createExitServersFromEgressConfigs = (): ServerItem[] => {
         const exitServers: ServerItem[] = [];
         
@@ -931,14 +931,14 @@ const ForwardRules: React.FC = () => {
             });
 
             // 使用API服务器信息（如果存在），否则使用出口配置信息
-            const serverName = matchedApiServer?.name || `出口服务器-${egressConfig.serverId}`;
+            const serverName = matchedApiServer?.name || `出口规则-${egressConfig.serverId}`;
             const serverIp = matchedApiServer?.ipv4 || matchedApiServer?.ipv6 || 
                            egressConfig.targetAddress || '未知IP';
             const serverCountry = matchedApiServer?.country || '未知';
             
             const coords = getCountryCoordinates(serverCountry);
             
-            // 创建出口服务器项
+            // 创建出口规则项
             const exitServer: ServerItem = {
                 id: egressConfig.id || `egress-${egressConfig.egressId}`,
                 name: serverName,
@@ -960,7 +960,7 @@ const ForwardRules: React.FC = () => {
         });
 
         // 调试输出
-        console.log('出口服务器创建完成:', {
+        console.log('出口规则创建完成:', {
             egressConfigsCount: egressConfigs.length,
             apiServersCount: apiServers.length,
             exitServersCount: exitServers.length,
@@ -1044,7 +1044,7 @@ const ForwardRules: React.FC = () => {
             return [];
         }
 
-        // 创建出口服务器列表（基于出口配置）
+        // 创建出口规则列表（基于出口配置）
         const exitServers = createExitServersFromEgressConfigs();
         
         // 创建中继服务器列表（排除被出口配置占用的服务器）

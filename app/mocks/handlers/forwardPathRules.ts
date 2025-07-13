@@ -15,8 +15,8 @@ const mockForwardPathRules: ForwardPathRule[] = [
     id: 'fpr-001',
     userId: 1,
     name: 'HTTP代理路径规则',
-    type: ForwardPathRuleType.HTTP,
-    status: ForwardPathRuleStatus.ACTIVE,
+    type: ForwardPathRuleType.FORWARD_PATH_RULE_TYPE_HTTP,
+    status: ForwardPathRuleStatus.FORWARD_PATH_RULE_STATUS_ACTIVE,
     path: [
       {
         serverId: 'server-001',
@@ -31,19 +31,19 @@ const mockForwardPathRules: ForwardPathRule[] = [
         order: 2
       }
     ],
-    egressServerId: 'exit-server-001',
-    egressServerName: '出口服务器1',
-    trafficUp: '1024000',
-    trafficDown: '2048000',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    egressId: 'exit-server-001',
+    egressName: '出口规则1',
+    trafficUp: 1024000,
+    trafficDown: 2048000,
+    createdAt: Date.now(),
+    updatedAt: Date.now()
   },
   {
     id: 'fpr-002',
     userId: 1,
     name: 'SOCKS5代理路径规则',
-    type: ForwardPathRuleType.SOCKS5,
-    status: ForwardPathRuleStatus.INACTIVE,
+    type: ForwardPathRuleType.FORWARD_PATH_RULE_TYPE_TCP,
+    status: ForwardPathRuleStatus.FORWARD_PATH_RULE_STATUS_INACTIVE,
     path: [
       {
         serverId: 'server-003',
@@ -52,12 +52,12 @@ const mockForwardPathRules: ForwardPathRule[] = [
         order: 1
       }
     ],
-    egressServerId: 'exit-server-002',
-    egressServerName: '出口服务器2',
-    trafficUp: '512000',
-    trafficDown: '1024000',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    egressId: 'exit-server-002',
+    egressName: '出口规则2',
+    trafficUp: 512000,
+    trafficDown: 1024000,
+    createdAt: Date.now(),
+    updatedAt: Date.now()
   }
 ];
 
@@ -100,10 +100,10 @@ export const forwardPathRulesHandlers = [
     const body = await request.json() as CreateForwardPathRuleRequest;
 
     // 验证必填字段
-    if (!body.name || !body.type || !body.egressServerId) {
+    if (!body.name || !body.type || !body.egressId) {
       return HttpResponse.json({
         success: false,
-        message: '缺少必填字段：规则名称、转发类型、出口服务器ID为必填项',
+        message: '缺少必填字段：规则名称、转发类型、出口规则ID为必填项',
         errorCode: 'INVALID_INPUT'
       }, { status: 400 });
     }
@@ -122,19 +122,19 @@ export const forwardPathRulesHandlers = [
       userId: 1,
       name: body.name,
       type: body.type,
-      status: ForwardPathRuleStatus.INACTIVE, // 新建规则默认为非活跃状态
+      status: ForwardPathRuleStatus.FORWARD_PATH_RULE_STATUS_INACTIVE, // 新建规则默认为非活跃状态
       path: body.pathServerIds.map((serverId, index) => ({
         serverId,
         serverName: `服务器-${serverId}`,
         port: 8080 + index,
         order: index + 1
       })),
-      egressServerId: body.egressServerId,
-      egressServerName: `出口服务器-${body.egressServerId}`,
-      trafficUp: '0',
-      trafficDown: '0',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      egressId: body.egressId,
+      egressName: `出口规则-${body.egressId}`,
+      trafficUp: 0,
+      trafficDown: 0,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
     };
 
     mockForwardPathRules.push(newRule);
@@ -192,7 +192,7 @@ export const forwardPathRulesHandlers = [
     if (body.name) rule.name = body.name;
     if (body.type) rule.type = body.type;
     if (body.status) rule.status = body.status;
-    if (body.egressServerId) rule.egressServerId = body.egressServerId;
+    if (body.egressId) rule.egressId = body.egressId;
     if (body.pathServerIds) {
       rule.path = body.pathServerIds.map((serverId, index) => ({
         serverId,
@@ -201,7 +201,7 @@ export const forwardPathRulesHandlers = [
         order: index + 1
       }));
     }
-    rule.updatedAt = new Date().toISOString();
+    rule.updatedAt = Date.now();
 
     return HttpResponse.json({
       success: true,
@@ -250,8 +250,8 @@ export const forwardPathRulesHandlers = [
       }, { status: 404 });
     }
 
-    rule.status = ForwardPathRuleStatus.ACTIVE;
-    rule.updatedAt = new Date().toISOString();
+    rule.status = ForwardPathRuleStatus.FORWARD_PATH_RULE_STATUS_ACTIVE;
+    rule.updatedAt = Date.now();
 
     return HttpResponse.json({
       success: true,
@@ -278,8 +278,8 @@ export const forwardPathRulesHandlers = [
       }, { status: 404 });
     }
 
-    rule.status = ForwardPathRuleStatus.INACTIVE;
-    rule.updatedAt = new Date().toISOString();
+    rule.status = ForwardPathRuleStatus.FORWARD_PATH_RULE_STATUS_INACTIVE;
+    rule.updatedAt = Date.now();
 
     return HttpResponse.json({
       success: true,
@@ -353,8 +353,8 @@ export const forwardPathRulesHandlers = [
     const iptablesConfigs = [
       {
         id: '1',
-        serverId: rule.egressServerId,
-        serverName: rule.egressServerName,
+        serverId: rule.egressId,
+        serverName: rule.egressName,
         configType: 'FORWARD',
         rules: [
           'iptables -t nat -A PREROUTING -p tcp --dport 8080 -j DNAT --to-destination 192.168.1.100:80',
@@ -403,7 +403,7 @@ export const forwardPathRulesHandlers = [
       backupExisting: body.backupExisting || false,
       startTime: new Date().toISOString(),
       endTime: new Date().toISOString(),
-      affectedServers: rule.path.map(p => p.serverId).concat([rule.egressServerId])
+      affectedServers: rule.path?.map(p => p.serverId || '').concat([rule.egressId || '']) || []
     };
 
     return HttpResponse.json({

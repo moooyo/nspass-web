@@ -1,70 +1,35 @@
 import { httpClient, ApiResponse } from '@/utils/http-client';
 
-// 转发路径规则类型（基于proto定义）
-export interface ForwardPathRule {
-  id?: string;
-  userId?: number;
-  name: string;
-  type: ForwardPathRuleType;
-  status: ForwardPathRuleStatus;
-  path: ForwardPathNode[];
-  egressServerId: string;
-  egressServerName?: string;
-  trafficUp?: string;
-  trafficDown?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
+// 从生成的proto文件导入类型
+import type {
+  CreateForwardPathRuleRequest,
+  UpdateForwardPathRuleRequest,
+  GetForwardPathRulesRequest
+} from '@/types/generated/api/forwardPath/forward_path_rule';
 
-// 转发路径节点
-export interface ForwardPathNode {
-  serverId: string;
-  serverName?: string;
-  port?: number;
-  order?: number;
-}
+import type {
+  ForwardPathRule,
+  ForwardPathNode
+} from '@/types/generated/model/forwardPath';
 
-// 转发类型枚举
-export enum ForwardPathRuleType {
-  UNSPECIFIED = 'FORWARD_PATH_RULE_TYPE_UNSPECIFIED',
-  HTTP = 'FORWARD_PATH_RULE_TYPE_HTTP',
-  SOCKS5 = 'FORWARD_PATH_RULE_TYPE_SOCKS5',
-  SHADOWSOCKS = 'FORWARD_PATH_RULE_TYPE_SHADOWSOCKS',
-  TROJAN = 'FORWARD_PATH_RULE_TYPE_TROJAN'
-}
+import {
+  ForwardPathRuleType,
+  ForwardPathRuleStatus
+} from '@/types/generated/model/forwardPath';
 
-// 规则状态枚举
-export enum ForwardPathRuleStatus {
-  UNSPECIFIED = 'FORWARD_PATH_RULE_STATUS_UNSPECIFIED',
-  ACTIVE = 'FORWARD_PATH_RULE_STATUS_ACTIVE',
-  INACTIVE = 'FORWARD_PATH_RULE_STATUS_INACTIVE',
-  ERROR = 'FORWARD_PATH_RULE_STATUS_ERROR'
-}
+// 重新导出类型和枚举以保持兼容性
+export type {
+  ForwardPathRule,
+  ForwardPathNode,
+  CreateForwardPathRuleRequest,
+  UpdateForwardPathRuleRequest,
+  GetForwardPathRulesRequest
+};
 
-// 创建转发路径规则请求
-export interface CreateForwardPathRuleRequest {
-  name: string;
-  type: ForwardPathRuleType;
-  pathServerIds: string[];
-  egressServerId: string;
-}
-
-// 获取转发路径规则列表请求
-export interface GetForwardPathRulesRequest {
-  page?: number;
-  pageSize?: number;
-  status?: ForwardPathRuleStatus;
-}
-
-// 更新转发路径规则请求
-export interface UpdateForwardPathRuleRequest {
-  id: string;
-  name?: string;
-  type?: ForwardPathRuleType;
-  status?: ForwardPathRuleStatus;
-  pathServerIds?: string[];
-  egressServerId?: string;
-}
+export {
+  ForwardPathRuleType,
+  ForwardPathRuleStatus
+};
 
 class ForwardPathRulesService {
   private readonly endpoint = '/v1/forward-path-rules';

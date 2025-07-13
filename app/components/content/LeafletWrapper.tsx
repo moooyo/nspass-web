@@ -108,7 +108,7 @@ const LeafletWrapper: React.FC<WorldMapProps> = ({
         
         <FitBoundsComponent servers={boundServers} />
         
-        {/* 绘制路径线（连接所有中继服务器并连接到出口服务器） */}
+        {/* 绘制路径线（连接所有中继服务器并连接到出口规则） */}
         {pathPoints.length > 1 && (
           <PolylineComponent
             positions={pathPoints.map(server => [server.location.latitude, server.location.longitude])}
@@ -136,7 +136,7 @@ const LeafletWrapper: React.FC<WorldMapProps> = ({
               }
               return '#1677ff'; // 蓝色
             }
-            // 已选择的出口服务器为橘红色
+            // 已选择的出口规则为橘红色
             if (isExitSelected) {
               return '#f5222d'; // 橘红色
             }
