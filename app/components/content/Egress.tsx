@@ -75,7 +75,7 @@ const convertEgressToLocalItem = (egress: EgressItem): LocalEgressItem => {
 // 转换前端表单数据为API请求数据
 const convertFormToCreateData = (values: any): CreateEgressData => {
     const data: CreateEgressData = {
-        egressId: values.egressId,
+        egressName: values.egressName,  // 更改为egressName
         serverId: values.serverId,
         egressMode: values.egressMode,
     };
@@ -99,7 +99,7 @@ const convertFormToCreateData = (values: any): CreateEgressData => {
 // 转换前端表单数据为更新API请求数据
 const convertFormToUpdateData = (values: any): UpdateEgressData => {
     const data: UpdateEgressData = {
-        egressId: values.egressId,
+        egressName: values.egressName,  // 更改为egressName
         serverId: values.serverId,
         egressMode: values.egressMode,
     };
@@ -249,7 +249,7 @@ const Egress: React.FC = () => {
         setEditingRecord(record);
         // 设置表单值
         editForm.setFieldsValue({
-            egressId: record.egressId,
+            egressName: record.egressName,  // 更改为egressName
             serverId: record.serverId,
             egressMode: record.egressMode,
             // 根据模式设置对应字段
@@ -325,10 +325,10 @@ const Egress: React.FC = () => {
 
     const columns: ProColumns<LocalEgressItem>[] = [
         {
-            title: '出口ID',
-            dataIndex: 'egressId',
+            title: '出口名称',
+            dataIndex: 'egressName',  // 更改为egressName
             formItemProps: {
-                rules: [{ required: true, message: '出口ID为必填项' }],
+                rules: [{ required: true, message: '出口名称为必填项' }],
             },
             width: '20%',
         },
@@ -427,7 +427,7 @@ const Egress: React.FC = () => {
                     // 不显示查询成功提示，只在console记录
                 }}
             >
-                <ProFormText name="egressId" label="出口ID" colProps={{ span: 8 }} />
+                <ProFormText name="egressName" label="出口名称" colProps={{ span: 8 }} />
                 <ProFormSelect 
                     name="serverId" 
                     label="服务器ID" 
@@ -507,9 +507,9 @@ const Egress: React.FC = () => {
                 form={form}
             >
                 <ProFormText
-                    name="egressId"
-                    label="出口ID"
-                    placeholder="请输入出口ID，不填将自动生成"
+                    name="egressName"
+                    label="出口名称"
+                    placeholder="请输入出口名称，不填将自动生成"
                 />
                 
                 <ProFormSelect
@@ -650,10 +650,10 @@ const Egress: React.FC = () => {
                 form={editForm}
             >
                 <ProFormText
-                    name="egressId"
-                    label="出口ID"
-                    placeholder="请输入出口ID"
-                    rules={[{ required: true, message: '出口ID为必填项' }]}
+                    name="egressName"
+                    label="出口名称"
+                    placeholder="请输入出口名称"
+                    rules={[{ required: true, message: '出口名称为必填项' }]}
                 />
                 
                 <ProFormSelect

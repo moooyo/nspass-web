@@ -292,7 +292,7 @@ const ForwardRules: React.FC = () => {
                 // 转换服务层返回的数据类型到组件期望的类型
                 const convertedData: EgressItem[] = response.data.map(item => ({
                     id: item.id?.toString(),
-                    egressId: item.egressId,
+                    egressName: item.egressName,  // 使用egressName而不是egressId
                     serverId: item.serverId,
                     egressMode: item.egressMode,
                     targetAddress: item.targetAddress,
@@ -504,7 +504,8 @@ const ForwardRules: React.FC = () => {
                     name: `转发规则-${Date.now().toString().substr(-6)}`,
                     type: ForwardPathRuleType.FORWARD_PATH_RULE_TYPE_HTTP, // 默认使用HTTP类型
                     pathServerIds: pathServerIds,
-                    egressId: exitServer.id
+                    egressId: exitServer.id,
+                    // egressName 由后端根据 egressId 自动填充，不需要前端传入
                 };
 
                 const response = await forwardPathRulesService.createForwardPathRule(createRequest);
@@ -548,7 +549,8 @@ const ForwardRules: React.FC = () => {
                     id: currentRecord.id.toString(),
                     name: `更新规则-${currentRecord.ruleId}`,
                     pathServerIds: pathServerIds,
-                    egressId: exitServer.id
+                    egressId: exitServer.id,
+                    // egressName 由后端根据 egressId 自动填充，不需要前端传入
                 };
 
                 const response = await forwardPathRulesService.updateForwardPathRule(updateRequest);
@@ -940,7 +942,7 @@ const ForwardRules: React.FC = () => {
             
             // 创建出口规则项
             const exitServer: ServerItem = {
-                id: egressConfig.id || `egress-${egressConfig.egressId}`,
+                id: egressConfig.id || `egress-${egressConfig.serverId}`,
                 name: serverName,
                 type: 'EXIT',
                 ip: serverIp,

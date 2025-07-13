@@ -19,7 +19,7 @@ export enum ForwardType {
 // 出口数据类型定义 - 匹配swagger schema
 export interface EgressItem {
   id: React.Key;
-  egressId?: string;
+  egressName?: string;  // 原来的egressId改为egressName，用于显示
   serverId: string;
   egressMode: EgressMode;
   
@@ -39,7 +39,7 @@ export interface EgressItem {
 
 // 创建出口请求类型 - 匹配swagger CreateEgressRequest
 export interface CreateEgressData {
-  egressId?: string;
+  egressName?: string;  // 原来的egressId改为egressName，用于显示
   serverId: string;
   egressMode: EgressMode;
   
@@ -59,7 +59,7 @@ export interface CreateEgressData {
 
 // 更新出口请求类型 - 匹配swagger UpdateEgressRequest
 export interface UpdateEgressData {
-  egressId?: string;
+  egressName?: string;  // 原来的egressId改为egressName，用于显示
   serverId?: string;
   egressMode?: EgressMode;
   targetAddress?: string;
@@ -75,7 +75,7 @@ export interface UpdateEgressData {
 export interface EgressListParams {
   page?: number;
   pageSize?: number;
-  egressId?: string;
+  egressName?: string;  // 原来的egressId改为egressName，用于查询
   serverId?: string;
   egressMode?: EgressMode;
 }
@@ -109,7 +109,7 @@ class EgressService {
     
     if (params.page) queryParams.page = params.page.toString();
     if (params.pageSize) queryParams.pageSize = params.pageSize.toString();
-    if (params.egressId) queryParams.egressId = params.egressId;
+    if (params.egressName) queryParams.egressName = params.egressName;
     if (params.serverId) queryParams.serverId = params.serverId;
     if (params.egressMode && params.egressMode !== EgressMode.EGRESS_MODE_UNSPECIFIED) {
       queryParams.egressMode = params.egressMode;

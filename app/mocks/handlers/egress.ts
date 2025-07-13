@@ -7,7 +7,7 @@ import { generateRandomPort } from '@/utils/passwordUtils';
 const mockEgressData: EgressItem[] = [
     {
         id: '1',
-        egressId: 'egress001',
+        egressName: 'egress001',  // 更改为egressName
         serverId: '1', // 北京服务器-01
         egressMode: EgressMode.EGRESS_MODE_DIRECT,
         egressConfig: '目的地址: 203.0.113.1',
@@ -15,7 +15,7 @@ const mockEgressData: EgressItem[] = [
     },
     {
         id: '2',
-        egressId: 'egress002',
+        egressName: 'egress002',  // 更改为egressName
         serverId: '2', // 洛杉矶服务器-01
         egressMode: EgressMode.EGRESS_MODE_IPTABLES,
         egressConfig: 'TCP转发至 192.168.1.1:8080',
@@ -25,7 +25,7 @@ const mockEgressData: EgressItem[] = [
     },
     {
         id: '3',
-        egressId: 'egress003',
+        egressName: 'egress003',  // 更改为egressName
         serverId: '3', // 东京服务器-01
         egressMode: EgressMode.EGRESS_MODE_IPTABLES,
         egressConfig: '全部转发至 10.0.0.1:443',
@@ -35,7 +35,7 @@ const mockEgressData: EgressItem[] = [
     },
     {
         id: '4',
-        egressId: 'egress004',
+        egressName: 'egress004',  // 更改为egressName
         serverId: '4', // 法兰克福服务器-01
         egressMode: EgressMode.EGRESS_MODE_SS2022,
         egressConfig: 'Shadowsocks-2022，端口: 25678，支持UDP',
@@ -53,15 +53,15 @@ export const egressHandlers = [
         const url = new URL(request.url);
         const page = parseInt(url.searchParams.get('page') || '1');
         const pageSize = parseInt(url.searchParams.get('pageSize') || '10');
-        const egressId = url.searchParams.get('egressId');
+        const egressName = url.searchParams.get('egressName');  // 更改为egressName
         const serverId = url.searchParams.get('serverId');
         const egressMode = url.searchParams.get('egressMode');
 
         let filteredData = [...mockEgressData];
 
         // 应用筛选条件
-        if (egressId) {
-            filteredData = filteredData.filter(item => item.egressId?.includes(egressId));
+        if (egressName) {
+            filteredData = filteredData.filter(item => item.egressName?.includes(egressName));
         }
         if (serverId) {
             filteredData = filteredData.filter(item => item.serverId === serverId);
@@ -94,7 +94,7 @@ export const egressHandlers = [
         const newEgress: EgressItem = {
             ...data,
             id: (nextId++).toString(),
-            egressId: data.egressId || `egress${Date.now().toString().substr(-6)}`,
+            egressName: data.egressName || `egress${Date.now().toString().substr(-6)}`,  // 更改为egressName
         };
         
         // 如果是shadowsocks-2022模式且没有提供端口，则生成随机端口
@@ -179,7 +179,7 @@ export const egressHandlers = [
         
         return HttpResponse.json({
             success: true,
-            message: `出口配置 ${deletedEgress.egressId} 删除成功`
+            message: `出口配置 ${deletedEgress.egressName} 删除成功`  // 更改为egressName
         });
     }),
 
