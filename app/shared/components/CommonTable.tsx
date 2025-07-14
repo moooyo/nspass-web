@@ -50,7 +50,7 @@ export interface CommonTableProps<T> {
   actionRef?: React.MutableRefObject<ActionType | undefined>;
 }
 
-export function CommonTable<T extends Record<string, any>>({
+export function CommonTable<T extends Record<string, unknown>>({
   data,
   loading = false,
   pagination,

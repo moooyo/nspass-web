@@ -25,7 +25,7 @@ export interface CommonSearchProps {
   onSearch: (params: QueryParams) => void;
   onReset?: () => void;
   loading?: boolean;
-  defaultValues?: Record<string, any>;
+  defaultValues?: Record<string, unknown>;
   collapsed?: boolean;
   showReset?: boolean;
   debounceDelay?: number;
@@ -41,13 +41,13 @@ export function CommonSearch({
   showReset = true,
   debounceDelay = 300,
 }: CommonSearchProps) {
-  const [searchValues, setSearchValues] = useState<Record<string, any>>(defaultValues);
+  const [searchValues, setSearchValues] = useState<Record<string, unknown>>(defaultValues);
   
   // 使用防抖处理搜索
   const debouncedSearchValues = useDebounce(searchValues, debounceDelay);
 
   // 处理搜索值变化
-  const handleValuesChange = useCallback((changedValues: any, allValues: any) => {
+  const handleValuesChange = useCallback((changedValues: Record<string, unknown>, allValues: Record<string, unknown>) => {
     setSearchValues(allValues);
   }, []);
 
@@ -92,7 +92,7 @@ export function CommonSearch({
     });
 
     onSearch({
-      search: debouncedSearchValues.search,
+      search: typeof debouncedSearchValues.search === 'string' ? debouncedSearchValues.search : undefined,
       filters,
     });
   }, [debouncedSearchValues, fields, onSearch]);

@@ -23,7 +23,7 @@ import { apiUtils } from '../utils';
  */
 export function useApi<T>(
   apiCall: () => Promise<StandardApiResponse<T>>,
-  deps: any[] = [],
+  deps: unknown[] = [],
   options: {
     immediate?: boolean;
     onSuccess?: (data: T) => void;
@@ -61,7 +61,7 @@ export function useApi<T>(
         setLoading(false);
       }
     }
-  }, [apiCall, onSuccess, onError, ...deps]);
+  }, [apiCall, onSuccess, onError, deps]);
 
   useEffect(() => {
     if (immediate) {
@@ -184,7 +184,7 @@ export function usePaginatedApi<T>(
     if (immediate) {
       fetchData();
     }
-  }, []);
+  }, [fetchData, immediate]);
 
   useEffect(() => {
     return () => {
@@ -211,8 +211,8 @@ export function usePaginatedApi<T>(
 export function useTable<T>(
   service: {
     getList: (params?: QueryParams) => Promise<StandardApiResponse<T[]>>;
-    create: (data: any) => Promise<StandardApiResponse<T>>;
-    update: (id: string | number, data: any) => Promise<StandardApiResponse<T>>;
+    create: (data: Record<string, unknown>) => Promise<StandardApiResponse<T>>;
+    update: (id: string | number, data: Record<string, unknown>) => Promise<StandardApiResponse<T>>;
     delete: (id: string | number) => Promise<StandardApiResponse<void>>;
     batchDelete?: (ids: (string | number)[]) => Promise<StandardApiResponse<void>>;
   },
@@ -233,13 +233,13 @@ export function useTable<T>(
     handleSearch,
   } = usePaginatedApi(service.getList, { initialPageSize, immediate });
 
-  const create = useCallback(async (data: any): Promise<OperationResult> => {
+  const create = useCallback(async (data: Record<string, unknown>): Promise<OperationResult<T>> => {
     try {
       const response = await service.create(data);
       apiUtils.handleResponse(response);
       apiUtils.showSuccess('创建成功');
       reload();
-      return { success: true };
+      return { success: true, data: response.data };
     } catch (error) {
       const err = error instanceof Error ? error : new Error('创建失败');
       apiUtils.showError(err);
@@ -247,13 +247,13 @@ export function useTable<T>(
     }
   }, [service, reload]);
 
-  const update = useCallback(async (id: string | number, data: any): Promise<OperationResult> => {
+  const update = useCallback(async (id: string | number, data: Record<string, unknown>): Promise<OperationResult<T>> => {
     try {
       const response = await service.update(id, data);
       apiUtils.handleResponse(response);
       apiUtils.showSuccess('更新成功');
       reload();
-      return { success: true };
+      return { success: true, data: response.data };
     } catch (error) {
       const err = error instanceof Error ? error : new Error('更新失败');
       apiUtils.showError(err);
@@ -261,7 +261,7 @@ export function useTable<T>(
     }
   }, [service, reload]);
 
-  const deleteItem = useCallback(async (id: string | number): Promise<OperationResult> => {
+  const deleteItem = useCallback(async (id: string | number): Promise<OperationResult<void>> => {
     try {
       const response = await service.delete(id);
       apiUtils.handleResponse(response);
@@ -326,16 +326,16 @@ export function useTable<T>(
  * 表单状态管理Hook
  * 提供表单验证、错误处理等功能
  */
-export function useFormState<T extends Record<string, any>>(
+export function useFormState<T extends Record<string, unknown>>(
   initialValues: T,
-  validators?: Partial<Record<keyof T, (value: any) => string | undefined>>
+  validators?: Partial<Record<keyof T, (value: unknown) => string | undefined>>
 ): FormState<T> {
   const [values, setValues] = useState<T>(initialValues);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
 
-  const setValue = useCallback((field: keyof T, value: any) => {
+  const setValue = useCallback((field: keyof T, value: unknown) => {
     setValues(prev => ({ ...prev, [field]: value }));
     
     // 清除该字段的错误

@@ -7,6 +7,7 @@ import React, { useEffect } from 'react';
 import { ModalForm, ProFormText, ProFormSelect, ProFormTextArea, ProFormDigit, ProFormCheckbox } from '@ant-design/pro-components';
 import { Form } from 'antd';
 import type { FormInstance } from 'antd';
+import type { Rule } from 'antd/es/form';
 import { FORM_CONFIG, MODAL_CONFIG } from '../constants';
 import type { Option } from '../types/common';
 
@@ -17,12 +18,12 @@ export interface FormField {
   required?: boolean;
   placeholder?: string;
   options?: Option[];
-  rules?: any[];
+  rules?: Rule[];
   dependencies?: string[];
   tooltip?: string;
   disabled?: boolean;
   hidden?: boolean;
-  defaultValue?: any;
+  defaultValue?: unknown;
 }
 
 export interface CommonFormProps {
@@ -31,12 +32,12 @@ export interface CommonFormProps {
   loading?: boolean;
   width?: number;
   fields: FormField[];
-  initialValues?: Record<string, any>;
-  onFinish: (values: any) => Promise<boolean>;
+  initialValues?: Record<string, unknown>;
+  onFinish: (values: Record<string, unknown>) => Promise<boolean>;
   onCancel: () => void;
   form?: FormInstance;
-  modalProps?: any;
-  formProps?: any;
+  modalProps?: Record<string, unknown>;
+  formProps?: Record<string, unknown>;
 }
 
 export function CommonForm({
@@ -89,7 +90,7 @@ export function CommonForm({
             {...commonProps}
             rules={[
               ...(commonProps.rules || []),
-              { type: 'email', message: '请输入有效的邮箱地址' },
+              { type: 'email' as const, message: '请输入有效的邮箱地址' },
             ]}
           />
         );

@@ -32,7 +32,7 @@ import { serverService } from '@/services/server';
 import type { ServerItem as ApiServerItem } from '@/types/generated/api/servers/server_management';
 import { egressService } from '@/services/egress';
 import type { EgressItem } from '@/types/generated/model/egressItem';
-import { forwardPathRulesService, ForwardPathRuleType, ForwardPathRuleStatus } from '@/services/forwardPathRules';
+import { forwardPathRulesService, ForwardPathRuleType } from '@/services/forwardPathRules';
 import 'leaflet/dist/leaflet.css';
 import { useApiOnce } from '@/components/hooks/useApiOnce';
 
@@ -317,7 +317,7 @@ const ForwardRules: React.FC = () => {
     }, []);
 
     // 暂停/启动规则
-    const toggleRuleStatus = async (record: ForwardRuleItem) => {
+    const toggleRuleStatus = useCallback(async (record: ForwardRuleItem) => {
         try {
             const newStatus = record.status === 'ACTIVE';
             const response = await forwardRulesService.toggleRule({
@@ -344,19 +344,19 @@ const ForwardRules: React.FC = () => {
         } catch (error) {
             handleDataResponse.userAction('切换规则状态', false, undefined, error);
         }
-    };
+    }, [dataSource, setDataSource]);
 
     // 诊断规则
-    const diagnoseRule = (record: ForwardRuleItem) => {
+    const diagnoseRule = useCallback((record: ForwardRuleItem) => {
         message.info(`正在诊断规则: ${record.ruleId}`);
         // 这里可以添加诊断逻辑，比如弹出诊断结果或跳转到诊断页面
         setTimeout(() => {
             message.success(`规则 ${record.ruleId} 诊断完成，一切正常！`);
         }, 1500);
-    };
+    }, []);
 
     // 复制规则
-    const copyRule = (record: ForwardRuleItem) => {
+    const copyRule = useCallback((record: ForwardRuleItem) => {
         const newRule: ForwardRuleItem = {
             ...record,
             id: Date.now(),
@@ -367,10 +367,10 @@ const ForwardRules: React.FC = () => {
         };
         setDataSource([...dataSource, newRule]);
         handleDataResponse.userAction('复制规则', true, { message: `已复制规则: ${record.ruleId}` });
-    };
+    }, [dataSource, setDataSource]);
 
     // 删除规则
-    const deleteRule = async (record: ForwardRuleItem) => {
+    const deleteRule = useCallback(async (record: ForwardRuleItem) => {
         try {
             const response = await forwardRulesService.deleteRule({ id: record.id as number });
             if (response.success) {
@@ -382,7 +382,7 @@ const ForwardRules: React.FC = () => {
         } catch (error) {
             handleDataResponse.userAction('删除规则', false, undefined, error);
         }
-    };
+    }, [dataSource, setDataSource]);
 
     // 打开新增弹窗
     const openCreateModal = () => {
@@ -396,7 +396,7 @@ const ForwardRules: React.FC = () => {
     };
 
     // 打开编辑弹窗
-    const openEditModal = (record: ForwardRuleItem) => {
+    const openEditModal = useCallback((record: ForwardRuleItem) => {
         setModalMode('edit');
         setCurrentRecord(record);
         
@@ -409,7 +409,7 @@ const ForwardRules: React.FC = () => {
         setModalVisible(true);
         // 标记地图已渲染，确保缓存
         mapRenderedRef.current = true;
-    };
+    }, [setModalMode, setCurrentRecord, setSelectedPath, setExitServer, setModalVisible]);
 
     // 处理服务器选择 - 使用useCallback缓存
     const handleServerSelect = useCallback((server: ServerItem) => {
@@ -914,7 +914,7 @@ const ForwardRules: React.FC = () => {
     };
 
     // 【核心修复】基于出口配置创建出口规则列表
-    const createExitServersFromEgressConfigs = (): ServerItem[] => {
+    const createExitServersFromEgressConfigs = useCallback((): ServerItem[] => {
         const exitServers: ServerItem[] = [];
         
         egressConfigs.forEach((egressConfig) => {
@@ -975,10 +975,10 @@ const ForwardRules: React.FC = () => {
         });
 
         return exitServers;
-    };
+    }, [egressConfigs, apiServers]);
 
     // 创建中继服务器列表（排除已被用作出口的服务器）
-    const createRelayServersFromApiServers = (): ServerItem[] => {
+    const createRelayServersFromApiServers = useCallback((): ServerItem[] => {
         // 获取所有被出口配置占用的服务器ID
         const usedServerIds = new Set(egressConfigs.map(egress => egress.serverId));
         
@@ -1013,7 +1013,7 @@ const ForwardRules: React.FC = () => {
                     _apiServer: apiServer
                 };
             });
-    };
+    }, [egressConfigs, apiServers]);
 
     // 加载服务器数据
     const loadServers = useCallback(async () => {
@@ -1064,7 +1064,7 @@ const ForwardRules: React.FC = () => {
         });
         
         return allServers;
-    }, [apiServers, egressConfigs, serversLoading, egressLoading]); // 依赖所有相关数据
+    }, [apiServers, egressConfigs, serversLoading, egressLoading, createExitServersFromEgressConfigs, createRelayServersFromApiServers]); // 依赖所有相关数据
 
     // 使用 useMemo 缓存表格列配置，避免每次渲染重新创建
     const columns: ProColumns<ForwardRuleItem>[] = useMemo(() => [

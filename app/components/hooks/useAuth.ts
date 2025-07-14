@@ -142,7 +142,7 @@ export const useAuth = (): UseAuthReturn => {
   const refreshUser = useCallback(() => {
     isInitializedRef.current = false;
     loadUserFromStorage();
-  }, []);
+  }, [loadUserFromStorage]);
 
   // 组件挂载时加载用户信息
   useEffect(() => {

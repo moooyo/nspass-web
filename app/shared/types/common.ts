@@ -26,9 +26,10 @@ export interface StandardApiResponse<T = unknown> {
 }
 
 // 表格操作结果
-export interface OperationResult {
+export interface OperationResult<T = unknown> {
   success: boolean;
   message?: string;
+  data?: T;
 }
 
 // 批量操作结果
@@ -40,6 +41,20 @@ export interface BatchOperationResult {
     id: string | number;
     message: string;
   }>;
+}
+
+// 表格列配置
+export interface TableColumn<T = Record<string, unknown>> {
+  key: string;
+  title: string;
+  dataIndex: keyof T;
+  render?: (value: unknown, record: T, index: number) => React.ReactNode;
+  sorter?: boolean;
+  filters?: Array<{ text: string; value: string }>;
+  width?: number;
+  align?: 'left' | 'center' | 'right';
+  fixed?: 'left' | 'right';
+  ellipsis?: boolean;
 }
 
 // Hook返回类型
@@ -57,8 +72,8 @@ export interface UseTableHookResult<T> {
   error: Error | null;
   pagination: Pagination;
   reload: () => void;
-  create: (data: Record<string, unknown>) => Promise<OperationResult>;
-  update: (id: string | number, data: Record<string, unknown>) => Promise<OperationResult>;
+  create: (data: Record<string, unknown>) => Promise<OperationResult<T>>;
+  update: (id: string | number, data: Record<string, unknown>) => Promise<OperationResult<T>>;
   delete: (id: string | number) => Promise<OperationResult>;
   batchDelete: (ids: (string | number)[]) => Promise<BatchOperationResult>;
   handlePageChange: (page: number, pageSize?: number) => void;
@@ -108,7 +123,7 @@ export enum OperationType {
 }
 
 // 通用选项接口
-export interface Option<T = any> {
+export interface Option<T = unknown> {
   label: string;
   value: T;
   disabled?: boolean;
@@ -176,7 +191,7 @@ export interface ExportOptions {
 export interface SearchFilter {
   field: string;
   operator: 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte' | 'like' | 'in' | 'nin';
-  value: any;
+  value: unknown;
 }
 
 // 排序选项
@@ -192,4 +207,5 @@ export interface QueryParams {
   search?: string;
   filters?: SearchFilter[];
   sort?: SortOption[];
+  [key: string]: unknown; // 添加索引签名以支持任意参数
 }

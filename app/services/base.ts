@@ -13,13 +13,13 @@ export interface PaginationParams {
  * 统一的查询参数接口
  */
 export interface QueryParams extends PaginationParams {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
  * 统一的 API 响应接口
  */
-export interface StandardApiResponse<T = any> extends ApiResponse<T> {
+export interface StandardApiResponse<T = unknown> extends ApiResponse<T> {
   total?: number;
   pagination?: {
     current: number;
@@ -47,7 +47,7 @@ export interface BatchStatusUpdateRequest extends BatchOperationRequest {
  * 基础 Service 抽象类
  * 提供通用的 CRUD 操作模板
  */
-export abstract class BaseService<T = any, CreateData = any, UpdateData = any> {
+export abstract class BaseService<T = unknown, CreateData = unknown, UpdateData = unknown> {
   protected abstract readonly endpoint: string;
   protected readonly httpClient = httpClient;
 
@@ -137,11 +137,12 @@ export abstract class BaseService<T = any, CreateData = any, UpdateData = any> {
   /**
    * 通用错误处理
    */
-  protected handleError(error: any, operation: string): StandardApiResponse<any> {
+  protected handleError(error: unknown, operation: string): StandardApiResponse<null> {
     console.error(`${operation} 操作失败:`, error);
+    const errorMessage = error instanceof Error ? error.message : `${operation}失败，请稍后重试`;
     return {
       success: false,
-      message: error?.message || `${operation}失败，请稍后重试`,
+      message: errorMessage,
       data: null
     };
   }
@@ -152,7 +153,7 @@ export abstract class BaseService<T = any, CreateData = any, UpdateData = any> {
  */
 export class ServiceManager {
   private static instance: ServiceManager;
-  private services: Map<string, any> = new Map();
+  private services: Map<string, unknown> = new Map();
 
   private constructor() {}
 

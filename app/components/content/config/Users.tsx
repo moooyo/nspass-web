@@ -85,7 +85,7 @@ const Users: React.FC = () => {
     }, [loadUserConfigs]);
 
     // 封禁/解除封禁用户
-    const toggleBanUser = async (record: UserConfigItem) => {
+    const toggleBanUser = useCallback(async (record: UserConfigItem) => {
         try {
             const response = await usersConfigService.toggleBanUser(record.id, !record.banned);
             if (response.success) {
@@ -98,10 +98,10 @@ const Users: React.FC = () => {
             console.error('封禁操作失败:', error);
             message.error('封禁操作失败');
         }
-    };
+    }, [loadUserConfigs]);
 
     // 重置用户流量
-    const resetUserTraffic = async (record: UserConfigItem) => {
+    const resetUserTraffic = useCallback(async (record: UserConfigItem) => {
         try {
             const response = await usersConfigService.resetUserTraffic(record.id);
             if (response.success) {
@@ -113,10 +113,10 @@ const Users: React.FC = () => {
             console.error('重置流量失败:', error);
             message.error('重置流量失败');
         }
-    };
+    }, []);
 
     // 邀请注册
-    const inviteUser = async (record: UserConfigItem) => {
+    const inviteUser = useCallback(async (record: UserConfigItem) => {
         try {
             const response = await usersConfigService.inviteUser(record.id);
             if (response.success) {
@@ -128,7 +128,7 @@ const Users: React.FC = () => {
             console.error('发送邀请失败:', error);
             message.error('发送邀请失败');
         }
-    };
+    }, []);
 
     // 打开新增弹窗
     const openCreateModal = () => {
@@ -138,24 +138,24 @@ const Users: React.FC = () => {
     };
 
     // 打开编辑弹窗
-    const openEditModal = (record: UserConfigItem) => {
+    const openEditModal = useCallback((record: UserConfigItem) => {
         setModalMode('edit');
         setCurrentRecord(record);
         setModalVisible(true);
-    };
+    }, []);
 
     // 统一处理表单提交
-    const handleModalSubmit = async (values: any) => {
+    const handleModalSubmit = async (values: Record<string, unknown>) => {
         try {
             if (modalMode === 'create') {
                 const userData: CreateUserConfigData = {
-                    userId: values.userId,
-                    username: values.username,
-                    userGroup: values.userGroup,
-                    expireTime: values.expireTime,
-                    trafficLimit: values.trafficLimit,
-                    trafficResetType: values.trafficResetType,
-                    ruleLimit: values.ruleLimit,
+                    userId: values.userId as string,
+                    username: values.username as string,
+                    userGroup: values.userGroup as never,
+                    expireTime: values.expireTime as string,
+                    trafficLimit: values.trafficLimit as number,
+                    trafficResetType: values.trafficResetType as never,
+                    ruleLimit: values.ruleLimit as number,
                     banned: false,
                 };
 

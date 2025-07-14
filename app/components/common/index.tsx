@@ -59,7 +59,7 @@ interface CommonTableProps<T> {
   // 自定义渲染
   renderCreateForm?: (props: {
     visible: boolean;
-    onSubmit: (data: any) => Promise<void>;
+    onSubmit: (data: Partial<T>) => Promise<void>;
     onCancel: () => void;
     loading: boolean;
   }) => React.ReactNode;
@@ -67,7 +67,7 @@ interface CommonTableProps<T> {
   renderEditForm?: (props: {
     visible: boolean;
     record: T;
-    onSubmit: (data: any) => Promise<void>;
+    onSubmit: (data: Partial<T>) => Promise<void>;
     onCancel: () => void;
     loading: boolean;
   }) => React.ReactNode;
@@ -106,7 +106,7 @@ interface CommonTableProps<T> {
 /**
  * 通用表格组件
  */
-export function CommonTable<T extends Record<string, any>>(props: CommonTableProps<T>) {
+export function CommonTable<T extends Record<string, unknown> & { [key: string]: string | number | unknown }>(props: CommonTableProps<T>) {
   const {
     title = '数据列表',
     columns,
@@ -146,7 +146,7 @@ export function CommonTable<T extends Record<string, any>>(props: CommonTablePro
     update,
     delete: deleteItem,
     batchDelete
-  } = useTable(service, pageSize);
+  } = useTable(service as Parameters<typeof useTable>[0], { initialPageSize: pageSize });
 
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -187,7 +187,7 @@ export function CommonTable<T extends Record<string, any>>(props: CommonTablePro
     
     setEditLoading(true);
     try {
-      const result = await update(editingRecord[rowKey as string], data);
+      const result = await update(editingRecord[rowKey as string] as string | number, data);
       if (result.success) {
         setEditModalVisible(false);
         setEditingRecord(null);
@@ -200,9 +200,9 @@ export function CommonTable<T extends Record<string, any>>(props: CommonTablePro
 
   // 处理删除
   const handleDelete = async (record: T) => {
-    const result = await deleteItem(record[rowKey as string]);
+    const result = await deleteItem(record[rowKey as string] as string | number);
     if (result.success) {
-      onDeleteSuccess?.(record[rowKey as string]);
+      onDeleteSuccess?.(record[rowKey as string] as string | number);
     }
   };
 
