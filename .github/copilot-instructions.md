@@ -21,6 +21,8 @@ This repo has some specific rules you must followed.
 
 I don't need any documentation to summarize your work. So please clean up it after you complete the task.
 
+I don't need any testing code or example, please clean up it after you complete the task.
+
 If you try to start the application, you need to stop it after you complete the task.
 
 Please always respond with Chinese.
