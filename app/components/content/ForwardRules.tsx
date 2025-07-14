@@ -339,10 +339,10 @@ const ForwardRules: React.FC = () => {
                     `已启动规则: ${record.ruleId}`)
                 );
             } else {
-                // handleDataResponse.userAction('切换规则状态', false, response);
+                // // handleDataResponse.userAction('切换规则状态', false, response);
             }
         } catch (error) {
-            // handleDataResponse.userAction('切换规则状态', false, undefined, error);
+            // // handleDataResponse.userAction('切换规则状态', false, undefined, error);
         }
     }, [dataSource, setDataSource]);
 
@@ -366,7 +366,7 @@ const ForwardRules: React.FC = () => {
             viaNodes: [], // 复制的规则途径节点为空
         };
         setDataSource([...dataSource, newRule]);
-        // handleDataResponse.userAction('复制规则', true, { message: `已复制规则: ${record.ruleId}` });
+        // // handleDataResponse.userAction('复制规则', true, { message: `已复制规则: ${record.ruleId}` });
     }, [dataSource, setDataSource]);
 
     // 删除规则
@@ -375,12 +375,12 @@ const ForwardRules: React.FC = () => {
             const response = await forwardRulesService.deleteRule({ id: record.id as number });
             if (response.success) {
                 setDataSource(dataSource.filter(item => item.id !== record.id));
-                // handleDataResponse.userAction('删除规则', true, response);
+                // // handleDataResponse.userAction('删除规则', true, response);
             } else {
-                // handleDataResponse.userAction('删除规则', false, response);
+                // // handleDataResponse.userAction('删除规则', false, response);
             }
         } catch (error) {
-            // handleDataResponse.userAction('删除规则', false, undefined, error);
+            // // handleDataResponse.userAction('删除规则', false, undefined, error);
         }
     }, [dataSource, setDataSource]);
 
@@ -526,14 +526,14 @@ const ForwardRules: React.FC = () => {
                     };
                     
                     setDataSource([...dataSource, newRule]);
-                    // handleDataResponse.userAction('创建转发路径规则', true, response);
+                    // // handleDataResponse.userAction('创建转发路径规则', true, response);
                     message.success('转发规则创建成功！');
                 } else {
-                    // handleDataResponse.userAction('创建转发路径规则', false, response);
+                    // // handleDataResponse.userAction('创建转发路径规则', false, response);
                     message.error(response.message || '创建转发规则失败');
                 }
             } catch (error) {
-                // handleDataResponse.userAction('创建转发路径规则', false, undefined, error);
+                // // handleDataResponse.userAction('创建转发路径规则', false, undefined, error);
                 message.error('创建转发规则时发生错误');
             }
         } else {
@@ -568,14 +568,14 @@ const ForwardRules: React.FC = () => {
                         item.id === currentRecord.id ? updatedRule : item
                     );
                     setDataSource(updatedDataSource);
-                    // handleDataResponse.userAction('更新转发路径规则', true, response);
+                    // // handleDataResponse.userAction('更新转发路径规则', true, response);
                     message.success('转发规则更新成功！');
                 } else {
-                    // handleDataResponse.userAction('更新转发路径规则', false, response);
+                    // // handleDataResponse.userAction('更新转发路径规则', false, response);
                     message.error(response.message || '更新转发规则失败');
                 }
             } catch (error) {
-                // handleDataResponse.userAction('更新转发路径规则', false, undefined, error);
+                // // handleDataResponse.userAction('更新转发路径规则', false, undefined, error);
                 message.error('更新转发规则时发生错误');
             }
         }
@@ -1011,14 +1011,14 @@ const ForwardRules: React.FC = () => {
             
             if (response.success && response.data) {
                 setApiServers(response.data);
-                // handleDataResponse.success('获取服务器列表', response);
+                // // handleDataResponse.success('获取服务器列表', response);
             } else {
                 setApiServers([]);
-                // handleDataResponse.error('获取服务器列表', undefined, response);
+                // // handleDataResponse.error('获取服务器列表', undefined, response);
             }
         } catch (error) {
             setApiServers([]);
-            // handleDataResponse.error('获取服务器列表', error);
+            // // handleDataResponse.error('获取服务器列表', error);
         } finally {
             setServersLoading(false);
         }

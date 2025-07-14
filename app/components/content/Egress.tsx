@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Button, Tag, Popconfirm, Tooltip } from 'antd';
-import { handleDataResponse } from '@/utils/message';
+import { handleApiResponse, message } from '@/utils/message';
 import {
     EditableProTable,
     ProColumns,
@@ -147,7 +147,7 @@ const Egress: React.FC = () => {
             if (!currentPort) {
                 const randomPort = generateRandomPort(20000, 50000);
                 formInstance.setFieldValue('port', randomPort);
-                handleDataResponse.userAction(`已自动生成Shadowsocks端口: ${randomPort}`, true);
+                // handleDataResponse.userAction(`已自动生成Shadowsocks端口: ${randomPort}`, true);
             }
         }
     }, []);
@@ -176,18 +176,18 @@ const Egress: React.FC = () => {
                 const convertedData = egressData.map(convertEgressToLocalItem);
                 setDataSource(convertedData);
                 // Data loaded successfully
-                handleDataResponse.success('获取出口配置', response);
+                // handleDataResponse.success('获取出口配置', response);
             } else {
                 // 失败时清空数据，避免显示过期缓存
                 setDataSource([]);
                 // Error loading data
-                handleDataResponse.error('获取出口配置', undefined, response);
+                // handleDataResponse.error('获取出口配置', undefined, response);
             }
         } catch (error) {
             // 失败时清空数据，避免显示过期缓存
             setDataSource([]);
             // Error loading data
-            handleDataResponse.error('获取出口配置', error);
+            // handleDataResponse.error('获取出口配置', error);
         } finally {
             setLoading(false);
         }
@@ -203,14 +203,14 @@ const Egress: React.FC = () => {
             
             if (response.success && response.data) {
                 setServers(response.data);
-                handleDataResponse.success('获取服务器列表', response);
+                // handleDataResponse.success('获取服务器列表', response);
             } else {
                 setServers([]);
-                handleDataResponse.error('获取服务器列表', undefined, response);
+                // handleDataResponse.error('获取服务器列表', undefined, response);
             }
         } catch (error) {
             setServers([]);
-            handleDataResponse.error('获取服务器列表', error);
+            // handleDataResponse.error('获取服务器列表', error);
         } finally {
             setServersLoading(false);
         }
@@ -235,12 +235,12 @@ const Egress: React.FC = () => {
             if (response.success) {
                 // 重新拉取数据
                 await loadEgressData();
-                handleDataResponse.userAction('删除出口', true, response);
+                // handleDataResponse.userAction('删除出口', true, response);
             } else {
-                handleDataResponse.userAction('删除出口', false, response);
+                // handleDataResponse.userAction('删除出口', false, response);
             }
         } catch (error) {
-            handleDataResponse.userAction('删除出口', false, undefined, error);
+            // handleDataResponse.userAction('删除出口', false, undefined, error);
         }
     };
 
@@ -284,15 +284,15 @@ const Egress: React.FC = () => {
                     const convertedData = egressData.map(convertEgressToLocalItem);
                     setDataSource(convertedData);
                 }
-                handleDataResponse.userAction('更新出口', true, response);
+                // handleDataResponse.userAction('更新出口', true, response);
                 setEditingRecord(null);
                 return true;
             } else {
-                handleDataResponse.userAction('更新出口', false, response);
+                // handleDataResponse.userAction('更新出口', false, response);
                 return false;
             }
         } catch (error) {
-            handleDataResponse.userAction('更新出口', false, undefined, error);
+            // handleDataResponse.userAction('更新出口', false, undefined, error);
             return false;
         }
     };
@@ -311,14 +311,14 @@ const Egress: React.FC = () => {
                     const convertedData = egressData.map(convertEgressToLocalItem);
                     setDataSource(convertedData);
                 }
-                handleDataResponse.userAction('创建出口', true, response);
+                // handleDataResponse.userAction('创建出口', true, response);
                 return true;
             } else {
-                handleDataResponse.userAction('创建出口', false, response);
+                // handleDataResponse.userAction('创建出口', false, response);
                 return false;
             }
         } catch (error) {
-            handleDataResponse.userAction('创建出口', false, undefined, error);
+            // handleDataResponse.userAction('创建出口', false, undefined, error);
             return false;
         }
     };
@@ -611,7 +611,7 @@ const Egress: React.FC = () => {
                                                         onClick={() => {
                                                             const randomPort = generateRandomPort(20000, 50000);
                                                             form.setFieldValue('port', randomPort);
-                                                            handleDataResponse.userAction(`已生成随机端口: ${randomPort}`, true);
+                                                            // handleDataResponse.userAction(`已生成随机端口: ${randomPort}`, true);
                                                         }}
                                                         size="small"
                                                     />
@@ -755,7 +755,7 @@ const Egress: React.FC = () => {
                                                         onClick={() => {
                                                             const randomPort = generateRandomPort(20000, 50000);
                                                             editForm.setFieldValue('port', randomPort);
-                                                            handleDataResponse.userAction(`已生成随机端口: ${randomPort}`, true);
+                                                            // handleDataResponse.userAction(`已生成随机端口: ${randomPort}`, true);
                                                         }}
                                                         size="small"
                                                     />

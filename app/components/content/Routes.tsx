@@ -5,7 +5,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Button, Tag, Popconfirm, Tooltip, Space, Card, Typography, Collapse, Input, Modal } from 'antd';
-import { handleDataResponse, message } from '@/utils/message';
+import { handleApiResponse, message } from '@/utils/message';
 import { routeService, RouteItem, CreateRouteData, UpdateRouteData } from '@/services/routes';
 import { 
   RouteType, 
@@ -125,7 +125,7 @@ const Routes: React.FC = () => {
         };
     }, [], {
         immediate: true,
-        onError: (error) => handleDataResponse.error('加载线路数据', error)
+        // onError: (error) => // handleDataResponse.error('加载线路数据', error)
     });
 
     // 处理数据，分离自定义和系统路由
@@ -164,10 +164,10 @@ const Routes: React.FC = () => {
                 message.success(`已删除线路: ${record.routeName}`);
                 refetch();
             } else {
-                handleDataResponse.userAction('删除线路', false, response);
+                // handleDataResponse.userAction('删除线路', false, response);
             }
         } catch (error) {
-            handleDataResponse.userAction('删除线路', false, undefined, error);
+            // handleDataResponse.userAction('删除线路', false, undefined, error);
         }
     };
 
@@ -246,16 +246,16 @@ const Routes: React.FC = () => {
 
             const response = await routeService.updateRoute(editingRecord.id, updateData);
             if (response.success) {
-                handleDataResponse.userAction('线路更新', true);
+                // handleDataResponse.userAction('线路更新', true);
                 setEditingRecord(null);
                 refetch();
                 return true;
             } else {
-                handleDataResponse.error('线路更新失败', response.message);
+                // handleDataResponse.error('线路更新失败', response.message);
                 return false;
             }
         } catch (error) {
-            handleDataResponse.error('线路更新', error);
+            // handleDataResponse.error('线路更新', error);
             return false;
         }
     };
@@ -300,11 +300,11 @@ const Routes: React.FC = () => {
                 refetch();
                 return true;
             } else {
-                handleDataResponse.error('线路创建失败', response.message);
+                // handleDataResponse.error('线路创建失败', response.message);
                 return false;
             }
         } catch (error) {
-            handleDataResponse.error('线路创建', error);
+            // handleDataResponse.error('线路创建', error);
             return false;
         }
     };
