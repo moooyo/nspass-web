@@ -66,7 +66,7 @@ const LoginPage = () => {
       });
       console.log('response:', response);
 
-      if (response.base.success && response.data) {
+      if (response.status.success && response.data) {
         console.log('auth response:', response.data);
         // 保存认证信息
         authService.saveAuthData(response.data);
@@ -82,10 +82,10 @@ const LoginPage = () => {
         console.log('user:', user);
         authLogin(user, loginType);
         
-        message.success(response.base.message || '登录成功！');
+        message.success(response.status.message || '登录成功！');
         router.push('/');
       } else {
-        message.error(response.base.message || '登录失败');
+        message.error(response.status.message || '登录失败');
       }
       
     } catch (error) {

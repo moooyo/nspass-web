@@ -302,8 +302,10 @@ export const dashboardHandlers = [
   // 获取系统概览
   http.get('/v1/dashboard/overview', () => {
     return HttpResponse.json({
-      success: true, 
-      message: '获取系统概览成功',
+      status: {
+        success: true, 
+        message: '获取系统概览成功'
+      },
       data: mockSystemOverview
     });
   }),
@@ -311,8 +313,10 @@ export const dashboardHandlers = [
   // 获取系统健康状态
   http.get('/v1/dashboard/health', () => {
     return HttpResponse.json({
-      success: true, 
-      message: '获取系统健康状态成功',
+      status: {
+        success: true, 
+        message: '获取系统健康状态成功'
+      },
       data: mockSystemHealth
     });
   }),
@@ -320,8 +324,10 @@ export const dashboardHandlers = [
   // 获取流量趋势
   http.get('/v1/dashboard/traffic-trend', () => {
     return HttpResponse.json({
-      success: true, 
-      message: '获取流量趋势成功',
+      status: {
+        success: true, 
+        message: '获取流量趋势成功'
+      },
       data: mockTrafficTrend
     });
   }),
@@ -329,8 +335,10 @@ export const dashboardHandlers = [
   // 获取地理流量分布
   http.get('/v1/dashboard/traffic-by-region', () => {
     return HttpResponse.json({
-      success: true, 
-      message: '获取地理流量分布成功',
+      status: {
+        success: true, 
+        message: '获取地理流量分布成功'
+      },
       data: mockTrafficByRegion
     });
   }),
@@ -338,8 +346,10 @@ export const dashboardHandlers = [
   // 获取实时流量
   http.get('/v1/dashboard/real-time-traffic', () => {
     return HttpResponse.json({
-      success: true, 
-      message: '获取实时流量成功',
+      status: {
+        success: true, 
+        message: '获取实时流量成功'
+      },
       data: mockRealTimeTraffic
     });
   }),
@@ -347,8 +357,10 @@ export const dashboardHandlers = [
   // 获取系统性能
   http.get('/v1/dashboard/performance', () => {
     return HttpResponse.json({
-      success: true, 
-      message: '获取系统性能成功',
+      status: {
+        success: true, 
+        message: '获取系统性能成功'
+      },
       data: mockSystemPerformance
     });
   }),
@@ -356,8 +368,10 @@ export const dashboardHandlers = [
   // 获取系统告警
   http.get('/v1/dashboard/alerts', () => {
     return HttpResponse.json({
-      success: true, 
-      message: '获取系统告警成功',
+      status: {
+        success: true, 
+        message: '获取系统告警成功'
+      },
       data: mockSystemAlerts
     });
   }),
@@ -369,8 +383,10 @@ export const dashboardHandlers = [
     const limitedRules = mockTopRules.slice(0, limit);
     
     return HttpResponse.json({
-      success: true,
-      message: '获取热门规则成功',
+      status: {
+        success: true,
+        message: '获取热门规则成功'
+      },
       data: limitedRules
     });
   }),
@@ -378,8 +394,10 @@ export const dashboardHandlers = [
   // 获取规则状态统计
   http.get('/v1/dashboard/rule-status', () => {
     return HttpResponse.json({
-      success: true,
-      message: '获取规则状态统计成功',
+      status: {
+        success: true,
+        message: '获取规则状态统计成功'
+      },
       data: mockRuleStatusStats
     });
   }),
@@ -387,8 +405,10 @@ export const dashboardHandlers = [
   // 获取服务器状态统计
   http.get('/v1/dashboard/server-status', () => {
     return HttpResponse.json({
-      success: true,
-      message: '获取服务器状态统计成功',
+      status: {
+        success: true,
+        message: '获取服务器状态统计成功'
+      },
       data: mockServerStatusStats
     });
   }),
@@ -400,8 +420,10 @@ export const dashboardHandlers = [
     const limitedStats = mockUserTrafficStats.slice(0, limit);
     
     return HttpResponse.json({
-      success: true,
-      message: '获取用户流量统计成功',
+      status: {
+        success: true,
+        message: '获取用户流量统计成功'
+      },
       data: limitedStats
     });
   }),
@@ -409,8 +431,10 @@ export const dashboardHandlers = [
   // 获取日志摘要
   http.get('/v1/dashboard/log-summary', () => {
     return HttpResponse.json({
-      success: true, 
-      message: '获取日志摘要成功',
+      status: {
+        success: true, 
+        message: '获取日志摘要成功'
+      },
       data: mockLogSummary
     });
   }),
@@ -418,8 +442,10 @@ export const dashboardHandlers = [
   // 刷新仪表板数据
   http.post('/v1/dashboard/refresh', () => {
     return HttpResponse.json({
-      success: true, 
-      message: '仪表板数据已刷新'
+      status: {
+        success: true, 
+        message: '仪表板数据已刷新'
+      }
     });
   })
 ]; 

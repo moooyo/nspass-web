@@ -26,27 +26,33 @@ export const authHandlers = [
     // 模拟验证
     if (!body.name || !body.email || !body.password) {
       return HttpResponse.json({
-        success: false, 
-        message: '用户名、邮箱和密码不能为空'
+        status: {
+          success: false, 
+          message: '用户名、邮箱和密码不能为空',
+          errorCode: 'VALIDATION_ERROR'
+        }
       }, { status: 400 });
     }
 
     if (body.name === 'existinguser') {
       return HttpResponse.json({
-        success: false, 
-        message: '用户名已存在'
+        status: {
+          success: false, 
+          message: '用户名已存在',
+          errorCode: 'USER_EXISTS'
+        }
       }, { status: 409 });
     }
 
     return HttpResponse.json({
-      success: true, 
-      message: '注册成功',
+      status: {
+        success: true, 
+        message: '注册成功'
+      },
       data: {
-        userId: '2', // 保持字符串类型
-        username: body.name,
+        id: 2, // 数字类型的id，与Proto定义一致
+        name: body.name,
         email: body.email,
-        // 添加其他可能需要的字段
-        id: 2, // 同时提供数字类型的id
         role: 0 // 新注册用户默认为普通用户
       }
     });
@@ -59,8 +65,11 @@ export const authHandlers = [
     // 验证输入
     if (!body.identifier || !body.password) {
       return HttpResponse.json({
-        success: false, 
-        message: '登录标识符和密码不能为空'
+        status: {
+          success: false, 
+          message: '登录标识符和密码不能为空',
+          errorCode: 'VALIDATION_ERROR'
+        }
       }, { status: 400 });
     }
 
@@ -72,33 +81,27 @@ export const authHandlers = [
       user.lastLoginAt = new Date().toISOString();
       
       return HttpResponse.json({
-        success: true, 
-        message: '登录成功',
+        status: {
+          success: true, 
+          message: '登录成功'
+        },
         data: {
           id: parseInt(user.id), // 转换为数字类型
           name: user.name,
           email: user.email,
           role: user.role === 'admin' ? 1 : 0, // 转换为数字类型，admin=1, user=0
           token: `mock-jwt-token-${user.id}`,
-          expires: Math.floor(Date.now() / 1000) + 3600, // 当前时间 + 1小时
-          refreshToken: `mock-refresh-token-${user.id}`,
-          expiresIn: 3600,
-          // 保留完整的用户信息以备后用
-          user: {
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            avatar: user.avatar,
-            createdAt: user.createdAt,
-            lastLoginAt: user.lastLoginAt
-          }
+          expires: Math.floor(Date.now() / 1000) + 3600 // 当前时间 + 1小时
         }
       });
     }
 
     return HttpResponse.json({
-      success: false, 
-      message: '用户名或密码错误'
+      status: {
+        success: false, 
+        message: '用户名或密码错误',
+        errorCode: 'INVALID_CREDENTIALS'
+      }
     }, { status: 401 });
   })
 ]; 

@@ -48,7 +48,7 @@ interface ApiResponse<T = unknown> {
 
 // Proto API响应结构
 interface ProtoApiResponse<T = unknown> {
-  base: {
+  status: {
     success: boolean;
     message?: string;
     errorCode?: string;

@@ -14,8 +14,14 @@ export interface LegacyLoginRequest {
   password: string;
 }
 
+export interface RegisterRequest {
+  name: string;  // 修改为与Proto定义一致
+  email: string;
+  password: string;
+}
+
 export interface LoginResponse {
-  base: {
+  status: {
     success: boolean;
     message: string;
     errorCode?: string;
@@ -30,22 +36,17 @@ export interface LoginResponse {
   };
 }
 
-export interface RegisterRequest {
-  username: string;
-  email: string;
-  password: string;
-}
-
 export interface RegisterResponse {
-  base: {
+  status: {
     success: boolean;
     message: string;
     errorCode?: string;
   };
   data?: {
-    userId: string;
-    username: string;
+    id: number;
+    name: string;
     email: string;
+    role: number;
   };
 }
 
@@ -75,7 +76,7 @@ class AuthService {
       const response = await httpClient.post<LoginResponse['data']>(`${this.endpoint}/login`, requestData);
       
       return {
-        base: {
+        status: {
           success: response.success,
           message: response.message || (response.success ? '登录成功' : '登录失败'),
           errorCode: response.success ? undefined : 'LOGIN_FAILED'
@@ -84,7 +85,7 @@ class AuthService {
       };
     } catch (error) {
       return {
-        base: {
+        status: {
           success: false,
           message: error instanceof Error ? error.message : '网络请求失败',
           errorCode: 'NETWORK_ERROR'
@@ -101,7 +102,7 @@ class AuthService {
       const response = await httpClient.post<RegisterResponse['data']>(`${this.endpoint}/register`, userData);
       
       return {
-        base: {
+        status: {
           success: response.success,
           message: response.message || (response.success ? '注册成功' : '注册失败'),
           errorCode: response.success ? undefined : 'REGISTER_FAILED'
@@ -110,7 +111,7 @@ class AuthService {
       };
     } catch (error) {
       return {
-        base: {
+        status: {
           success: false,
           message: error instanceof Error ? error.message : '网络请求失败',
           errorCode: 'NETWORK_ERROR'

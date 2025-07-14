@@ -8,7 +8,10 @@ export const websiteConfigHandlers = [
   // 获取网站配置
   http.get('/v1/settings', () => {
     return HttpResponse.json({
-      success: true,
+      status: {
+        success: true,
+        message: '获取网站配置成功'
+      },
       data: mockWebsiteConfig
     });
   }),
@@ -21,8 +24,10 @@ export const websiteConfigHandlers = [
     mockWebsiteConfig.updatedAt = new Date().toISOString();
     
     return HttpResponse.json({
-      success: true,
-      message: "网站配置更新成功",
+      status: {
+        success: true,
+        message: "网站配置更新成功"
+      },
       data: mockWebsiteConfig
     });
   }),
@@ -41,8 +46,10 @@ export const websiteConfigHandlers = [
     });
     
     return HttpResponse.json({
-      success: true,
-      message: "网站配置已重置为默认值",
+      status: {
+        success: true,
+        message: "网站配置已重置为默认值"
+      },
       data: mockWebsiteConfig
     });
   }),
@@ -53,7 +60,10 @@ export const websiteConfigHandlers = [
     const valid = code === mockWebsiteConfig.inviteCode;
     
     return HttpResponse.json({
-      success: true,
+      status: {
+        success: true,
+        message: valid ? '邀请码有效' : '邀请码无效'
+      },
       data: { valid }
     });
   }),
@@ -65,8 +75,10 @@ export const websiteConfigHandlers = [
     mockWebsiteConfig.updatedAt = new Date().toISOString();
     
     return HttpResponse.json({
-      success: true,
-      message: "新邀请码生成成功",
+      status: {
+        success: true,
+        message: "新邀请码生成成功"
+      },
       data: { inviteCode: newInviteCode }
     });
   }),
