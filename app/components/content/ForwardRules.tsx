@@ -1,6 +1,6 @@
 import React, { useState, FC, useRef, useCallback, useMemo, useEffect } from 'react';
 import { Button, Tag, Popconfirm, Badge, Space, Tooltip, Modal, Form, Card, Row, Col, Typography, Divider } from 'antd';
-import { handleDataResponse, message } from '@/utils/message';
+import { handleApiResponse, message } from '@/utils/message';
 import {
     ProTable,
     ProColumns,
@@ -256,18 +256,18 @@ const ForwardRules: React.FC = () => {
                 const convertedRules = rulesData.map(convertForwardRuleToItem);
                 setDataSource(convertedRules);
                 // Data loaded successfully
-                handleDataResponse.success('获取转发规则', response);
+                handleApiResponse.fetch(response, '获取转发规则');
             } else {
                 // 失败时清空数据，避免显示过期缓存
                 setDataSource([]);
                 // Error loading data
-                handleDataResponse.error('获取转发规则', undefined, response);
+                handleApiResponse.fetch(response, '获取转发规则');
             }
         } catch (error) {
             // 失败时清空数据，避免显示过期缓存
             setDataSource([]);
             // Error loading data
-            handleDataResponse.error('获取转发规则', error);
+            message.error('获取转发规则失败');
         } finally {
             setLoading(false);
         }
@@ -303,14 +303,14 @@ const ForwardRules: React.FC = () => {
                     supportUdp: item.supportUdp
                 }));
                 setEgressConfigs(convertedData);
-                handleDataResponse.success('获取出口配置', response);
+                handleApiResponse.fetch(response, '获取出口配置');
             } else {
                 setEgressConfigs([]);
-                handleDataResponse.error('获取出口配置', undefined, response);
+                handleApiResponse.fetch(response, '获取出口配置');
             }
         } catch (error) {
             setEgressConfigs([]);
-            handleDataResponse.error('获取出口配置', error);
+            message.error('获取出口配置失败');
         } finally {
             setEgressLoading(false);
         }
@@ -339,10 +339,10 @@ const ForwardRules: React.FC = () => {
                     `已启动规则: ${record.ruleId}`)
                 );
             } else {
-                handleDataResponse.userAction('切换规则状态', false, response);
+                // handleDataResponse.userAction('切换规则状态', false, response);
             }
         } catch (error) {
-            handleDataResponse.userAction('切换规则状态', false, undefined, error);
+            // handleDataResponse.userAction('切换规则状态', false, undefined, error);
         }
     }, [dataSource, setDataSource]);
 
@@ -366,7 +366,7 @@ const ForwardRules: React.FC = () => {
             viaNodes: [], // 复制的规则途径节点为空
         };
         setDataSource([...dataSource, newRule]);
-        handleDataResponse.userAction('复制规则', true, { message: `已复制规则: ${record.ruleId}` });
+        // handleDataResponse.userAction('复制规则', true, { message: `已复制规则: ${record.ruleId}` });
     }, [dataSource, setDataSource]);
 
     // 删除规则
@@ -375,12 +375,12 @@ const ForwardRules: React.FC = () => {
             const response = await forwardRulesService.deleteRule({ id: record.id as number });
             if (response.success) {
                 setDataSource(dataSource.filter(item => item.id !== record.id));
-                handleDataResponse.userAction('删除规则', true, response);
+                // handleDataResponse.userAction('删除规则', true, response);
             } else {
-                handleDataResponse.userAction('删除规则', false, response);
+                // handleDataResponse.userAction('删除规则', false, response);
             }
         } catch (error) {
-            handleDataResponse.userAction('删除规则', false, undefined, error);
+            // handleDataResponse.userAction('删除规则', false, undefined, error);
         }
     }, [dataSource, setDataSource]);
 
@@ -526,14 +526,14 @@ const ForwardRules: React.FC = () => {
                     };
                     
                     setDataSource([...dataSource, newRule]);
-                    handleDataResponse.userAction('创建转发路径规则', true, response);
+                    // handleDataResponse.userAction('创建转发路径规则', true, response);
                     message.success('转发规则创建成功！');
                 } else {
-                    handleDataResponse.userAction('创建转发路径规则', false, response);
+                    // handleDataResponse.userAction('创建转发路径规则', false, response);
                     message.error(response.message || '创建转发规则失败');
                 }
             } catch (error) {
-                handleDataResponse.userAction('创建转发路径规则', false, undefined, error);
+                // handleDataResponse.userAction('创建转发路径规则', false, undefined, error);
                 message.error('创建转发规则时发生错误');
             }
         } else {
@@ -568,14 +568,14 @@ const ForwardRules: React.FC = () => {
                         item.id === currentRecord.id ? updatedRule : item
                     );
                     setDataSource(updatedDataSource);
-                    handleDataResponse.userAction('更新转发路径规则', true, response);
+                    // handleDataResponse.userAction('更新转发路径规则', true, response);
                     message.success('转发规则更新成功！');
                 } else {
-                    handleDataResponse.userAction('更新转发路径规则', false, response);
+                    // handleDataResponse.userAction('更新转发路径规则', false, response);
                     message.error(response.message || '更新转发规则失败');
                 }
             } catch (error) {
-                handleDataResponse.userAction('更新转发路径规则', false, undefined, error);
+                // handleDataResponse.userAction('更新转发路径规则', false, undefined, error);
                 message.error('更新转发规则时发生错误');
             }
         }
@@ -977,24 +977,9 @@ const ForwardRules: React.FC = () => {
         return exitServers;
     }, [egressConfigs, apiServers]);
 
-    // 创建中继服务器列表（排除已被用作出口的服务器）
+    // 创建中继服务器列表（显示所有服务器）
     const createRelayServersFromApiServers = useCallback((): ServerItem[] => {
-        // 获取所有被出口配置占用的服务器ID
-        const usedServerIds = new Set(egressConfigs.map(egress => egress.serverId));
-        
         return apiServers
-            .filter(apiServer => {
-                // 排除被出口配置占用的服务器
-                return !usedServerIds.has(apiServer.id) && 
-                       !usedServerIds.has(apiServer.name) &&
-                       // 额外检查，防止ID格式不一致的情况
-                       !Array.from(usedServerIds).some(usedId => 
-                           usedId?.includes(apiServer.id || '') || 
-                           usedId?.includes(apiServer.name || '') ||
-                           apiServer.id?.toString().includes(usedId || '') ||
-                           apiServer.name?.includes(usedId || '')
-                       );
-            })
             .map(apiServer => {
                 const coords = getCountryCoordinates(apiServer.country || '');
                 
@@ -1013,7 +998,7 @@ const ForwardRules: React.FC = () => {
                     _apiServer: apiServer
                 };
             });
-    }, [egressConfigs, apiServers]);
+    }, [apiServers]);
 
     // 加载服务器数据
     const loadServers = useCallback(async () => {
@@ -1026,14 +1011,14 @@ const ForwardRules: React.FC = () => {
             
             if (response.success && response.data) {
                 setApiServers(response.data);
-                handleDataResponse.success('获取服务器列表', response);
+                // handleDataResponse.success('获取服务器列表', response);
             } else {
                 setApiServers([]);
-                handleDataResponse.error('获取服务器列表', undefined, response);
+                // handleDataResponse.error('获取服务器列表', undefined, response);
             }
         } catch (error) {
             setApiServers([]);
-            handleDataResponse.error('获取服务器列表', error);
+            // handleDataResponse.error('获取服务器列表', error);
         } finally {
             setServersLoading(false);
         }
@@ -1041,8 +1026,8 @@ const ForwardRules: React.FC = () => {
 
     // 将API服务器数据转换为地图格式 - 使用新的逻辑
     const convertedServers = useMemo(() => {
-        // 如果数据还在加载中或者出口配置为空，返回空数组
-        if (serversLoading || egressLoading || egressConfigs.length === 0) {
+        // 如果数据还在加载中，返回空数组
+        if (serversLoading || egressLoading) {
             return [];
         }
 
