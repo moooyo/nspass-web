@@ -19,4 +19,8 @@ This repo has some specific rules you must followed.
 6. Always use 'npm run dev' to run the application, which ensures that all dependencies are correctly set up and the application runs in the intended environment.
 7. All API has been documented in the /proto/swagger.json file. You can read it to understand the API endpoints and their usage.
 
+I don't need any documentation to summarize your work. So please clean up it after you complete the task.
+
+If you try to start the application, you need to stop it after you complete the task.
+
 Please always respond with Chinese.
