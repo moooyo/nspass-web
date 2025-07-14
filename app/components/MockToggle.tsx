@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { ApiOutlined } from '@ant-design/icons';
 import { useMSW } from './MSWProvider';
-import { message } from '@/utils/message';
+import { message, handleApiResponse, OperationType } from '@/utils/message';
 
 export const MockToggle: React.FC = () => {
   // 使用新的MSWProvider中的useMSW hook
@@ -55,15 +55,29 @@ export const MockToggle: React.FC = () => {
       // 使用MSWProvider的toggle方法（已包含localStorage操作）
       await toggle();
       
-      // 显示成功消息
-      if (!mockEnabled) {
-        message.success('Mock服务已启动');
-      } else {
-        message.success('Mock服务已停止');
-      }
+      // 使用新的响应处理器
+      const operation = !mockEnabled ? '启动Mock服务' : '停止Mock服务';
+      const operationType = !mockEnabled ? OperationType.START : OperationType.STOP;
+      
+      handleApiResponse.handle({
+        success: true,
+        message: operation + '成功'
+      }, {
+        operation,
+        operationType,
+        forceShowSuccess: true // 强制显示成功提示
+      });
     } catch (error) {
-      console.error('切换Mock状态失败:', error);
-      message.error('切换Mock状态失败');
+      const operation = !mockEnabled ? '启动Mock服务' : '停止Mock服务';
+      const operationType = !mockEnabled ? OperationType.START : OperationType.STOP;
+      
+      handleApiResponse.handle({
+        success: false,
+        message: error instanceof Error ? error.message : '切换Mock状态失败'
+      }, {
+        operation,
+        operationType
+      });
     }
   };
 

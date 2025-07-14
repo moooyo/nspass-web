@@ -3,7 +3,7 @@ import {
     ProForm,
     ProFormText,
   } from '@ant-design/pro-components';
-  import { handleDataResponse } from '@/utils/message';
+  import { handleApiResponse, OperationType } from '@/utils/message';
   import { Card, Row, Col, Avatar, Typography, Space, Tag, Divider, Progress, Statistic, Button } from 'antd';
   import { 
     UserOutlined, 
@@ -42,21 +42,28 @@ const UserInfo: React.FC = () => {
       setLoading(true);
       const response = await userInfoService.getCurrentUserInfo();
       
-      if (response.success && response.data) {
-        setUserInfo(response.data);
+      // 使用新的统一响应处理器
+      const handledResponse = handleApiResponse.fetch(response, '获取用户信息');
+      
+      if (handledResponse.success && handledResponse.data) {
+        setUserInfo(handledResponse.data);
         setHasLoadedData(true);
-        handleDataResponse.success('获取用户信息', response);
       } else {
         // 失败时清空数据，避免显示过期缓存
         setUserInfo(null);
         setHasLoadedData(false);
-        handleDataResponse.error('获取用户信息', undefined, response);
       }
     } catch (error) {
       // 失败时清空数据，避免显示过期缓存
       setUserInfo(null);
       setHasLoadedData(false);
-      handleDataResponse.error('获取用户信息', error);
+      handleApiResponse.handle({
+        success: false,
+        message: error instanceof Error ? error.message : '获取用户信息失败'
+      }, {
+        operation: '获取用户信息',
+        operationType: OperationType.FETCH
+      });
     } finally {
       setLoading(false);
     }
@@ -268,18 +275,24 @@ const UserInfo: React.FC = () => {
                     phone: values.phone as string,
                   });
                   
-                  if (response.success) {
-                    handleDataResponse.userAction('保存用户信息', true, response);
+                  // 使用新的统一响应处理器
+                  const handledResponse = handleApiResponse.userAction(response, '保存用户信息', OperationType.SAVE);
+                  
+                  if (handledResponse.success) {
                     // 重新获取用户信息
                     const updatedResponse = await userInfoService.getCurrentUserInfo();
                     if (updatedResponse.success && updatedResponse.data) {
                       setUserInfo(updatedResponse.data);
                     }
-                  } else {
-                    handleDataResponse.userAction('保存用户信息', false, response);
                   }
                 } catch (error) {
-                  handleDataResponse.userAction('保存用户信息', false, undefined, error);
+                  handleApiResponse.handle({
+                    success: false,
+                    message: error instanceof Error ? error.message : '保存用户信息失败'
+                  }, {
+                    operation: '保存用户信息',
+                    operationType: OperationType.SAVE
+                  });
                 }
               }}
               initialValues={{
