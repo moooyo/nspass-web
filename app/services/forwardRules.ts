@@ -11,12 +11,17 @@ import type {
   BatchDeleteRulesRequest,
   ToggleRuleRequest,
   GetRuleTrafficStatsRequest,
+  ForwardRuleType,
+  EgressMode,
 } from '@/types/generated/api/rules/rule_management';
 
-// 入口类型
+// 重新导出枚举类型
+export { ForwardRuleType, EgressMode, RuleStatus };
+
+// 入口类型 - 保持向后兼容的自定义类型
 export type EntryType = 'HTTP' | 'SOCKS5' | 'SHADOWSOCKS' | 'TROJAN';
 
-// 出口类型
+// 出口类型 - 保持向后兼容的自定义类型
 export type ExitType = 'DIRECT' | 'PROXY' | 'REJECT';
 
 // 服务器类型
@@ -49,29 +54,11 @@ export interface ForwardRuleItem extends ForwardRule {
   viaNodes?: string[]; // 途径节点数组
 }
 
-// 创建转发规则数据类型
-export interface CreateForwardRuleData {
-  ruleId?: string;
-  entryType: EntryType;
-  entryConfig: string;
-  exitType: ExitType;
-  exitConfig: string;
-  status?: RuleStatus;
-  viaNodes?: string[];
-}
-
-// 查询参数类型
-export interface ForwardRuleListParams {
-  page?: number;
-  pageSize?: number;
-  ruleId?: string;
-  entryType?: EntryType;
-  exitType?: ExitType;
-  status?: RuleStatus;
-}
-
-// 更新转发规则数据类型
-export type UpdateForwardRuleData = Partial<Omit<ForwardRuleItem, 'id'>>;
+// 重新导出生成的类型，提供更简洁的导入路径
+export type CreateForwardRuleData = CreateRuleRequest;
+export type UpdateForwardRuleData = UpdateRuleRequest;
+export type ForwardRuleListParams = GetRulesRequest;
+export type { RuleTrafficStats };
 
 class ForwardRulesService {
   private readonly endpoint = '/v1/rules';
@@ -202,19 +189,4 @@ class ForwardRulesService {
 
 // 创建并导出服务实例
 export const forwardRulesService = new ForwardRulesService();
-export default ForwardRulesService;
-
-// 导出类型和枚举
-export type {
-  ForwardRule,
-  RuleTrafficStats,
-  GetRulesRequest,
-  CreateRuleRequest,
-  UpdateRuleRequest
-} from '@/types/generated/api/rules/rule_management';
-
-export {
-  ForwardRuleType,
-  EgressMode,
-  RuleStatus
-} from '@/types/generated/api/rules/rule_management'; 
+export default ForwardRulesService; 

@@ -1,5 +1,11 @@
 import { httpClient, ApiResponse } from '@/utils/http-client';
-import type { UserListItem, UserDetail } from '@/types/generated/api/users/user_management';
+import type { 
+  UserListItem, 
+  UserDetail,
+  CreateUserRequest,
+  UpdateUserRequest,
+  GetUsersRequest,
+} from '@/types/generated/api/users/user_management';
 
 // 用户数据类型定义（使用生成的类型）
 export interface User extends UserListItem {
@@ -11,19 +17,10 @@ export interface UserDetailInfo extends UserDetail {
   // 扩展字段
 }
 
-export interface CreateUserData {
-  name: string;
-  email: string;
-  role: number; // 使用数字类型的角色
-}
-
-export interface UserListParams {
-  page?: number;
-  pageSize?: number;
-  status?: string; // 使用字符串类型的状态
-  name?: string;
-  role?: number;
-}
+// 重新导出生成的类型，提供更简洁的导入路径
+export type CreateUserData = CreateUserRequest;
+export type UpdateUserData = UpdateUserRequest;
+export type UserListParams = GetUsersRequest;
 
 class UserService {
   private readonly endpoint = '/v1/users';

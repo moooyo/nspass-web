@@ -1,35 +1,24 @@
 import React from 'react';
 import { httpClient, ApiResponse } from '@/utils/http-client';
 import type { DnsConfig, DnsProvider } from '@/types/generated/model/dnsConfig';
+import type {
+  CreateDnsConfigRequest,
+  UpdateDnsConfigRequest,
+  GetDnsConfigsRequest,
+} from '@/types/generated/api/dns/dns_config';
+
+// 重新导出枚举类型
+export { DnsProvider };
 
 // DNS配置项数据类型定义（使用生成的类型）
 export interface DnsConfigItem extends DnsConfig {
   // 扩展字段可以在这里添加
 }
 
-// 创建DNS配置数据类型
-export interface CreateDnsConfigData {
-  configName: string;
-  provider: DnsProvider;
-  domain: string;
-  configParams: string;
-}
-
-// 更新DNS配置数据类型
-export interface UpdateDnsConfigData {
-  configName?: string;
-  provider?: DnsProvider;
-  domain?: string;
-  configParams?: string;
-}
-
-// 查询参数类型
-export interface DnsConfigListParams {
-  page?: number;
-  pageSize?: number;
-  configName?: string;
-  provider?: DnsProvider;
-}
+// 重新导出生成的类型，提供更简洁的导入路径
+export type CreateDnsConfigData = CreateDnsConfigRequest;
+export type UpdateDnsConfigData = UpdateDnsConfigRequest;
+export type DnsConfigListParams = GetDnsConfigsRequest;
 
 // DNS配置服务
 export const dnsConfigService = {

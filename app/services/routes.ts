@@ -4,7 +4,18 @@ import {
   Protocol, 
   Route,
   ProtocolParams,
+  RouteStatus,
 } from '@/types/generated/model/route';
+import type {
+  CreateRouteRequest,
+  UpdateRouteRequest,
+  ListRoutesRequest,
+  BatchDeleteRoutesRequest,
+  BatchUpdateRouteStatusRequest,
+} from '@/types/generated/api/routes/route_management';
+
+// 重新导出枚举类型
+export { RouteType, Protocol, RouteStatus };
 
 // 路由项类型 - 使用proto生成的类型
 export interface RouteItem extends Omit<Route, 'id' | 'metadata'> {
@@ -12,40 +23,11 @@ export interface RouteItem extends Omit<Route, 'id' | 'metadata'> {
   metadata?: { [key: string]: string };
 }
 
-// 创建路由请求数据类型
-export interface CreateRouteData {
-  routeId?: string;
-  routeName: string;
-  entryPoint: string;
-  port?: number;
-  protocol: Protocol;
-  protocolParams?: ProtocolParams;
-  description?: string;
-  metadata?: { [key: string]: string };
-}
-
-// 查询参数类型 - 匹配swagger接口
-export interface RouteListParams {
-  'pagination.page'?: number;
-  'pagination.pageSize'?: number;
-  type?: RouteType;
-  status?: string; // RouteStatus enum
-  protocol?: Protocol;
-}
-
-// 更新线路数据类型
-export type UpdateRouteData = Partial<Omit<RouteItem, 'id'>>;
-
-// 批量删除请求类型
-export interface BatchDeleteRoutesRequest {
-  ids: React.Key[];
-}
-
-// 批量更新状态请求类型
-export interface BatchUpdateRouteStatusRequest {
-  ids: React.Key[];
-  status: string; // RouteStatus
-}
+// 重新导出生成的类型，提供更简洁的导入路径
+export type CreateRouteData = CreateRouteRequest;
+export type UpdateRouteData = UpdateRouteRequest;
+export type RouteListParams = ListRoutesRequest;
+export type { Route };
 
 class RouteService {
   private readonly endpoint = '/v1/routes';
@@ -56,11 +38,11 @@ class RouteService {
   async getRouteList(params: RouteListParams = {}): Promise<ApiResponse<RouteItem[]>> {
     const queryParams: Record<string, string> = {};
     
-    if (params['pagination.page']) queryParams['pagination.page'] = params['pagination.page'].toString();
-    if (params['pagination.pageSize']) queryParams['pagination.pageSize'] = params['pagination.pageSize'].toString();
-    if (params.type && params.type !== 'ROUTE_TYPE_UNSPECIFIED') queryParams.type = params.type;
-    if (params.status && params.status !== 'ROUTE_STATUS_UNSPECIFIED') queryParams.status = params.status;
-    if (params.protocol && params.protocol !== 'PROTOCOL_UNSPECIFIED') queryParams.protocol = params.protocol;
+    if (params.pagination?.page) queryParams['pagination.page'] = params.pagination.page.toString();
+    if (params.pagination?.pageSize) queryParams['pagination.pageSize'] = params.pagination.pageSize.toString();
+    if (params.type && params.type !== RouteType.ROUTE_TYPE_UNSPECIFIED) queryParams.type = params.type;
+    if (params.status && params.status !== RouteStatus.ROUTE_STATUS_UNSPECIFIED) queryParams.status = params.status;
+    if (params.protocol && params.protocol !== Protocol.PROTOCOL_UNSPECIFIED) queryParams.protocol = params.protocol;
 
     return httpClient.get<RouteItem[]>(this.endpoint, queryParams);
   }

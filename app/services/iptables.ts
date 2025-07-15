@@ -1,54 +1,25 @@
 import { httpClient, ApiResponse } from '@/utils/http-client';
+import type {
+  IptablesConfig,
+  IptablesRebuildTask,
+  IptablesChainType,
+  IptablesTableType,
+  IptablesProtocol,
+} from '@/types/generated/model/iptables';
+import type {
+  GetServerIptablesConfigsRequest,
+  GetServerIptablesConfigsResponse,
+  GetServerIptablesOverviewRequest,
+  GetServerIptablesRulesRequest,
+  GetServerIptablesScriptRequest,
+} from '@/types/generated/api/iptables/iptables_config';
 
-// iptables 配置信息接口 - 根据最新 API 定义更新
-export interface IptablesConfig {
-  id: number;
-  serverId: string;
-  configName: string;
-  tableName: string;
-  chainName: string;
-  ruleAction: string;
-  sourceIp: string;
-  sourcePort: string;
-  destIp: string;
-  destPort: string;
-  protocol: string;
-  interface: string;
-  ruleComment: string;
-  priority: number;
-  isEnabled: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+// 重新导出枚举类型
+export { IptablesChainType, IptablesTableType, IptablesProtocol };
 
-// iptables 重建任务接口
-export interface IptablesRebuildTask {
-  taskId: string;
-  serverId: string;
-  status: 'IPTABLES_REBUILD_STATUS_UNSPECIFIED' | 'IPTABLES_REBUILD_STATUS_PENDING' | 'IPTABLES_REBUILD_STATUS_RUNNING' | 'IPTABLES_REBUILD_STATUS_SUCCESS' | 'IPTABLES_REBUILD_STATUS_FAILED';
-  totalRules: number;
-  processedRules: number;
-  failedRules: number;
-  errorMessage: string;
-  startedAt: string;
-  completedAt: string;
-}
-
-// API 响应接口 - 根据最新 swagger.json 更新
-export interface GetServerIptablesConfigsResponse {
-  status: {
-    success: boolean;
-    message: string;
-    code: string;
-  };
-  data: IptablesConfig[];
-  pagination: {
-    page: number;
-    pageSize: number;
-    total: number;
-    totalPages: number;
-  };
-}
+// 重新导出生成的类型，提供更简洁的导入路径
+export type { IptablesConfig, IptablesRebuildTask };
+export type IptablesConfigListParams = GetServerIptablesConfigsRequest;
 
 export interface RebuildServerIptablesResponse {
   status: {

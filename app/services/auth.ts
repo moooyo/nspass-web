@@ -1,53 +1,26 @@
 // 认证相关的API服务
 import { httpClient } from '@/utils/http-client';
-import { LoginType } from '@/types/generated/api/users/user_auth';
+import { 
+  LoginType,
+  type LoginRequest as GeneratedLoginRequest,
+  type RegisterRequest as GeneratedRegisterRequest,
+  type LoginResponse as GeneratedLoginResponse,
+  type RegisterResponse as GeneratedRegisterResponse,
+} from '@/types/generated/api/users/user_auth';
 
-export interface LoginRequest {
-  loginType?: LoginType;
-  identifier: string;
-  password: string;
-}
+// 重新导出枚举类型
+export { LoginType };
+
+// 重新导出生成的类型，提供更简洁的导入路径
+export type LoginRequest = GeneratedLoginRequest;
+export type RegisterRequest = GeneratedRegisterRequest;
+export type LoginResponse = GeneratedLoginResponse;
+export type RegisterResponse = GeneratedRegisterResponse;
 
 // 为了保持向后兼容，添加一个简化的接口
 export interface LegacyLoginRequest {
   username: string;
   password: string;
-}
-
-export interface RegisterRequest {
-  name: string;  // 修改为与Proto定义一致
-  email: string;
-  password: string;
-}
-
-export interface LoginResponse {
-  status: {
-    success: boolean;
-    message: string;
-    errorCode?: string;
-  };
-  data?: {
-    id: number;
-    name: string;
-    email: string;
-    role: number;
-    token: string;
-    expires: number;
-  };
-}
-
-export interface RegisterResponse {
-  status: {
-    success: boolean;
-    message: string;
-    errorCode?: string;
-  };
-  data?: {
-    id: number;
-    name: string;
-    email: string;
-    role: number;
-  };
 }
 
 class AuthService {
@@ -154,7 +127,7 @@ class AuthService {
    * 保存认证信息
    */
   saveAuthData(authData: LoginResponse['data']): void {
-    if (!authData) return;
+    if (!authData || !authData.token) return;
     
     try {
       localStorage.setItem('auth_token', authData.token);

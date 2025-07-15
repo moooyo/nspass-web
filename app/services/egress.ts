@@ -1,72 +1,27 @@
 import { httpClient, ApiResponse } from '@/utils/http-client';
-import type { EgressItem as GeneratedEgressItem } from '@/types/generated/model/egressItem';
+// 使用 generated 类型定义
+import type { EgressItem } from '@/types/generated/model/egressItem';
 import { EgressMode, ForwardType } from '@/types/generated/model/egress';
+import type {
+  CreateEgressRequest,
+  UpdateEgressRequest,
+  GetEgressListRequest,
+  TestEgressConnectionRequest,
+  ValidateEgressConfigRequest,
+  GetEgressStatsRequest,
+  AvailableServerItem
+} from '@/types/generated/api/egress/egress_management';
 
-// 出口数据类型定义 - 使用生成的类型
-export interface EgressItem extends GeneratedEgressItem {
-  // 扩展字段可以在这里添加
-}
+// 重新导出枚举类型，以便其他模块可以使用
+export { EgressMode, ForwardType };
 
-// 创建出口请求类型 - 匹配swagger CreateEgressRequest
-export interface CreateEgressData {
-  egressName?: string;  // 原来的egressId改为egressName，用于显示
-  serverId: string;
-  egressMode: EgressMode;
-  
-  // 直出模式字段
-  targetAddress?: string;
-  
-  // iptables模式字段
-  forwardType?: ForwardType;
-  destAddress?: string;
-  destPort?: string;
-  
-  // shadowsocks-2022模式字段
-  password?: string;
-  supportUdp?: boolean;
-  port?: number;  // shadowsocks端口，默认从20000到50000之间随机生成
-}
-
-// 更新出口请求类型 - 匹配swagger UpdateEgressRequest
-export interface UpdateEgressData {
-  egressName?: string;  // 原来的egressId改为egressName，用于显示
-  serverId?: string;
-  egressMode?: EgressMode;
-  targetAddress?: string;
-  forwardType?: ForwardType;
-  destAddress?: string;
-  destPort?: string;
-  password?: string;
-  supportUdp?: boolean;
-  port?: number;  // shadowsocks端口
-}
-
-// 查询参数类型 - 匹配swagger GetEgressListRequest
-export interface EgressListParams {
-  page?: number;
-  pageSize?: number;
-  egressName?: string;  // 原来的egressId改为egressName，用于查询
-  serverId?: string;
-  egressMode?: EgressMode;
-}
-
-// 测试连接请求类型
-export interface TestEgressConnectionData {
-  timeout?: number; // 超时时间（秒）
-}
-
-// 验证配置请求类型
-export interface ValidateEgressConfigData {
-  egressId?: string;
-  serverId: string;
-  egressMode: EgressMode;
-  targetAddress?: string;
-  forwardType?: ForwardType;
-  destAddress?: string;
-  destPort?: string;
-  password?: string;
-  supportUdp?: boolean;
-}
+// 重新导出生成的类型，提供更简洁的导入路径
+export type { EgressItem };
+export type CreateEgressData = CreateEgressRequest;
+export type UpdateEgressData = UpdateEgressRequest;
+export type EgressListParams = GetEgressListRequest;
+export type TestEgressConnectionData = TestEgressConnectionRequest;
+export type ValidateEgressConfigData = ValidateEgressConfigRequest;
 
 class EgressService {
   private readonly endpoint = '/v1/egress';
@@ -144,8 +99,8 @@ class EgressService {
   /**
    * 获取可用服务器列表 - 匹配swagger接口 GET /v1/egress/available-servers
    */
-  async getAvailableServers(): Promise<ApiResponse<{ id: string; name: string; country: string }[]>> {
-    return httpClient.get<{ id: string; name: string; country: string }[]>(`${this.endpoint}/available-servers`);
+  async getAvailableServers(): Promise<ApiResponse<AvailableServerItem[]>> {
+    return httpClient.get<AvailableServerItem[]>(`${this.endpoint}/available-servers`);
   }
 
   /**
@@ -154,9 +109,8 @@ class EgressService {
   async validateEgressConfig(configData: ValidateEgressConfigData): Promise<ApiResponse<{
     valid: boolean;
     errors?: string[];
-    warnings?: string[];
   }>> {
-    return httpClient.post<{ valid: boolean; errors?: string[]; warnings?: string[] }>(`${this.endpoint}/validate-config`, configData);
+    return httpClient.post<{ valid: boolean; errors?: string[] }>(`${this.endpoint}/validate-config`, configData);
   }
 }
 
