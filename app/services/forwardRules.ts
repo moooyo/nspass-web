@@ -37,17 +37,16 @@ export interface ServerItem {
   };
 }
 
-// 转发规则数据类型定义
-export interface ForwardRuleItem {
-  id: React.Key;
-  ruleId: string;
-  entryType: EntryType;
-  entryConfig: string;
-  trafficUsed: number; // MB
-  exitType: ExitType;
-  exitConfig: string;
-  status: RuleStatus;
-  viaNodes: string[]; // 途径节点数组
+// 转发规则数据类型定义（使用生成的类型）
+export interface ForwardRuleItem extends ForwardRule {
+  // 保持向后兼容性的额外字段
+  ruleId?: string;
+  entryType?: EntryType;
+  entryConfig?: string;
+  trafficUsed?: number; // MB
+  exitType?: ExitType;
+  exitConfig?: string;
+  viaNodes?: string[]; // 途径节点数组
 }
 
 // 创建转发规则数据类型

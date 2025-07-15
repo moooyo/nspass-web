@@ -18,10 +18,11 @@ import {
     CreateDnsConfigData, 
     DnsConfigListParams 
 } from '../../../services/dnsConfig';
+import { DnsProvider } from '@/types/generated/model/dnsConfig';
 
-// DNS提供商枚举
-const _dnsProviders = {
-    CLOUDFLARE: { text: 'Cloudflare', value: 'CLOUDFLARE' },
+// DNS提供商枚举映射
+const dnsProviderOptions = {
+    [DnsProvider.DNS_PROVIDER_CLOUDFLARE]: { text: 'Cloudflare', value: DnsProvider.DNS_PROVIDER_CLOUDFLARE },
 };
 
 const DnsConfig: React.FC = () => {
@@ -75,9 +76,9 @@ const DnsConfig: React.FC = () => {
     }, [loadDnsConfigs]);
 
     // 优化：缓存删除操作函数
-    const _handleDelete = useCallback(async (id: React.Key) => {
+    const _handleDelete = useCallback(async (id: number) => {
         try {
-            const response = await dnsConfigService.deleteDnsConfig(id as number);
+            const response = await dnsConfigService.deleteDnsConfig(id);
             if (response.success) {
                 message.success('删除成功');
                 loadDnsConfigs();
@@ -99,11 +100,7 @@ const DnsConfig: React.FC = () => {
 
     // 使用 useMemo 缓存DNS Provider选项
     const dnsProviderOptions = useMemo(() => [
-        { label: 'Cloudflare', value: 'CLOUDFLARE' },
-        { label: 'Aliyun', value: 'ALIYUN' },
-        { label: 'Tencent Cloud', value: 'TENCENT' },
-        { label: 'Amazon Route 53', value: 'ROUTE53' },
-        { label: 'Google Cloud DNS', value: 'GOOGLE' },
+        { label: 'Cloudflare', value: DnsProvider.DNS_PROVIDER_CLOUDFLARE },
     ], []);
 
     // 使用 useMemo 缓存表格列配置，避免每次渲染重新创建
@@ -126,11 +123,7 @@ const DnsConfig: React.FC = () => {
             width: '15%',
             valueType: 'select',
             valueEnum: {
-                CLOUDFLARE: { text: 'Cloudflare' },
-                ALIYUN: { text: 'Aliyun' },
-                TENCENT: { text: 'Tencent Cloud' },
-                ROUTE53: { text: 'Amazon Route 53' },
-                GOOGLE: { text: 'Google Cloud DNS' },
+                [DnsProvider.DNS_PROVIDER_CLOUDFLARE]: { text: 'Cloudflare' },
             },
             editable: false,
         },
@@ -168,6 +161,10 @@ const DnsConfig: React.FC = () => {
     // 测试DNS配置
     const _testDnsConfig = async (record: DnsConfigItem) => {
         try {
+            if (!record.id) {
+                message.error('无法测试：缺少配置ID');
+                return;
+            }
             const response = await dnsConfigService.testDnsConfig(record.id);
             if (response.success) {
                 message.success(`DNS配置 ${record.configName} 测试成功`);
@@ -186,7 +183,7 @@ const DnsConfig: React.FC = () => {
             let configParams = '';
             
             // 根据provider类型组装配置参数
-            if (values.provider === 'CLOUDFLARE') {
+            if (values.provider === DnsProvider.DNS_PROVIDER_CLOUDFLARE) {
                 if (values.email || values.zoneId || values.apiToken) {
                     configParams = JSON.stringify({
                         email: values.email || '',
@@ -272,7 +269,7 @@ const DnsConfig: React.FC = () => {
                     placeholder="请选择DNS Provider"
                     options={dnsProviderOptions}
                     rules={[{ required: true, message: 'DNS Provider为必填项' }]}
-                    initialValue="CLOUDFLARE"
+                    initialValue={DnsProvider.DNS_PROVIDER_CLOUDFLARE}
                 />
                 <ProFormText
                     name="domain"
@@ -284,7 +281,7 @@ const DnsConfig: React.FC = () => {
                 {/* 动态配置字段 */}
                 <ProFormDependency name={['provider']}>
                     {({ provider }) => {
-                        if (provider === 'CLOUDFLARE') {
+                        if (provider === DnsProvider.DNS_PROVIDER_CLOUDFLARE) {
                             return (
                                 <>
                                     <ProFormText
@@ -405,6 +402,10 @@ const DnsConfig: React.FC = () => {
                     onSave: async (key, record) => {
                         try {
                             // 现在都是更新记录，因为新建记录通过Modal处理
+                            if (!record.id) {
+                                message.error('无法更新：缺少配置ID');
+                                return false;
+                            }
                             const response = await dnsConfigService.updateDnsConfig(record.id, record);
                             if (response.success) {
                                 message.success('DNS配置更新成功');
@@ -419,6 +420,10 @@ const DnsConfig: React.FC = () => {
                     },
                     onDelete: async (key, record) => {
                         try {
+                            if (!record.id) {
+                                message.error('无法删除：缺少配置ID');
+                                return false;
+                            }
                             const response = await dnsConfigService.deleteDnsConfig(record.id);
                             if (response.success) {
                                 message.success('DNS配置删除成功');

@@ -1,40 +1,10 @@
 import { httpClient, ApiResponse } from '@/utils/http-client';
+import type { EgressItem as GeneratedEgressItem } from '@/types/generated/model/egressItem';
+import { EgressMode, ForwardType } from '@/types/generated/model/egress';
 
-// 出口模式枚举 - 匹配swagger定义
-export enum EgressMode {
-  EGRESS_MODE_UNSPECIFIED = 'EGRESS_MODE_UNSPECIFIED',
-  EGRESS_MODE_DIRECT = 'EGRESS_MODE_DIRECT',
-  EGRESS_MODE_IPTABLES = 'EGRESS_MODE_IPTABLES',
-  EGRESS_MODE_SS2022 = 'EGRESS_MODE_SS2022'
-}
-
-// 转发类型枚举
-export enum ForwardType {
-  FORWARD_TYPE_UNSPECIFIED = 'FORWARD_TYPE_UNSPECIFIED',
-  FORWARD_TYPE_TCP = 'FORWARD_TYPE_TCP',
-  FORWARD_TYPE_UDP = 'FORWARD_TYPE_UDP',
-  FORWARD_TYPE_ALL = 'FORWARD_TYPE_ALL'
-}
-
-// 出口数据类型定义 - 匹配swagger schema
-export interface EgressItem {
-  id: React.Key;
-  egressName?: string;  // 原来的egressId改为egressName，用于显示
-  serverId: string;
-  egressMode: EgressMode;
-  
-  // 直出模式字段
-  targetAddress?: string;
-  
-  // iptables模式字段
-  forwardType?: ForwardType;
-  destAddress?: string;
-  destPort?: string;
-  
-  // shadowsocks-2022模式字段
-  password?: string;
-  supportUdp?: boolean;
-  port?: number;  // shadowsocks端口
+// 出口数据类型定义 - 使用生成的类型
+export interface EgressItem extends GeneratedEgressItem {
+  // 扩展字段可以在这里添加
 }
 
 // 创建出口请求类型 - 匹配swagger CreateEgressRequest

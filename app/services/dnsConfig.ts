@@ -1,17 +1,10 @@
 import React from 'react';
 import { httpClient, ApiResponse } from '@/utils/http-client';
+import type { DnsConfig, DnsProvider } from '@/types/generated/model/dnsConfig';
 
-// DNS提供商类型
-export type DnsProvider = 'CLOUDFLARE';
-
-// DNS配置项数据类型定义
-export interface DnsConfigItem {
-  id: React.Key;
-  configName: string;
-  provider: DnsProvider;
-  domain: string;
-  configParams: string; // JSON字符串
-  createdAt: string;
+// DNS配置项数据类型定义（使用生成的类型）
+export interface DnsConfigItem extends DnsConfig {
+  // 扩展字段可以在这里添加
 }
 
 // 创建DNS配置数据类型
@@ -67,7 +60,7 @@ export const dnsConfigService = {
   },
 
   // 更新DNS配置
-  async updateDnsConfig(id: React.Key, data: UpdateDnsConfigData): Promise<ApiResponse<DnsConfigItem>> {
+  async updateDnsConfig(id: number, data: UpdateDnsConfigData): Promise<ApiResponse<DnsConfigItem>> {
     try {
       return await httpClient.put<DnsConfigItem>(`/v1/dns/configs/${id}`, data);
     } catch (error) {
@@ -77,7 +70,7 @@ export const dnsConfigService = {
   },
 
   // 删除DNS配置
-  async deleteDnsConfig(id: React.Key): Promise<ApiResponse<boolean>> {
+  async deleteDnsConfig(id: number): Promise<ApiResponse<boolean>> {
     try {
       return await httpClient.delete<boolean>(`/v1/dns/configs/${id}`);
     } catch (error) {
@@ -87,7 +80,7 @@ export const dnsConfigService = {
   },
 
   // 测试DNS配置
-  async testDnsConfig(id: React.Key): Promise<ApiResponse<boolean>> {
+  async testDnsConfig(id: number): Promise<ApiResponse<boolean>> {
     try {
       return await httpClient.post<boolean>(`/v1/dns/configs/${id}/test`);
     } catch (error) {

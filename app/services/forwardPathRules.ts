@@ -67,7 +67,7 @@ class ForwardPathRulesService {
   /**
    * 获取单个转发路径规则
    */
-  async getForwardPathRule(id: string): Promise<ApiResponse<ForwardPathRule>> {
+  async getForwardPathRule(id: number): Promise<ApiResponse<ForwardPathRule>> {
     return httpClient.get<ForwardPathRule>(`${this.endpoint}/${id}`);
   }
 
@@ -82,28 +82,28 @@ class ForwardPathRulesService {
   /**
    * 删除转发路径规则
    */
-  async deleteForwardPathRule(id: string): Promise<ApiResponse<void>> {
+  async deleteForwardPathRule(id: number): Promise<ApiResponse<void>> {
     return httpClient.delete<void>(`${this.endpoint}/${id}`);
   }
 
   /**
    * 启用转发路径规则
    */
-  async enableForwardPathRule(id: string): Promise<ApiResponse<void>> {
+  async enableForwardPathRule(id: number): Promise<ApiResponse<void>> {
     return httpClient.post<void>(`${this.endpoint}/${id}/enable`, {});
   }
 
   /**
    * 禁用转发路径规则
    */
-  async disableForwardPathRule(id: string): Promise<ApiResponse<void>> {
+  async disableForwardPathRule(id: number): Promise<ApiResponse<void>> {
     return httpClient.post<void>(`${this.endpoint}/${id}/disable`, {});
   }
 
   /**
    * 获取转发路径规则流量统计
    */
-  async getForwardPathRuleTraffic(id: string, days: number = 7): Promise<ApiResponse<{
+  async getForwardPathRuleTraffic(id: number, days: number = 7): Promise<ApiResponse<{
     totalUpload: string;
     totalDownload: string;
     dailyStats: Array<{
@@ -119,14 +119,14 @@ class ForwardPathRulesService {
   /**
    * 获取转发路径规则iptables配置
    */
-  async getForwardPathRuleIptables(id: string): Promise<ApiResponse<any[]>> {
+  async getForwardPathRuleIptables(id: number): Promise<ApiResponse<any[]>> {
     return httpClient.get(`${this.endpoint}/${id}/iptables`);
   }
 
   /**
    * 重建转发路径规则iptables配置
    */
-  async rebuildForwardPathRuleIptables(ruleId: string, options: {
+  async rebuildForwardPathRuleIptables(ruleId: number, options: {
     forceRebuild?: boolean;
     backupExisting?: boolean;
   } = {}): Promise<ApiResponse<any>> {

@@ -78,7 +78,7 @@ const ruleStatusEnum = {
 };
 
 type ForwardRuleItem = {
-    id: React.Key;
+    id: number; // 使用后端自增ID (int32)
     ruleId: string;
     entryType: keyof typeof entryTypeEnum;
     entryConfig: string;
@@ -289,20 +289,8 @@ const ForwardRules: React.FC = () => {
             });
             
             if (response.success && response.data) {
-                // 转换服务层返回的数据类型到组件期望的类型
-                const convertedData: EgressItem[] = response.data.map(item => ({
-                    id: item.id?.toString(),
-                    egressName: item.egressName,  // 使用egressName而不是egressId
-                    serverId: item.serverId,
-                    egressMode: item.egressMode,
-                    targetAddress: item.targetAddress,
-                    forwardType: item.forwardType,
-                    destAddress: item.destAddress,
-                    destPort: item.destPort,
-                    password: item.password,
-                    supportUdp: item.supportUdp
-                }));
-                setEgressConfigs(convertedData);
+                // 直接使用response.data，它已经是EgressItem[]类型
+                setEgressConfigs(response.data);
                 handleApiResponse.fetch(response, '获取出口配置');
             } else {
                 setEgressConfigs([]);
@@ -321,7 +309,7 @@ const ForwardRules: React.FC = () => {
         try {
             const newStatus = record.status === 'ACTIVE';
             const response = await forwardRulesService.toggleRule({
-                id: record.id as number,
+                id: record.id,
                 enabled: !newStatus
             });
             
@@ -372,7 +360,7 @@ const ForwardRules: React.FC = () => {
     // 删除规则
     const deleteRule = useCallback(async (record: ForwardRuleItem) => {
         try {
-            const response = await forwardRulesService.deleteRule({ id: record.id as number });
+            const response = await forwardRulesService.deleteRule({ id: record.id });
             if (response.success) {
                 setDataSource(dataSource.filter(item => item.id !== record.id));
                 // // handleDataResponse.userAction('删除规则', true, response);
@@ -501,11 +489,9 @@ const ForwardRules: React.FC = () => {
             try {
                 // 调用真实的API创建转发路径规则
                 const createRequest = {
-                    name: `转发规则-${Date.now().toString().substr(-6)}`,
                     type: ForwardPathRuleType.FORWARD_PATH_RULE_TYPE_HTTP, // 默认使用HTTP类型
                     pathServerIds: pathServerIds,
-                    egressId: exitServer.id,
-                    // egressName 由后端根据 egressId 自动填充，不需要前端传入
+                    egressId: typeof exitServer.id === 'number' ? exitServer.id : parseInt(exitServer.id as string),
                 };
 
                 const response = await forwardPathRulesService.createForwardPathRule(createRequest);
@@ -514,8 +500,8 @@ const ForwardRules: React.FC = () => {
                     // API调用成功，更新本地状态
                     const createdRule = response.data;
                     const newRule: ForwardRuleItem = {
-                        id: createdRule?.id || (Math.random() * 1000000).toFixed(0),
-                        ruleId: createdRule?.id || `rule${Date.now().toString().substr(-6)}`,
+                        id: createdRule?.id || Math.floor(Math.random() * 1000000),
+                        ruleId: createdRule?.id?.toString() || `rule${Date.now().toString().substr(-6)}`,
                         entryType: 'HTTP',
                         entryConfig: '0.0.0.0:8080', // 默认配置
                         trafficUsed: 0,
@@ -546,11 +532,9 @@ const ForwardRules: React.FC = () => {
             try {
                 // 调用真实的API更新转发路径规则
                 const updateRequest = {
-                    id: currentRecord.id.toString(),
-                    name: `更新规则-${currentRecord.ruleId}`,
+                    id: currentRecord.id, // currentRecord.id 现在是number类型
                     pathServerIds: pathServerIds,
-                    egressId: exitServer.id,
-                    // egressName 由后端根据 egressId 自动填充，不需要前端传入
+                    egressId: typeof exitServer.id === 'number' ? exitServer.id : parseInt(exitServer.id as string),
                 };
 
                 const response = await forwardPathRulesService.updateForwardPathRule(updateRequest);
@@ -942,7 +926,7 @@ const ForwardRules: React.FC = () => {
             
             // 创建出口规则项
             const exitServer: ServerItem = {
-                id: egressConfig.id || `egress-${egressConfig.serverId}`,
+                id: (egressConfig.id ? egressConfig.id.toString() : `egress-${egressConfig.serverId}`),
                 name: serverName,
                 type: 'EXIT',
                 ip: serverIp,
