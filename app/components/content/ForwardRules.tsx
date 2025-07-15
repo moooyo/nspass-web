@@ -27,7 +27,7 @@ import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { ServerItem as BaseServerItem } from './LeafletWrapper';
 import { forwardRulesService } from '@/services/forwardRules';
-import type { ForwardRule } from '@/services/forwardRules';
+import type { ForwardRule } from '@/types/generated/api/rules/rule_management';
 import { serverService } from '@/services/server';
 import type { ServerItem as ApiServerItem } from '@/types/generated/api/servers/server_management';
 import { egressService } from '@/services/egress';
@@ -491,7 +491,7 @@ const ForwardRules: React.FC = () => {
                 const createRequest = {
                     type: ForwardPathRuleType.FORWARD_PATH_RULE_TYPE_HTTP, // 默认使用HTTP类型
                     pathServerIds: pathServerIds,
-                    egressId: typeof exitServer.id === 'number' ? exitServer.id : parseInt(exitServer.id as string),
+                    egressId: parseInt(exitServer.id as string), // ServerItem.id 是 string，API 需要 number
                 };
 
                 const response = await forwardPathRulesService.createForwardPathRule(createRequest);
@@ -534,7 +534,7 @@ const ForwardRules: React.FC = () => {
                 const updateRequest = {
                     id: currentRecord.id, // currentRecord.id 现在是number类型
                     pathServerIds: pathServerIds,
-                    egressId: typeof exitServer.id === 'number' ? exitServer.id : parseInt(exitServer.id as string),
+                    egressId: parseInt(exitServer.id as string), // ServerItem.id 是 string，API 需要 number
                 };
 
                 const response = await forwardPathRulesService.updateForwardPathRule(updateRequest);

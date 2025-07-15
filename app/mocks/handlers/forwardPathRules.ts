@@ -1,18 +1,18 @@
 import { http, HttpResponse } from 'msw';
 import type {
-  ForwardPathRule,
   CreateForwardPathRuleRequest,
   UpdateForwardPathRuleRequest
-} from '@/services/forwardPathRules';
+} from '@/types/generated/api/forwardPath/forward_path_rule';
+import type { ForwardPathRule } from '@/types/generated/model/forwardPath';
 import {
   ForwardPathRuleType,
   ForwardPathRuleStatus
-} from '@/services/forwardPathRules';
+} from '@/types/generated/model/forwardPath';
 
 // 模拟转发路径规则数据
 const mockForwardPathRules: ForwardPathRule[] = [
   {
-    id: 'fpr-001',
+    id: 1, // 改为数字类型
     userId: 1,
     name: 'HTTP代理路径规则',
     type: ForwardPathRuleType.FORWARD_PATH_RULE_TYPE_HTTP,
@@ -31,7 +31,7 @@ const mockForwardPathRules: ForwardPathRule[] = [
         order: 2
       }
     ],
-    egressId: 'exit-server-001',
+    egressId: 1, // 改为数字类型
     egressName: '出口规则1',
     trafficUp: 1024000,
     trafficDown: 2048000,
@@ -39,7 +39,7 @@ const mockForwardPathRules: ForwardPathRule[] = [
     updatedAt: Date.now()
   },
   {
-    id: 'fpr-002',
+    id: 2, // 改为数字类型
     userId: 1,
     name: 'SOCKS5代理路径规则',
     type: ForwardPathRuleType.FORWARD_PATH_RULE_TYPE_TCP,
@@ -52,7 +52,7 @@ const mockForwardPathRules: ForwardPathRule[] = [
         order: 1
       }
     ],
-    egressId: 'exit-server-002',
+    egressId: 2, // 改为数字类型
     egressName: '出口规则2',
     trafficUp: 512000,
     trafficDown: 1024000,
@@ -100,10 +100,10 @@ export const forwardPathRulesHandlers = [
     const body = await request.json() as CreateForwardPathRuleRequest;
 
     // 验证必填字段
-    if (!body.name || !body.type || !body.egressId) {
+    if (!body.type || !body.egressId) {
       return HttpResponse.json({
         success: false,
-        message: '缺少必填字段：规则名称、转发类型、出口规则ID为必填项',
+        message: '缺少必填字段：转发类型、出口规则ID为必填项',
         errorCode: 'INVALID_INPUT'
       }, { status: 400 });
     }
@@ -118,9 +118,9 @@ export const forwardPathRulesHandlers = [
 
     // 创建新规则
     const newRule: ForwardPathRule = {
-      id: `fpr-${nextId.toString().padStart(3, '0')}`,
+      id: nextId++, // 使用数字类型的ID
       userId: 1,
-      name: body.name,
+      name: `转发路径规则-${nextId}`, // 自动生成名称
       type: body.type,
       status: ForwardPathRuleStatus.FORWARD_PATH_RULE_STATUS_INACTIVE, // 新建规则默认为非活跃状态
       path: body.pathServerIds.map((serverId, index) => ({
@@ -149,7 +149,7 @@ export const forwardPathRulesHandlers = [
 
   // 获取单个转发路径规则
   http.get('/v1/forward-path-rules/:id', ({ params }) => {
-    const id = params.id as string;
+    const id = parseInt(params.id as string); // 转换为数字
     const rule = mockForwardPathRules.find(r => r.id === id);
 
     if (!rule) {
@@ -175,7 +175,7 @@ export const forwardPathRulesHandlers = [
 
   // 更新转发路径规则
   http.put('/v1/forward-path-rules/:id', async ({ params, request }) => {
-    const id = params.id as string;
+    const id = parseInt(params.id as string); // 转换为数字
     const body = await request.json() as Omit<UpdateForwardPathRuleRequest, 'id'>;
     const ruleIndex = mockForwardPathRules.findIndex(r => r.id === id);
 
@@ -189,7 +189,6 @@ export const forwardPathRulesHandlers = [
 
     // 更新规则
     const rule = mockForwardPathRules[ruleIndex];
-    if (body.name) rule.name = body.name;
     if (body.type) rule.type = body.type;
     if (body.status) rule.status = body.status;
     if (body.egressId) rule.egressId = body.egressId;
@@ -212,7 +211,7 @@ export const forwardPathRulesHandlers = [
 
   // 删除转发路径规则
   http.delete('/v1/forward-path-rules/:id', ({ params }) => {
-    const id = params.id as string;
+    const id = parseInt(params.id as string); // 转换为数字
     const ruleIndex = mockForwardPathRules.findIndex(r => r.id === id);
 
     if (ruleIndex === -1) {
@@ -239,7 +238,7 @@ export const forwardPathRulesHandlers = [
 
   // 启用转发路径规则
   http.post('/v1/forward-path-rules/:id/enable', ({ params }) => {
-    const id = params.id as string;
+    const id = parseInt(params.id as string); // 转换为数字
     const rule = mockForwardPathRules.find(r => r.id === id);
 
     if (!rule) {
@@ -267,7 +266,7 @@ export const forwardPathRulesHandlers = [
 
   // 禁用转发路径规则
   http.post('/v1/forward-path-rules/:id/disable', ({ params }) => {
-    const id = params.id as string;
+    const id = parseInt(params.id as string); // 转换为数字
     const rule = mockForwardPathRules.find(r => r.id === id);
 
     if (!rule) {
@@ -295,7 +294,7 @@ export const forwardPathRulesHandlers = [
 
   // 获取转发路径规则流量统计
   http.get('/v1/forward-path-rules/:id/traffic', ({ params, request }) => {
-    const id = params.id as string;
+    const id = parseInt(params.id as string); // 转换为数字
     const url = new URL(request.url);
     const days = parseInt(url.searchParams.get('days') || '7');
 
@@ -338,7 +337,7 @@ export const forwardPathRulesHandlers = [
 
   // 获取转发路径规则iptables配置
   http.get('/v1/forward-path-rules/:id/iptables', ({ params }) => {
-    const id = params.id as string;
+    const id = parseInt(params.id as string); // 转换为数字
     const rule = mockForwardPathRules.find(r => r.id === id);
 
     if (!rule) {
@@ -381,7 +380,7 @@ export const forwardPathRulesHandlers = [
 
   // 重建转发路径规则iptables配置
   http.post('/v1/forward-path-rules/:ruleId/iptables/rebuild', async ({ params, request }) => {
-    const ruleId = params.ruleId as string;
+    const ruleId = parseInt(params.ruleId as string); // 转换为数字
     const body = await request.json() as { forceRebuild?: boolean; backupExisting?: boolean };
     
     const rule = mockForwardPathRules.find(r => r.id === ruleId);
@@ -403,7 +402,7 @@ export const forwardPathRulesHandlers = [
       backupExisting: body.backupExisting || false,
       startTime: new Date().toISOString(),
       endTime: new Date().toISOString(),
-      affectedServers: rule.path?.map(p => p.serverId || '').concat([rule.egressId || '']) || []
+      affectedServers: rule.path?.map(p => p.serverId || '').concat([rule.egressId?.toString() || '']) || [] // 将 egressId 转换为字符串
     };
 
     return HttpResponse.json({
