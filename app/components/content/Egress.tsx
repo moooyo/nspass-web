@@ -50,8 +50,9 @@ interface LocalEgressItem extends EgressItem {
 
 // 将API数据转换为显示数据格式
 const convertEgressToLocalItem = (egress: EgressItem): LocalEgressItem => {
-    // 生成显示用的配置字符串
+    // 根据出口模式生成显示配置字符串
     let displayConfig = '';
+    
     switch (egress.egressMode) {
         case EgressMode.EGRESS_MODE_DIRECT:
             displayConfig = `直出到: ${egress.targetAddress || 'N/A'}`;
@@ -60,8 +61,7 @@ const convertEgressToLocalItem = (egress: EgressItem): LocalEgressItem => {
             displayConfig = `${egress.forwardType || 'N/A'} -> ${egress.destAddress || 'N/A'}:${egress.destPort || 'N/A'}`;
             break;
         case EgressMode.EGRESS_MODE_SS2022:
-            const portInfo = egress.port ? `:${egress.port}` : '';
-            displayConfig = `SS2022${portInfo}, UDP: ${egress.supportUdp ? '是' : '否'}`;
+            displayConfig = `SS2022:${egress.port || 'N/A'}, UDP: ${egress.supportUdp ? '是' : '否'}`;
             break;
         default:
             displayConfig = '未配置';
@@ -229,8 +229,10 @@ const Egress: React.FC = () => {
 
     // 删除出口
     const deleteEgress = async (record: LocalEgressItem) => {
-        if (!record.id) {
-            message.error('无效的出口ID');
+        // 后端API要求使用自增主键ID，如果ID为0或null说明后端数据有问题
+        if (!record.id || record.id === 0) {
+            message.error('后端数据错误：记录的自增主键ID无效（为0或null）。请检查后端数据库和API实现。');
+            console.error('后端数据错误：记录ID无效', record);
             return;
         }
         
@@ -274,7 +276,14 @@ const Egress: React.FC = () => {
     const handleEditEgress = async (values: LocalEgressItem) => {
         console.log('编辑出口表单提交:', values);
         
-        if (!editingRecord || !editingRecord.id) return false;
+        if (!editingRecord) return false;
+        
+        // 后端API要求使用自增主键ID，如果ID为0或null说明后端数据有问题
+        if (!editingRecord.id || editingRecord.id === 0) {
+            message.error('后端数据错误：记录的自增主键ID无效（为0或null）。请检查后端数据库和API实现。');
+            console.error('后端数据错误：记录ID无效', editingRecord);
+            return false;
+        }
         
         const response = await handleAsyncOperation(
             egressService.updateEgress(editingRecord.id, convertFormToUpdateData(values)),
@@ -316,12 +325,20 @@ const Egress: React.FC = () => {
             formItemProps: {
                 rules: [{ required: true, message: '出口名称为必填项' }],
             },
-            width: '20%',
+            width: '15%',
+            render: (_, record) => (
+                <div>
+                    <div>{record.egressName}</div>
+                    <div style={{ fontSize: '12px', color: '#666' }}>
+                        ID: {record.id || 'N/A'} | egressId: {record.egressId || 'N/A'}
+                    </div>
+                </div>
+            ),
         },
         {
             title: '服务器ID',
             dataIndex: 'serverId',
-            width: '20%',
+            width: '15%',
             valueType: 'select',
             valueEnum: {
                 server01: { text: '服务器01' },
@@ -346,7 +363,7 @@ const Egress: React.FC = () => {
         {
             title: '出口模式',
             dataIndex: 'egressMode',
-            width: '20%',
+            width: '15%',
             valueType: 'select',
             valueEnum: {
                 [EgressMode.EGRESS_MODE_DIRECT]: { text: '直出', status: 'Success' },
@@ -370,7 +387,7 @@ const Egress: React.FC = () => {
         {
             title: '出口配置',
             dataIndex: 'displayConfig',
-            width: '30%',
+            width: '35%',
             formItemProps: {
                 rules: [{ required: true, message: '出口配置为必填项' }],
             },
@@ -378,27 +395,45 @@ const Egress: React.FC = () => {
         {
             title: '操作',
             valueType: 'option',
-            width: '10%',
-            render: (_, record) => [
-                <Tooltip key="edit" title="编辑">
-                    <a onClick={() => openEditModal(record)}>
-                        <Tag icon={<EditOutlined />} color="blue">编辑</Tag>
-                    </a>
-                </Tooltip>,
-                <Popconfirm
-                    key="delete"
-                    title="确定要删除此出口吗？"
-                    onConfirm={() => deleteEgress(record)}
-                    okText="确定"
-                    cancelText="取消"
-                >
-                    <Tooltip title="删除">
-                        <a>
-                            <Tag icon={<DeleteOutlined />} color="error">删除</Tag>
+            width: '20%',
+            render: (_, record) => {
+                const isValidId = record.id && record.id !== 0;
+                
+                return [
+                    <Tooltip key="edit" title={isValidId ? "编辑" : "后端数据错误：ID无效"}>
+                        <a 
+                            onClick={() => isValidId ? openEditModal(record) : undefined}
+                            style={{ 
+                                opacity: isValidId ? 1 : 0.5,
+                                cursor: isValidId ? 'pointer' : 'not-allowed'
+                            }}
+                        >
+                            <Tag icon={<EditOutlined />} color={isValidId ? "blue" : "default"}>编辑</Tag>
                         </a>
-                    </Tooltip>
-                </Popconfirm>,
-            ],
+                    </Tooltip>,
+                    isValidId ? (
+                        <Popconfirm
+                            key="delete"
+                            title="确定要删除此出口吗？"
+                            onConfirm={() => deleteEgress(record)}
+                            okText="确定"
+                            cancelText="取消"
+                        >
+                            <Tooltip title="删除">
+                                <a>
+                                    <Tag icon={<DeleteOutlined />} color="error">删除</Tag>
+                                </a>
+                            </Tooltip>
+                        </Popconfirm>
+                    ) : (
+                        <Tooltip key="delete" title="后端数据错误：ID无效">
+                            <a style={{ cursor: 'not-allowed', opacity: 0.5 }}>
+                                <Tag icon={<DeleteOutlined />} color="default">删除</Tag>
+                            </a>
+                        </Tooltip>
+                    )
+                ];
+            }
         },
     ];
 
@@ -434,6 +469,29 @@ const Egress: React.FC = () => {
                     }}
                 />
             </QueryFilter>
+
+            {/* 后端数据错误警告 */}
+            {dataSource.some(item => !item.id || item.id === 0) && (
+                <div style={{ 
+                    marginBottom: 16, 
+                    padding: '12px 16px', 
+                    backgroundColor: '#fff2f0', 
+                    border: '1px solid #ffccc7',
+                    borderRadius: '6px',
+                    color: '#cf1322'
+                }}>
+                    <span style={{ fontWeight: 'bold' }}>🚨 后端数据错误：</span> 
+                    检测到部分出口记录的自增主键ID无效（为0或null）。根据API规范，删除和编辑操作需要有效的自增主键ID。
+                    <br />
+                    <span style={{ fontWeight: 'bold' }}>需要后端修复：</span>
+                    <br />
+                    1. 检查数据库自增主键设置是否正确
+                    <br />
+                    2. 检查创建记录时是否正确返回了自增ID
+                    <br />
+                    3. 检查时间戳字段格式（当前返回字符串"0"，应该返回int64格式的时间戳）
+                </div>
+            )}
 
             <EditableProTable<LocalEgressItem>
                 rowKey="id"
