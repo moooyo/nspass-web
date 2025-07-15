@@ -25,6 +25,7 @@ import { egressService, EgressItem, CreateEgressData, UpdateEgressData, EgressMo
 import { serverService } from '@/services/server';
 import type { ServerItem } from '@/types/generated/api/servers/server_management';
 import { useApiOnce } from '@/components/hooks/useApiOnce';
+import { useApiErrorHandler } from '@/hooks/useApiErrorHandler';
 import { securityUtils } from '@/shared/utils';
 import { generateRandomPort } from '@/utils/passwordUtils';
 
@@ -133,6 +134,9 @@ const Egress: React.FC = () => {
     const [servers, setServers] = useState<ServerItem[]>([]);
     const [serversLoading, setServersLoading] = useState<boolean>(false);
     
+    // 统一错误处理
+    const { handleAsyncOperation, handleDataFetch, handleUserAction } = useApiErrorHandler();
+    
     // 转换服务器数据为选项格式
     const serverOptions = servers.map(server => ({
         label: `${server.name} (${server.ipv4 || server.ipv6 || 'N/A'})`,
@@ -167,54 +171,49 @@ const Egress: React.FC = () => {
 
     // 加载出口配置数据
     const loadEgressData = useCallback(async () => {
+        setLoading(true);
         try {
-            setLoading(true);
-            const response = await egressService.getEgressList();
-            
-            if (response.success) {
-                const egressData = response.data || [];
-                const convertedData = egressData.map(convertEgressToLocalItem);
-                setDataSource(convertedData);
-                // Data loaded successfully
-                // handleDataResponse.success('获取出口配置', response);
-            } else {
-                // 失败时清空数据，避免显示过期缓存
-                setDataSource([]);
-                // Error loading data
-                // handleDataResponse.error('获取出口配置', undefined, response);
-            }
-        } catch (error) {
-            // 失败时清空数据，避免显示过期缓存
-            setDataSource([]);
-            // Error loading data
-            // handleDataResponse.error('获取出口配置', error);
+            const response = await handleAsyncOperation(
+                egressService.getEgressList(),
+                '获取出口配置',
+                {
+                    showSuccess: false, // 数据获取不显示成功提示
+                    onSuccess: (data) => {
+                        const egressData = data || [];
+                        const convertedData = egressData.map(convertEgressToLocalItem);
+                        setDataSource(convertedData);
+                    },
+                    onError: () => {
+                        setDataSource([]); // 失败时清空数据
+                    }
+                }
+            );
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [handleAsyncOperation]);
 
     // 加载服务器数据
     const loadServersData = useCallback(async () => {
+        setServersLoading(true);
         try {
-            setServersLoading(true);
-            const response = await serverService.getServers({
-                pageSize: 1000 // 获取所有服务器
-            });
-            
-            if (response.success && response.data) {
-                setServers(response.data);
-                // handleDataResponse.success('获取服务器列表', response);
-            } else {
-                setServers([]);
-                // handleDataResponse.error('获取服务器列表', undefined, response);
-            }
-        } catch (error) {
-            setServers([]);
-            // handleDataResponse.error('获取服务器列表', error);
+            await handleAsyncOperation(
+                serverService.getServers({ pageSize: 1000 }),
+                '获取服务器列表',
+                {
+                    showSuccess: false, // 数据获取不显示成功提示
+                    onSuccess: (data) => {
+                        setServers(data || []);
+                    },
+                    onError: () => {
+                        setServers([]); // 失败时清空数据
+                    }
+                }
+            );
         } finally {
             setServersLoading(false);
         }
-    }, []);
+    }, [handleAsyncOperation]);
 
     // 使用useApiOnce防止重复API调用
     useApiOnce(() => {
@@ -230,18 +229,21 @@ const Egress: React.FC = () => {
 
     // 删除出口
     const deleteEgress = async (record: LocalEgressItem) => {
-        try {
-            const response = await egressService.deleteEgress(record.id);
-            if (response.success) {
-                // 重新拉取数据
-                await loadEgressData();
-                // handleDataResponse.userAction('删除出口', true, response);
-            } else {
-                // handleDataResponse.userAction('删除出口', false, response);
-            }
-        } catch (error) {
-            // handleDataResponse.userAction('删除出口', false, undefined, error);
+        if (!record.id) {
+            message.error('无效的出口ID');
+            return;
         }
+        
+        await handleAsyncOperation(
+            egressService.deleteEgress(record.id),
+            '删除出口',
+            {
+                customSuccessMessage: `出口 ${record.egressName} 删除成功！`,
+                onSuccess: () => {
+                    loadEgressData(); // 重新加载数据
+                }
+            }
+        );
     };
 
     // 打开编辑模态框
@@ -272,55 +274,39 @@ const Egress: React.FC = () => {
     const handleEditEgress = async (values: LocalEgressItem) => {
         console.log('编辑出口表单提交:', values);
         
-        if (!editingRecord) return false;
+        if (!editingRecord || !editingRecord.id) return false;
         
-        try {
-            const response = await egressService.updateEgress(editingRecord.id, convertFormToUpdateData(values));
-            if (response.success) {
-                // 重新加载数据
-                const listResponse = await egressService.getEgressList();
-                if (listResponse.success) {
-                    const egressData = listResponse.data || [];
-                    const convertedData = egressData.map(convertEgressToLocalItem);
-                    setDataSource(convertedData);
+        const response = await handleAsyncOperation(
+            egressService.updateEgress(editingRecord.id, convertFormToUpdateData(values)),
+            '更新出口',
+            {
+                customSuccessMessage: '出口更新成功！',
+                onSuccess: () => {
+                    loadEgressData(); // 重新加载数据
+                    setEditingRecord(null);
                 }
-                // handleDataResponse.userAction('更新出口', true, response);
-                setEditingRecord(null);
-                return true;
-            } else {
-                // handleDataResponse.userAction('更新出口', false, response);
-                return false;
             }
-        } catch (error) {
-            // handleDataResponse.userAction('更新出口', false, undefined, error);
-            return false;
-        }
+        );
+        
+        return response.success;
     };
 
     // 处理新建出口提交
     const handleCreateEgress = async (values: LocalEgressItem) => {
         console.log('创建出口表单提交:', values);
         
-        try {
-            const response = await egressService.createEgress(convertFormToCreateData(values));
-            if (response.success) {
-                // 重新加载数据
-                const listResponse = await egressService.getEgressList();
-                if (listResponse.success) {
-                    const egressData = listResponse.data || [];
-                    const convertedData = egressData.map(convertEgressToLocalItem);
-                    setDataSource(convertedData);
+        const response = await handleAsyncOperation(
+            egressService.createEgress(convertFormToCreateData(values)),
+            '创建出口',
+            {
+                customSuccessMessage: '出口创建成功！',
+                onSuccess: () => {
+                    loadEgressData(); // 重新加载数据
                 }
-                // handleDataResponse.userAction('创建出口', true, response);
-                return true;
-            } else {
-                // handleDataResponse.userAction('创建出口', false, response);
-                return false;
             }
-        } catch (error) {
-            // handleDataResponse.userAction('创建出口', false, undefined, error);
-            return false;
-        }
+        );
+        
+        return response.success;
     };
 
     const columns: ProColumns<LocalEgressItem>[] = [

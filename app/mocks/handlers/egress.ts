@@ -6,7 +6,7 @@ import { generateRandomPort } from '@/utils/passwordUtils';
 // 模拟出口配置数据
 const mockEgressData: EgressItem[] = [
     {
-        id: '1',
+        id: 1,
         egressName: 'egress001',  // 更改为egressName
         serverId: '1', // 北京服务器-01
         egressMode: EgressMode.EGRESS_MODE_DIRECT,
@@ -14,7 +14,7 @@ const mockEgressData: EgressItem[] = [
         targetAddress: '203.0.113.1',
     },
     {
-        id: '2',
+        id: 2,
         egressName: 'egress002',  // 更改为egressName
         serverId: '2', // 洛杉矶服务器-01
         egressMode: EgressMode.EGRESS_MODE_IPTABLES,
@@ -24,7 +24,7 @@ const mockEgressData: EgressItem[] = [
         destPort: '8080',
     },
     {
-        id: '3',
+        id: 3,
         egressName: 'egress003',  // 更改为egressName
         serverId: '3', // 东京服务器-01
         egressMode: EgressMode.EGRESS_MODE_IPTABLES,
@@ -34,7 +34,7 @@ const mockEgressData: EgressItem[] = [
         destPort: '443',
     },
     {
-        id: '4',
+        id: 4,
         egressName: 'egress004',  // 更改为egressName
         serverId: '4', // 法兰克福服务器-01
         egressMode: EgressMode.EGRESS_MODE_SS2022,
@@ -91,9 +91,27 @@ export const egressHandlers = [
     http.post('/v1/egress', async ({ request }) => {
         const data = await request.json() as EgressItem;
         
+        // 模拟创建失败的场景：如果出口名称包含 "fail" 或 "error"，则返回失败
+        if (data.egressName && (data.egressName.toLowerCase().includes('fail') || data.egressName.toLowerCase().includes('error'))) {
+            return HttpResponse.json({
+                success: false,
+                message: '出口配置创建失败：服务器拒绝了请求，请检查配置参数',
+                errorCode: 'VALIDATION_ERROR'
+            }, { status: 400 });
+        }
+
+        // 模拟服务器内部错误：如果出口名称包含 "server-error"
+        if (data.egressName && data.egressName.toLowerCase().includes('server-error')) {
+            return HttpResponse.json({
+                success: false,
+                message: '服务器内部错误，请稍后重试',
+                errorCode: 'INTERNAL_ERROR'
+            }, { status: 500 });
+        }
+        
         const newEgress: EgressItem = {
             ...data,
-            id: (nextId++).toString(),
+            id: nextId++,
             egressName: data.egressName || `egress${Date.now().toString().substr(-6)}`,  // 更改为egressName
         };
         
@@ -121,7 +139,7 @@ export const egressHandlers = [
 
     // 获取单个出口配置
     http.get('/v1/egress/:id', ({ params }) => {
-        const id = params.id as string;
+        const id = parseInt(params.id as string);
         const egress = mockEgressData.find(item => item.id === id);
 
         if (!egress) {
@@ -141,7 +159,7 @@ export const egressHandlers = [
 
     // 更新出口配置
     http.put('/v1/egress/:id', async ({ params, request }) => {
-        const id = params.id as string;
+        const id = parseInt(params.id as string);
         const updateData = await request.json() as Partial<EgressItem>;
         
         const index = mockEgressData.findIndex(item => item.id === id);
@@ -164,7 +182,7 @@ export const egressHandlers = [
 
     // 删除出口配置
     http.delete('/v1/egress/:id', ({ params }) => {
-        const id = params.id as string;
+        const id = parseInt(params.id as string);
         const index = mockEgressData.findIndex(item => item.id === id);
         
         if (index === -1) {
@@ -185,7 +203,7 @@ export const egressHandlers = [
 
     // 批量删除出口配置
     http.post('/v1/egress/batch-delete', async ({ request }) => {
-        const { ids } = await request.json() as { ids: string[] };
+        const { ids } = await request.json() as { ids: number[] };
         let deletedCount = 0;
         
         ids.forEach(id => {
@@ -204,7 +222,7 @@ export const egressHandlers = [
 
     // 测试出口连接
     http.post('/v1/egress/:id/test', ({ params }) => {
-        const id = params.id as string;
+        const id = parseInt(params.id as string);
         const egress = mockEgressData.find(item => item.id === id);
 
         if (!egress) {
@@ -232,7 +250,7 @@ export const egressHandlers = [
 
     // 获取出口统计信息
     http.get('/v1/egress/:id/stats', ({ params }) => {
-        const id = params.id as string;
+        const id = parseInt(params.id as string);
         const egress = mockEgressData.find(item => item.id === id);
 
         if (!egress) {
