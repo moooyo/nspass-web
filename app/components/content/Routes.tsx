@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Button, Tag, Popconfirm, Tooltip, Space, Card, Typography, Collapse, Input, Modal } from 'antd';
+import { Button, Tag, Popconfirm, Tooltip, Space, Card, Typography, Input, Modal } from 'antd';
 import { handleApiResponse, message } from '@/utils/message';
 import { routeService, RouteItem, CreateRouteData, UpdateRouteData } from '@/services/routes';
 import { 
@@ -36,6 +36,7 @@ import {
     EyeInvisibleOutlined,
     EyeTwoTone,
     EyeOutlined,
+    ReloadOutlined,
 } from '@ant-design/icons';
 import { useApi } from '@/shared/hooks';
 import { securityUtils } from '@/shared/utils';
@@ -125,6 +126,31 @@ const Routes: React.FC = () => {
             setSystemRoutes(systemResponse.success ? systemResponse.data || [] : []);
         } catch (err) {
             console.error('Routes: 加载数据出错', err);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    // 分别加载自定义线路和系统线路的函数
+    const loadCustomRoutes = useCallback(async () => {
+        try {
+            setLoading(true);
+            const response = await routeService.getRouteList({ type: RouteType.ROUTE_TYPE_CUSTOM });
+            setCustomRoutes(response.success ? response.data || [] : []);
+        } catch (err) {
+            console.error('Routes: 加载自定义线路出错', err);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    const loadSystemRoutes = useCallback(async () => {
+        try {
+            setLoading(true);
+            const response = await routeService.getRouteList({ type: RouteType.ROUTE_TYPE_SYSTEM });
+            setSystemRoutes(response.success ? response.data || [] : []);
+        } catch (err) {
+            console.error('Routes: 加载系统线路出错', err);
         } finally {
             setLoading(false);
         }
@@ -458,27 +484,40 @@ const Routes: React.FC = () => {
         <div style={{ padding: '0 0 24px 0' }}>
             {/* 自定义线路配置 */}
             <Card 
-                title={<Title level={4} style={{ margin: 0 }}>自定义线路配置</Title>} 
+                title={
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Title level={4} style={{ margin: 0 }}>
+                            自定义线路配置 ({customDataSource.length}条)
+                        </Title>
+                        <Space>
+                            <Button
+                                icon={<ReloadOutlined />}
+                                onClick={loadCustomRoutes}
+                                loading={loading}
+                            >
+                                刷新
+                            </Button>
+                            <Button
+                                icon={<PlusOutlined />}
+                                onClick={() => setCreateModalVisible(true)}
+                                type="primary"
+                            >
+                                新增线路
+                            </Button>
+                        </Space>
+                    </div>
+                }
                 style={{ marginBottom: '24px' }}
             >
                 <EditableProTable<RouteItem>
                     rowKey="id"
-                    headerTitle="自定义线路列表"
                     maxLength={50}
                     scroll={{ x: 'max-content' }}
                     recordCreatorProps={false}
                     loading={loading}
+                    search={false}
+                    options={false}
                     dataSource={customDataSource}
-                    toolBarRender={() => [
-                        <Button
-                            key="button"
-                            icon={<PlusOutlined />}
-                            onClick={() => setCreateModalVisible(true)}
-                            type="primary"
-                        >
-                            新增线路
-                        </Button>,
-                    ]}
                     columns={generateColumns(true)}
                     value={customDataSource}
                     onChange={(value) => {
@@ -496,40 +535,40 @@ const Routes: React.FC = () => {
             </Card>
 
             {/* 系统生成线路 */}
-            <Card>
-                <Collapse 
-                    defaultActiveKey={[]}
-                    style={{ backgroundColor: 'transparent' }}
-                    items={[
-                        {
-                            key: '1',
-                            label: <Title level={4} style={{ margin: 0 }}>系统生成线路 ({systemDataSource.length}条)</Title>,
-                            style: { padding: 0 },
-                            children: (
-                                <div style={{ paddingTop: '16px' }}>
-                                    <EditableProTable<RouteItem>
-                                        rowKey="id"
-                                        maxLength={50}
-                                        scroll={{ x: 'max-content' }}
-                                        recordCreatorProps={false}
-                                        loading={loading}
-                                        search={false}
-                                        options={false}
-                                        dataSource={systemDataSource}
-                                        columns={generateColumns(false)}
-                                        value={systemDataSource}
-                                        editable={{
-                                            type: 'multiple',
-                                            editableKeys: [],
-                                            onSave: async () => false,
-                                            onChange: () => {},
-                                            actionRender: () => [],
-                                        }}
-                                    />
-                                </div>
-                            )
-                        }
-                    ]}
+            <Card
+                title={
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Title level={4} style={{ margin: 0 }}>
+                            系统生成线路 ({systemDataSource.length}条)
+                        </Title>
+                        <Button
+                            icon={<ReloadOutlined />}
+                            onClick={loadSystemRoutes}
+                            loading={loading}
+                        >
+                            刷新
+                        </Button>
+                    </div>
+                }
+            >
+                <EditableProTable<RouteItem>
+                    rowKey="id"
+                    maxLength={50}
+                    scroll={{ x: 'max-content' }}
+                    recordCreatorProps={false}
+                    loading={loading}
+                    search={false}
+                    options={false}
+                    dataSource={systemDataSource}
+                    columns={generateColumns(false)}
+                    value={systemDataSource}
+                    editable={{
+                        type: 'multiple',
+                        editableKeys: [],
+                        onSave: async () => false,
+                        onChange: () => {},
+                        actionRender: () => [],
+                    }}
                 />
             </Card>
 
