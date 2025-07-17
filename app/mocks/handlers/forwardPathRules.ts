@@ -378,6 +378,30 @@ export const forwardPathRulesHandlers = [
     });
   }),
 
+  // 重建所有转发路径规则的 iptables 配置
+  http.post('/v1/forward-path-rules/rebuild-iptables', async ({ request }) => {
+    const body = await request.json() as { forceRebuild?: boolean };
+    
+    // 模拟重建所有规则的任务
+    const rebuildTask = {
+      taskId: `rebuild-all-${Date.now()}`,
+      status: 'STARTED',
+      forceRebuild: body.forceRebuild || false,
+      startTime: new Date().toISOString(),
+      totalRules: mockForwardPathRules.length,
+      processedRules: 0,
+      affectedServers: [...new Set(mockForwardPathRules.flatMap(rule => 
+        rule.path?.map(p => p.serverId || '').concat([rule.egressId?.toString() || '']) || []
+      ))]
+    };
+
+    return HttpResponse.json({
+      success: true,
+      message: '所有转发路径规则的 iptables 配置重建任务已启动',
+      data: rebuildTask
+    });
+  }),
+
   // 重建转发路径规则iptables配置
   http.post('/v1/forward-path-rules/:ruleId/iptables/rebuild', async ({ params, request }) => {
     const ruleId = parseInt(params.ruleId as string); // 转换为数字

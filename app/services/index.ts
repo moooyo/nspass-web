@@ -12,7 +12,7 @@ import { userInfoService } from './userInfo';
 import { routeService } from './routes';
 import { egressService } from './egress';
 import { dashboardService } from './dashboard';
-import { forwardRulesService } from './forwardRules';
+import { forwardPathRulesService } from './forwardPathRules';
 import { userService } from './user';
 import { userGroupsService } from './userGroups';
 import { userManagementService } from './userManagement';
@@ -30,7 +30,7 @@ const services = {
   route: routeService,
   egress: egressService,
   dashboard: dashboardService,
-  forwardRules: forwardRulesService,
+  forwardRules: forwardPathRulesService,
   user: userService,
   userGroups: userGroupsService,
   userManagement: userManagementService,
@@ -72,7 +72,7 @@ export {
   routeService,
   egressService,
   dashboardService,
-  forwardRulesService,
+  forwardPathRulesService,
   userService,
   userGroupsService,
   userManagementService,

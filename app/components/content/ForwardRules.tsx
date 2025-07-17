@@ -27,13 +27,12 @@ import dynamic from 'next/dynamic';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { ServerItem as BaseServerItem } from './LeafletWrapper';
-import { forwardRulesService } from '@/services/forwardRules';
-import type { ForwardRule } from '@/types/generated/api/rules/rule_management';
+import { forwardPathRulesService, ForwardPathRuleType, ForwardPathRuleStatus } from '@/services/forwardPathRules';
+import type { ForwardPathRule } from '@/types/generated/model/forwardPath';
 import { serverService } from '@/services/server';
 import type { ServerItem as ApiServerItem } from '@/types/generated/api/servers/server_management';
 import { egressService } from '@/services/egress';
 import type { EgressItem } from '@/types/generated/model/egressItem';
-import { forwardPathRulesService, ForwardPathRuleType } from '@/services/forwardPathRules';
 import 'leaflet/dist/leaflet.css';
 import { useApiOnce } from '@/components/hooks/useApiOnce';
 
@@ -91,18 +90,18 @@ type ForwardRuleItem = {
 };
 
 // 将API数据转换为组件数据格式
-const convertForwardRuleToItem = (rule: ForwardRule): ForwardRuleItem => {
+const convertForwardRuleToItem = (rule: ForwardPathRule): ForwardRuleItem => {
     return {
         id: rule.id || 0,
-        ruleId: `rule${rule.id || 0}`,
-        entryType: 'HTTP', // 根据API数据映射
-        entryConfig: `${rule.targetAddress || ''}:${rule.targetPort || 0}`,
-        trafficUsed: (rule.uploadTraffic || 0) + (rule.downloadTraffic || 0),
-        exitType: rule.egressMode === 'EGRESS_MODE_DIRECT' ? 'DIRECT' : 'PROXY',
-        exitConfig: rule.targetAddress || '',
-        status: rule.status === 'RULE_STATUS_ACTIVE' ? 'ACTIVE' : 
-                rule.status === 'RULE_STATUS_INACTIVE' ? 'PAUSED' : 'ERROR',
-        viaNodes: [], // API数据中可能没有这个字段
+        ruleId: rule.id?.toString() || '',
+        entryType: 'HTTP', // 根据 rule.type 映射
+        entryConfig: `${rule.name || ''}`, // 使用规则名称
+        trafficUsed: Math.round(((rule.trafficUp || 0) + (rule.trafficDown || 0)) / (1024 * 1024)), // 转换为MB
+        exitType: rule.egressId ? 'PROXY' : 'DIRECT',
+        exitConfig: rule.egressName || '',
+        status: rule.status === ForwardPathRuleStatus.FORWARD_PATH_RULE_STATUS_ACTIVE ? 'ACTIVE' :
+                rule.status === ForwardPathRuleStatus.FORWARD_PATH_RULE_STATUS_INACTIVE ? 'PAUSED' : 'ERROR',
+        viaNodes: rule.path?.map(node => node.serverName || '') || []
     };
 };
 
@@ -250,10 +249,10 @@ const ForwardRules: React.FC = () => {
     const loadRules = useCallback(async () => {
         try {
             setLoading(true);
-            const response = await forwardRulesService.getRules();
+            const response = await forwardPathRulesService.getForwardPathRules();
             
             if (response.success) {
-                const rulesData = response.data?.data || [];
+                const rulesData = response.data?.rules || [];
                 const convertedRules = rulesData.map(convertForwardRuleToItem);
                 setDataSource(convertedRules);
                 // Data loaded successfully
@@ -308,11 +307,10 @@ const ForwardRules: React.FC = () => {
     // 暂停/启动规则
     const toggleRuleStatus = useCallback(async (record: ForwardRuleItem) => {
         try {
-            const newStatus = record.status === 'ACTIVE';
-            const response = await forwardRulesService.toggleRule({
-                id: record.id,
-                enabled: !newStatus
-            });
+            const isActive = record.status === 'ACTIVE';
+            const response = isActive 
+                ? await forwardPathRulesService.disableForwardPathRule(record.id)
+                : await forwardPathRulesService.enableForwardPathRule(record.id);
             
             if (response.success) {
                 const newDataSource = dataSource.map(item => {
@@ -361,7 +359,7 @@ const ForwardRules: React.FC = () => {
     // 删除规则
     const deleteRule = useCallback(async (record: ForwardRuleItem) => {
         try {
-            const response = await forwardRulesService.deleteRule({ id: record.id });
+            const response = await forwardPathRulesService.deleteForwardPathRule(record.id);
             if (response.success) {
                 setDataSource(dataSource.filter(item => item.id !== record.id));
                 // // handleDataResponse.userAction('删除规则', true, response);

@@ -8,7 +8,6 @@ import {
   userInfoHandlers,
   authHandlers,
   dashboardHandlers,
-  rulesHandlers,
   userManagementHandlers,
   routeHandlers,
   miscHandlers,
@@ -24,7 +23,6 @@ export const handlers = [
   ...authHandlers,           // 认证 (/api/v1/auth)
   ...passkeyHandlers,        // Passkey认证 (/api/v1/auth/passkey, /api/v1/user/passkeys)
   ...dashboardHandlers,      // 仪表盘 (/api/v1/dashboard)
-  ...rulesHandlers,          // 规则管理 (/api/v1/rules)
   ...forwardPathRulesHandlers, // 转发路径规则管理 (/v1/forward-path-rules)
   ...routeHandlers,          // 线路管理 (/api/routes)
   ...egressHandlers,         // 出口配置管理 (/api/v1/egress)

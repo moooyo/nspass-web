@@ -61,7 +61,7 @@ export type ForwardRuleListParams = GetRulesRequest;
 export type { RuleTrafficStats };
 
 class ForwardRulesService {
-  private readonly endpoint = '/v1/rules';
+  private readonly endpoint = '/v1/forward-path-rules';
 
   /**
    * 获取转发规则列表
