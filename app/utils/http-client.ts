@@ -71,7 +71,7 @@ interface RequestCacheItem {
 // 通用响应处理工具
 class ResponseHandler {
   /**
-   * 统一处理API响应，转换为标准ApiResponse格式
+   * 规范化响应格式为标准ApiResponse
    */
   static normalizeProtoResponse<T>(response: any): ApiResponse<T> {
     // 处理扁平化格式：{status: {success, message, errorCode}, data, pagination}
@@ -95,11 +95,32 @@ class ResponseHandler {
       return normalized;
     }
 
+    // 处理直接格式：{success, message, data, pagination}
+    if (response && typeof response === 'object' && 'success' in response) {
+      const normalized: ApiResponse<T> = {
+        success: response.success ?? false,
+        message: response.message,
+        data: response.data
+      };
+
+      // 处理分页信息
+      if (response.pagination) {
+        normalized.pagination = {
+          current: response.pagination.current || response.pagination.page || 1,
+          pageSize: response.pagination.pageSize || 10,
+          total: response.pagination.total || 0,
+          totalPages: response.pagination.totalPages || Math.ceil((response.pagination.total || 0) / (response.pagination.pageSize || 10))
+        };
+      }
+
+      return normalized;
+    }
+
     // 如果不匹配标准格式，返回错误格式
     return {
       success: false,
-      message: '响应格式不正确',
-      data: response as T
+      message: response?.message || 'Unknown error',
+      data: response?.data as T
     };
   }
 

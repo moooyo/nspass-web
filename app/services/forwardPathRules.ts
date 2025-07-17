@@ -41,24 +41,14 @@ class ForwardPathRulesService {
   /**
    * 获取转发路径规则列表
    */
-  async getForwardPathRules(params: GetForwardPathRulesRequest = {}): Promise<ApiResponse<{
-    rules: ForwardPathRule[];
-    total: number;
-    page: number;
-    pageSize: number;
-  }>> {
+  async getForwardPathRules(params: GetForwardPathRulesRequest = {}): Promise<ApiResponse<ForwardPathRule[]>> {
     const queryParams: Record<string, string> = {};
     
     if (params.page) queryParams.page = params.page.toString();
     if (params.pageSize) queryParams.pageSize = params.pageSize.toString();
     if (params.status) queryParams.status = params.status;
 
-    return httpClient.get<{
-      rules: ForwardPathRule[];
-      total: number;
-      page: number;
-      pageSize: number;
-    }>(this.endpoint, queryParams);
+    return httpClient.get<ForwardPathRule[]>(this.endpoint, queryParams);
   }
 
   /**

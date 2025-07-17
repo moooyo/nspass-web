@@ -84,13 +84,16 @@ export const forwardPathRulesHandlers = [
     const paginatedRules = filteredRules.slice(start, end);
 
     return HttpResponse.json({
-      success: true,
-      message: '获取转发路径规则列表成功',
-      data: {
-        rules: paginatedRules,
+      status: {
+        success: true,
+        message: '获取转发路径规则列表成功'
+      },
+      data: paginatedRules,
+      pagination: {
         total: filteredRules.length,
         page,
-        pageSize
+        pageSize,
+        totalPages: Math.ceil(filteredRules.length / pageSize)
       }
     });
   }),

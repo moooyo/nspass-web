@@ -91,12 +91,16 @@ type ForwardRuleItem = {
 
 // 将API数据转换为组件数据格式
 const convertForwardRuleToItem = (rule: ForwardPathRule): ForwardRuleItem => {
+    // 处理字符串格式的流量数据
+    const trafficUp = parseInt(rule.trafficUp?.toString() || '0', 10);
+    const trafficDown = parseInt(rule.trafficDown?.toString() || '0', 10);
+    
     return {
         id: rule.id || 0,
         ruleId: rule.id?.toString() || '',
         entryType: 'HTTP', // 根据 rule.type 映射
         entryConfig: `${rule.name || ''}`, // 使用规则名称
-        trafficUsed: Math.round(((rule.trafficUp || 0) + (rule.trafficDown || 0)) / (1024 * 1024)), // 转换为MB
+        trafficUsed: Math.round((trafficUp + trafficDown) / (1024 * 1024)), // 转换为MB
         exitType: rule.egressId ? 'PROXY' : 'DIRECT',
         exitConfig: rule.egressName || '',
         status: rule.status === ForwardPathRuleStatus.FORWARD_PATH_RULE_STATUS_ACTIVE ? 'ACTIVE' :
@@ -252,7 +256,8 @@ const ForwardRules: React.FC = () => {
             const response = await forwardPathRulesService.getForwardPathRules();
             
             if (response.success) {
-                const rulesData = response.data?.rules || [];
+                // API直接返回规则数组在data中，而不是在data.rules中
+                const rulesData = response.data || [];
                 const convertedRules = rulesData.map(convertForwardRuleToItem);
                 setDataSource(convertedRules);
                 // Data loaded successfully

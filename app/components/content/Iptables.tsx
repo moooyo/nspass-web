@@ -87,8 +87,9 @@ const IptablesManagement: React.FC = () => {
       // 使用响应处理器，获取操作不显示成功消息
       const handledResponse = handleApiResponse.fetch(response, '获取iptables配置');
       
-      if (handledResponse.success && handledResponse.data?.data) {
-        setConfigs(handledResponse.data.data);
+      if (handledResponse.success && handledResponse.data) {
+        // API直接返回配置数组在data中
+        setConfigs(handledResponse.data);
       }
     } catch {
       message.error('获取 iptables 配置失败');

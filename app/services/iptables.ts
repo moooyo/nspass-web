@@ -82,7 +82,7 @@ export type IptablesConfigListParams = GetServerIptablesConfigsRequest;
 export const getServerIptablesConfigs = async (
   serverId: string,
   params?: GetServerIptablesConfigsRequest
-): Promise<ApiResponse<GetServerIptablesConfigsResponse>> => {
+): Promise<ApiResponse<IptablesConfig[]>> => {
   const queryParams: Record<string, string> = {};
   
   if (params?.tableType) queryParams.tableType = params.tableType;
@@ -92,7 +92,7 @@ export const getServerIptablesConfigs = async (
   if (params?.page) queryParams.page = params.page.toString();
   if (params?.pageSize) queryParams.pageSize = params.pageSize.toString();
   
-  return httpClient.get<GetServerIptablesConfigsResponse>(`/v1/servers/${serverId}/iptables/configs`, queryParams);
+  return httpClient.get<IptablesConfig[]>(`/v1/servers/${serverId}/iptables/configs`, queryParams);
 };
 
 // 获取单个 iptables 配置
