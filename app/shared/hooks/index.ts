@@ -61,7 +61,7 @@ export function useApi<T>(
         setLoading(false);
       }
     }
-  }, [apiCall, onSuccess, onError, deps]);
+  }, [apiCall, onSuccess, onError, ...deps]);
 
   useEffect(() => {
     if (immediate) {

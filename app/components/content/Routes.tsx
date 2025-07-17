@@ -3,7 +3,7 @@
  * 集成了原版本的完整功能和优化版本的最佳实践
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Button, Tag, Popconfirm, Tooltip, Space, Card, Typography, Collapse, Input, Modal } from 'antd';
 import { handleApiResponse, message } from '@/utils/message';
 import { routeService, RouteItem, CreateRouteData, UpdateRouteData } from '@/services/routes';
@@ -39,6 +39,8 @@ import {
 } from '@ant-design/icons';
 import { useApi } from '@/shared/hooks';
 import { securityUtils } from '@/shared/utils';
+import { ApiResponse } from '@/utils/http-client';
+import { StandardApiResponse } from '@/shared/types/common';
 
 const { Title } = Typography;
 
@@ -104,38 +106,48 @@ const Routes: React.FC = () => {
     const [form] = Form.useForm();
     const [editForm] = Form.useForm();
 
-    // 使用优化后的API Hook
-    const {
-        data: routesData,
-        loading,
-        refetch
-    } = useApi(async () => {
-        const [customResponse, systemResponse] = await Promise.all([
-            routeService.getRouteList({ type: RouteType.ROUTE_TYPE_CUSTOM }),
-            routeService.getRouteList({ type: RouteType.ROUTE_TYPE_SYSTEM })
-        ]);
+    // 直接使用 useState + useEffect，这是最可靠的方式
+    const [customRoutes, setCustomRoutes] = useState<RouteItem[]>([]);
+    const [systemRoutes, setSystemRoutes] = useState<RouteItem[]>([]);
+    const [loading, setLoading] = useState(true);
 
-        return {
-            success: true,
-            data: {
-                custom: customResponse.success ? customResponse.data || [] : [],
-                system: systemResponse.success ? systemResponse.data || [] : []
-            },
-            message: 'success'
-        };
-    }, [], {
-        immediate: true,
-        // onError: (error) => // handleDataResponse.error('加载线路数据', error)
-    });
+    // 加载数据的函数
+    const loadData = useCallback(async () => {
+        try {
+            setLoading(true);
+            
+            const [customResponse, systemResponse] = await Promise.all([
+                routeService.getRouteList({ type: RouteType.ROUTE_TYPE_CUSTOM }),
+                routeService.getRouteList({ type: RouteType.ROUTE_TYPE_SYSTEM })
+            ]);
+
+            setCustomRoutes(customResponse.success ? customResponse.data || [] : []);
+            setSystemRoutes(systemResponse.success ? systemResponse.data || [] : []);
+        } catch (err) {
+            console.error('Routes: 加载数据出错', err);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    // 初始加载
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
+    // refetch 方法
+    const refetch = loadData;
 
     // 处理数据，分离自定义和系统路由
     const { customDataSource, systemDataSource } = useMemo(() => {
-        const data = routesData || { custom: [], system: [] };
-        return {
-            customDataSource: data.custom,
-            systemDataSource: data.system
+        // 直接使用状态中的数据
+        const result = {
+            customDataSource: customRoutes || [],
+            systemDataSource: systemRoutes || []
         };
-    }, [routesData]);
+        
+        return result;
+    }, [customRoutes, systemRoutes]);
 
     // 生成并设置随机密码
     const generateAndSetPassword = (fieldName: string, minLength: number, maxLength: number, successMessage: string, targetForm?: any) => {
@@ -456,6 +468,7 @@ const Routes: React.FC = () => {
                     scroll={{ x: 'max-content' }}
                     recordCreatorProps={false}
                     loading={loading}
+                    dataSource={customDataSource}
                     toolBarRender={() => [
                         <Button
                             key="button"
@@ -467,11 +480,6 @@ const Routes: React.FC = () => {
                         </Button>,
                     ]}
                     columns={generateColumns(true)}
-                    request={async () => ({
-                        data: customDataSource,
-                        total: customDataSource.length,
-                        success: true,
-                    })}
                     value={customDataSource}
                     onChange={(value) => {
                         // This is for local editing, actual changes go through API
@@ -507,12 +515,8 @@ const Routes: React.FC = () => {
                                         loading={loading}
                                         search={false}
                                         options={false}
+                                        dataSource={systemDataSource}
                                         columns={generateColumns(false)}
-                                        request={async () => ({
-                                            data: systemDataSource,
-                                            total: systemDataSource.length,
-                                            success: true,
-                                        })}
                                         value={systemDataSource}
                                         editable={{
                                             type: 'multiple',
