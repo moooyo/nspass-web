@@ -83,7 +83,7 @@ const IptablesManagement: React.FC = () => {
     setLoading(true);
     try {
       const response = await getServerIptablesConfigs(serverId);
-      if (response.success && response.data) {
+      if (response.success && response.data?.data) {
         setConfigs(response.data.data);
       } else {
         message.error(response.message || '获取 iptables 配置失败');
@@ -96,13 +96,19 @@ const IptablesManagement: React.FC = () => {
   }, []);
 
   // 重建 iptables 配置
-  const handleRebuildIptables = useCallback(async (serverId: string, force = false) => {
+  const handleRebuildIptables = useCallback(async (serverId: string, options: {
+    forceRebuild?: boolean;
+    backupExisting?: boolean;
+  } = {}) => {
     if (!serverId) return;
     
     try {
-      const response = await rebuildServerIptables(serverId, { force });
-      if (response.success && response.data) {
-        setRebuildTask(response.data);
+      const response = await rebuildServerIptables(serverId, {
+        serverId,
+        ...options
+      });
+      if (response.success && response.data?.data) {
+        setRebuildTask(response.data.data);
         setRebuildModalVisible(true);
         message.success('iptables 重建任务已启动');
       } else {
@@ -226,7 +232,7 @@ const IptablesManagement: React.FC = () => {
       title: '优先级',
       dataIndex: 'priority',
       width: 80,
-      sorter: (a, b) => a.priority - b.priority,
+      sorter: (a, b) => (a.priority || 0) - (b.priority || 0),
     },
     {
       title: '状态',
@@ -262,19 +268,15 @@ const IptablesManagement: React.FC = () => {
   ];
 
   // 渲染重建状态图标
-  const renderRebuildStatusIcon = (status: string) => {
-    switch (status) {
-      case 'IPTABLES_REBUILD_STATUS_PENDING':
-        return <ClockCircleOutlined style={{ color: '#faad14' }} />;
-      case 'IPTABLES_REBUILD_STATUS_RUNNING':
-        return <LoadingOutlined style={{ color: '#1890ff' }} />;
-      case 'IPTABLES_REBUILD_STATUS_SUCCESS':
-        return <CheckCircleOutlined style={{ color: '#52c41a' }} />;
-      case 'IPTABLES_REBUILD_STATUS_FAILED':
-        return <CloseCircleOutlined style={{ color: '#ff4d4f' }} />;
-      default:
-        return <ExclamationCircleOutlined style={{ color: '#d9d9d9' }} />;
-    }
+  const renderRebuildStatusIcon = (status: any) => {
+    if (!status) return <ExclamationCircleOutlined style={{ color: '#d9d9d9' }} />;
+    
+    const statusStr = status.toString();
+    if (statusStr.includes('PENDING')) return <ClockCircleOutlined style={{ color: '#faad14' }} />;
+    if (statusStr.includes('RUNNING')) return <LoadingOutlined style={{ color: '#1890ff' }} />;
+    if (statusStr.includes('SUCCESS')) return <CheckCircleOutlined style={{ color: '#52c41a' }} />;
+    if (statusStr.includes('FAILED')) return <CloseCircleOutlined style={{ color: '#ff4d4f' }} />;
+    return <ExclamationCircleOutlined style={{ color: '#d9d9d9' }} />;
   };
 
   return (
@@ -373,12 +375,12 @@ const IptablesManagement: React.FC = () => {
               <div>
                 <Text strong>进度：</Text>
                 <Progress 
-                  percent={rebuildTask.totalRules > 0 ? Math.round((rebuildTask.processedRules / rebuildTask.totalRules) * 100) : 0}
-                  format={() => `${rebuildTask.processedRules}/${rebuildTask.totalRules}`}
+                  percent={(rebuildTask.totalRules || 0) > 0 ? Math.round(((rebuildTask.processedRules || 0) / (rebuildTask.totalRules || 1)) * 100) : 0}
+                  format={() => `${rebuildTask.processedRules || 0}/${rebuildTask.totalRules || 0}`}
                 />
               </div>
               
-              {rebuildTask.failedRules > 0 && (
+              {(rebuildTask.failedRules || 0) > 0 && (
                 <div>
                   <Text strong>失败规则数：</Text>
                   <Text type="danger">{rebuildTask.failedRules}</Text>
@@ -394,13 +396,13 @@ const IptablesManagement: React.FC = () => {
               
               <div>
                 <Text strong>开始时间：</Text>
-                <Text>{new Date(parseInt(rebuildTask.startedAt) * 1000).toLocaleString()}</Text>
+                <Text>{rebuildTask.startedAt ? new Date(Number(rebuildTask.startedAt) * 1000).toLocaleString() : '未知'}</Text>
               </div>
               
               {rebuildTask.completedAt && (
                 <div>
                   <Text strong>完成时间：</Text>
-                  <Text>{new Date(parseInt(rebuildTask.completedAt) * 1000).toLocaleString()}</Text>
+                  <Text>{new Date(Number(rebuildTask.completedAt) * 1000).toLocaleString()}</Text>
                 </div>
               )}
             </Space>

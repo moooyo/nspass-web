@@ -20,7 +20,8 @@ import {
     ArrowRightOutlined,
     DragOutlined,
     GlobalOutlined,
-    ApiOutlined
+    ApiOutlined,
+    SyncOutlined
 } from '@ant-design/icons';
 import dynamic from 'next/dynamic';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
@@ -371,6 +372,36 @@ const ForwardRules: React.FC = () => {
             // // handleDataResponse.userAction('删除规则', false, undefined, error);
         }
     }, [dataSource, setDataSource]);
+
+    // 重建所有 iptables 规则
+    const rebuildAllIptablesRules = useCallback(async () => {
+        Modal.confirm({
+            title: '确认重建所有 iptables 规则',
+            content: (
+                <div>
+                    <p>您确定要重建所有转发路径规则的 iptables 配置吗？</p>
+                    <p style={{ color: '#ff4d4f', marginBottom: 0 }}>
+                        <strong>警告：</strong>重建操作将会重新生成并应用所有 iptables 规则，可能会暂时影响网络连接。
+                    </p>
+                </div>
+            ),
+            okText: '确认重建',
+            cancelText: '取消',
+            okType: 'danger',
+            onOk: async () => {
+                try {
+                    const response = await forwardPathRulesService.rebuildAllIptablesRules({});
+                    if (response.success) {
+                        message.success('所有 iptables 规则重建任务已启动');
+                    } else {
+                        message.error(response.message || '启动重建任务失败');
+                    }
+                } catch (error) {
+                    message.error('启动重建任务失败');
+                }
+            },
+        });
+    }, []);
 
     // 打开新增弹窗
     const openCreateModal = () => {
@@ -1283,6 +1314,14 @@ const ForwardRules: React.FC = () => {
                         loading={loading}
                     >
                         刷新
+                    </Button>,
+                    <Button
+                        key="rebuild-iptables"
+                        icon={<SyncOutlined />}
+                        onClick={rebuildAllIptablesRules}
+                        danger
+                    >
+                        重建 iptables
                     </Button>,
                     <Button
                         key="button"

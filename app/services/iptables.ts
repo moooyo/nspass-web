@@ -6,29 +6,40 @@ import type {
   IptablesTableType,
   IptablesProtocol,
 } from '@/types/generated/model/iptables';
+import { IptablesRebuildStatus } from '@/types/generated/model/iptables';
 import type {
   GetServerIptablesConfigsRequest,
   GetServerIptablesConfigsResponse,
   GetServerIptablesOverviewRequest,
   GetServerIptablesRulesRequest,
   GetServerIptablesScriptRequest,
+  RebuildServerIptablesRequest,
+  RebuildServerIptablesResponse,
+  GetRebuildTaskStatusRequest,
+  GetRebuildTaskStatusResponse,
+  BatchRebuildServersIptablesRequest,
+  BatchRebuildServersIptablesResponse,
+  RebuildForwardPathRuleIptablesRequest,
+  RebuildForwardPathRuleIptablesResponse,
 } from '@/types/generated/api/iptables/iptables_config';
 
 // 重新导出枚举类型
-export { IptablesChainType, IptablesTableType, IptablesProtocol };
+export { IptablesChainType, IptablesTableType, IptablesProtocol, IptablesRebuildStatus };
 
 // 重新导出生成的类型，提供更简洁的导入路径
-export type { IptablesConfig, IptablesRebuildTask };
+export type { 
+  IptablesConfig, 
+  IptablesRebuildTask,
+  RebuildServerIptablesRequest,
+  RebuildServerIptablesResponse,
+  GetRebuildTaskStatusRequest,
+  GetRebuildTaskStatusResponse,
+  BatchRebuildServersIptablesRequest,
+  BatchRebuildServersIptablesResponse,
+  RebuildForwardPathRuleIptablesRequest,
+  RebuildForwardPathRuleIptablesResponse,
+};
 export type IptablesConfigListParams = GetServerIptablesConfigsRequest;
-
-export interface RebuildServerIptablesResponse {
-  status: {
-    success: boolean;
-    message: string;
-    code: string;
-  };
-  data: IptablesRebuildTask;
-}
 
 // 获取服务器 iptables 配置列表 - 支持分页和过滤
 export const getServerIptablesConfigs = async (
@@ -143,27 +154,12 @@ export const getServerIptablesScript = async (
 // 重建服务器 iptables 配置
 export const rebuildServerIptables = async (
   serverId: string, 
-  options?: { force?: boolean; dryRun?: boolean }
-): Promise<ApiResponse<IptablesRebuildTask>> => {
-  return httpClient.post<IptablesRebuildTask>(`/v1/servers/${serverId}/iptables/rebuild`, options || {});
+  options?: RebuildServerIptablesRequest
+): Promise<ApiResponse<RebuildServerIptablesResponse>> => {
+  return httpClient.post<RebuildServerIptablesResponse>(`/v1/servers/${serverId}/iptables/rebuild`, options || {});
 };
 
 // 批量重建多个服务器 iptables 配置
-export interface BatchRebuildServersIptablesRequest {
-  serverIds: string[];
-  force?: boolean;
-  dryRun?: boolean;
-}
-
-export interface BatchRebuildServersIptablesResponse {
-  status: {
-    success: boolean;
-    message: string;
-    code: string;
-  };
-  data: IptablesRebuildTask[];
-}
-
 export const batchRebuildServersIptables = async (
   request: BatchRebuildServersIptablesRequest
 ): Promise<ApiResponse<BatchRebuildServersIptablesResponse>> => {
@@ -171,16 +167,9 @@ export const batchRebuildServersIptables = async (
 };
 
 // 获取重建任务状态
-export interface GetRebuildTaskStatusResponse {
-  status: {
-    success: boolean;
-    message: string;
-    code: string;
-  };
-  data: IptablesRebuildTask;
-}
-
-export const getRebuildTaskStatus = async (taskId: string): Promise<ApiResponse<GetRebuildTaskStatusResponse>> => {
+export const getRebuildTaskStatus = async (
+  taskId: string
+): Promise<ApiResponse<GetRebuildTaskStatusResponse>> => {
   return httpClient.get<GetRebuildTaskStatusResponse>(`/v1/iptables/rebuild-tasks/${taskId}`);
 };
 
@@ -248,15 +237,17 @@ export const rebuildForwardPathRuleIptables = async (ruleId: string, options?: {
 };
 
 // 获取 iptables 重建状态的中文描述
-export const getIptablesRebuildStatusText = (status: string): string => {
+export const getIptablesRebuildStatusText = (status: IptablesRebuildStatus | undefined): string => {
+  if (!status) return '未知状态';
+  
   switch (status) {
-    case 'IPTABLES_REBUILD_STATUS_PENDING':
+    case IptablesRebuildStatus.IPTABLES_REBUILD_STATUS_PENDING:
       return '等待中';
-    case 'IPTABLES_REBUILD_STATUS_RUNNING':
+    case IptablesRebuildStatus.IPTABLES_REBUILD_STATUS_RUNNING:
       return '执行中';
-    case 'IPTABLES_REBUILD_STATUS_SUCCESS':
+    case IptablesRebuildStatus.IPTABLES_REBUILD_STATUS_SUCCESS:
       return '成功';
-    case 'IPTABLES_REBUILD_STATUS_FAILED':
+    case IptablesRebuildStatus.IPTABLES_REBUILD_STATUS_FAILED:
       return '失败';
     default:
       return '未知状态';
@@ -264,15 +255,17 @@ export const getIptablesRebuildStatusText = (status: string): string => {
 };
 
 // 获取 iptables 重建状态的颜色
-export const getIptablesRebuildStatusColor = (status: string): string => {
+export const getIptablesRebuildStatusColor = (status: IptablesRebuildStatus | undefined): string => {
+  if (!status) return 'default';
+  
   switch (status) {
-    case 'IPTABLES_REBUILD_STATUS_PENDING':
+    case IptablesRebuildStatus.IPTABLES_REBUILD_STATUS_PENDING:
       return 'default';
-    case 'IPTABLES_REBUILD_STATUS_RUNNING':
+    case IptablesRebuildStatus.IPTABLES_REBUILD_STATUS_RUNNING:
       return 'processing';
-    case 'IPTABLES_REBUILD_STATUS_SUCCESS':
+    case IptablesRebuildStatus.IPTABLES_REBUILD_STATUS_SUCCESS:
       return 'success';
-    case 'IPTABLES_REBUILD_STATUS_FAILED':
+    case IptablesRebuildStatus.IPTABLES_REBUILD_STATUS_FAILED:
       return 'error';
     default:
       return 'default';
