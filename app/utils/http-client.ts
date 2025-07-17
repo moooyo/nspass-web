@@ -290,6 +290,11 @@ class HttpClient {
       const response = await fetch(url, config);
       
       if (!response.ok) {
+        // 检查是否为 UNAUTHORIZED 状态 (401)
+        if (response.status === 401) {
+          this.handleUnauthorized();
+        }
+        
         // 尝试解析错误响应
         try {
           const errorData = await response.json();
@@ -355,6 +360,35 @@ class HttpClient {
   clearCache() {
     this.requestCache.clear();
     console.log('HTTP客户端缓存已清理');
+  }
+
+  // 处理未授权错误
+  private handleUnauthorized() {
+    // 仅在浏览器环境中执行
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    console.warn('检测到未授权访问，正在注销登录...');
+    
+    // 清理认证信息
+    localStorage.removeItem('user');
+    localStorage.removeItem('login_method');
+    localStorage.removeItem('auth_token');
+    
+    // 清理所有OAuth2相关的配置
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith('oauth2_')) {
+        localStorage.removeItem(key);
+      }
+    });
+
+    // 清理HTTP客户端缓存
+    this.clearCache();
+
+    // 跳转到登录页面
+    window.location.href = '/login';
   }
 
   // 获取缓存统计信息
