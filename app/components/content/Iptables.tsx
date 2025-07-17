@@ -16,7 +16,7 @@ import {
     ClockCircleOutlined,
     LoadingOutlined
 } from '@ant-design/icons';
-import { message } from '@/utils/message';
+import { message, handleApiResponse, OperationType } from '@/utils/message';
 import { 
   getServerIptablesConfigs,
   rebuildServerIptables,
@@ -83,10 +83,12 @@ const IptablesManagement: React.FC = () => {
     setLoading(true);
     try {
       const response = await getServerIptablesConfigs(serverId);
-      if (response.success && response.data?.data) {
-        setConfigs(response.data.data);
-      } else {
-        message.error(response.message || '获取 iptables 配置失败');
+      
+      // 使用响应处理器，获取操作不显示成功消息
+      const handledResponse = handleApiResponse.fetch(response, '获取iptables配置');
+      
+      if (handledResponse.success && handledResponse.data?.data) {
+        setConfigs(handledResponse.data.data);
       }
     } catch {
       message.error('获取 iptables 配置失败');

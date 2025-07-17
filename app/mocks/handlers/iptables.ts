@@ -110,7 +110,7 @@ export const iptablesHandlers = [
     return HttpResponse.json({
       status: {
         success: true,
-        message: `获取服务器 ${serverId} 的 iptables 配置成功，共 ${total} 条规则`,
+        message: '', // 获取操作成功时不返回消息
         code: 'SUCCESS'
       },
       data: paginatedConfigs,
@@ -145,7 +145,7 @@ export const iptablesHandlers = [
     return HttpResponse.json({
       status: {
         success: true,
-        message: `获取配置 ${configName} 成功`,
+        message: '', // 获取操作成功时不返回消息
         code: 'SUCCESS'
       },
       data: config
@@ -232,7 +232,7 @@ export const iptablesHandlers = [
     return HttpResponse.json({
       status: {
         success: true,
-        message: `获取任务状态成功`,
+        message: '', // 获取操作成功时不返回消息
         code: 'SUCCESS'
       },
       data: task
