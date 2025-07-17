@@ -1,24 +1,41 @@
 import { httpClient, ApiResponse } from '@/utils/http-client';
-import type {
-  IptablesConfig,
-  IptablesRebuildTask,
+import {
   IptablesChainType,
   IptablesTableType,
   IptablesProtocol,
+  IptablesRebuildStatus,
 } from '@/types/generated/model/iptables';
-import { IptablesRebuildStatus } from '@/types/generated/model/iptables';
+import type {
+  IptablesConfig,
+  IptablesRebuildTask,
+  IptablesServerConfig,
+  IptablesGeneratedRule,
+  IptablesScript,
+  IptablesConfigInfo,
+} from '@/types/generated/model/iptables';
 import type {
   GetServerIptablesConfigsRequest,
   GetServerIptablesConfigsResponse,
   GetServerIptablesOverviewRequest,
+  GetServerIptablesOverviewResponse,
   GetServerIptablesRulesRequest,
+  GetServerIptablesRulesResponse,
   GetServerIptablesScriptRequest,
+  GetServerIptablesScriptResponse,
+  GetIptablesConfigRequest,
+  GetIptablesConfigResponse,
   RebuildServerIptablesRequest,
   RebuildServerIptablesResponse,
   GetRebuildTaskStatusRequest,
   GetRebuildTaskStatusResponse,
   BatchRebuildServersIptablesRequest,
   BatchRebuildServersIptablesResponse,
+  ValidateServerIptablesRequest,
+  ValidateServerIptablesResponse,
+  CleanupServerIptablesRequest,
+  CleanupServerIptablesResponse,
+  GetForwardPathRuleIptablesRequest,
+  GetForwardPathRuleIptablesResponse,
   RebuildForwardPathRuleIptablesRequest,
   RebuildForwardPathRuleIptablesResponse,
 } from '@/types/generated/api/iptables/iptables_config';
@@ -30,12 +47,32 @@ export { IptablesChainType, IptablesTableType, IptablesProtocol, IptablesRebuild
 export type { 
   IptablesConfig, 
   IptablesRebuildTask,
+  IptablesServerConfig,
+  IptablesGeneratedRule,
+  IptablesScript,
+  IptablesConfigInfo,
+  GetServerIptablesConfigsRequest,
+  GetServerIptablesConfigsResponse,
+  GetServerIptablesOverviewRequest,
+  GetServerIptablesOverviewResponse,
+  GetServerIptablesRulesRequest,
+  GetServerIptablesRulesResponse,
+  GetServerIptablesScriptRequest,
+  GetServerIptablesScriptResponse,
+  GetIptablesConfigRequest,
+  GetIptablesConfigResponse,
   RebuildServerIptablesRequest,
   RebuildServerIptablesResponse,
   GetRebuildTaskStatusRequest,
   GetRebuildTaskStatusResponse,
   BatchRebuildServersIptablesRequest,
   BatchRebuildServersIptablesResponse,
+  ValidateServerIptablesRequest,
+  ValidateServerIptablesResponse,
+  CleanupServerIptablesRequest,
+  CleanupServerIptablesResponse,
+  GetForwardPathRuleIptablesRequest,
+  GetForwardPathRuleIptablesResponse,
   RebuildForwardPathRuleIptablesRequest,
   RebuildForwardPathRuleIptablesResponse,
 };
@@ -44,111 +81,48 @@ export type IptablesConfigListParams = GetServerIptablesConfigsRequest;
 // 获取服务器 iptables 配置列表 - 支持分页和过滤
 export const getServerIptablesConfigs = async (
   serverId: string,
-  params?: {
-    tableType?: string;
-    chainType?: string;
-    protocol?: string;
-    isEnabled?: boolean;
-    page?: number;
-    pageSize?: number;
-  }
+  params?: GetServerIptablesConfigsRequest
 ): Promise<ApiResponse<GetServerIptablesConfigsResponse>> => {
-  const queryParams = new URLSearchParams();
-  if (params?.tableType) queryParams.append('tableType', params.tableType);
-  if (params?.chainType) queryParams.append('chainType', params.chainType);
-  if (params?.protocol) queryParams.append('protocol', params.protocol);
-  if (params?.isEnabled !== undefined) queryParams.append('isEnabled', params.isEnabled.toString());
-  if (params?.page) queryParams.append('page', params.page.toString());
-  if (params?.pageSize) queryParams.append('pageSize', params.pageSize.toString());
+  const queryParams: Record<string, string> = {};
   
-  const url = `/v1/servers/${serverId}/iptables/configs${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-  return httpClient.get<GetServerIptablesConfigsResponse>(url);
+  if (params?.tableType) queryParams.tableType = params.tableType;
+  if (params?.chainType) queryParams.chainType = params.chainType;
+  if (params?.protocol) queryParams.protocol = params.protocol;
+  if (params?.isEnabled !== undefined) queryParams.isEnabled = params.isEnabled.toString();
+  if (params?.page) queryParams.page = params.page.toString();
+  if (params?.pageSize) queryParams.pageSize = params.pageSize.toString();
+  
+  return httpClient.get<GetServerIptablesConfigsResponse>(`/v1/servers/${serverId}/iptables/configs`, queryParams);
 };
 
 // 获取单个 iptables 配置
-export interface GetIptablesConfigResponse {
-  status: {
-    success: boolean;
-    message: string;
-    code: string;
-  };
-  data: IptablesConfig;
-}
-
 export const getIptablesConfig = async (serverId: string, configName: string): Promise<ApiResponse<GetIptablesConfigResponse>> => {
   return httpClient.get<GetIptablesConfigResponse>(`/v1/servers/${serverId}/iptables/configs/${configName}`);
 };
 
 // 获取服务器 iptables 概览
-export interface IptablesServerConfig {
-  serverId: string;
-  totalConfigs: number;
-  enabledConfigs: number;
-  disabledConfigs: number;
-  totalRules: number;
-  lastRebuildTime: string;
-  rebuildStatus: string;
-}
-
-export interface GetServerIptablesOverviewResponse {
-  status: {
-    success: boolean;
-    message: string;
-    code: string;
-  };
-  data: IptablesServerConfig;
-}
-
 export const getServerIptablesOverview = async (serverId: string): Promise<ApiResponse<GetServerIptablesOverviewResponse>> => {
   return httpClient.get<GetServerIptablesOverviewResponse>(`/v1/servers/${serverId}/iptables/overview`);
 };
 
 // 获取服务器 iptables 生成的规则
-export interface IptablesGeneratedRule {
-  ruleCommand: string;
-  configName: string;
-  priority: number;
-  isValid: boolean;
-  errorMessage?: string;
-}
-
-export interface GetServerIptablesRulesResponse {
-  status: {
-    success: boolean;
-    message: string;
-    code: string;
-  };
-  data: IptablesGeneratedRule[];
-}
-
 export const getServerIptablesRules = async (serverId: string, onlyEnabled?: boolean): Promise<ApiResponse<GetServerIptablesRulesResponse>> => {
-  const url = `/v1/servers/${serverId}/iptables/rules${onlyEnabled ? '?onlyEnabled=true' : ''}`;
-  return httpClient.get<GetServerIptablesRulesResponse>(url);
+  const queryParams: Record<string, string> = {};
+  if (onlyEnabled !== undefined) queryParams.onlyEnabled = onlyEnabled.toString();
+  
+  return httpClient.get<GetServerIptablesRulesResponse>(`/v1/servers/${serverId}/iptables/rules`, queryParams);
 };
 
 // 获取服务器 iptables 脚本
-export interface GetServerIptablesScriptResponse {
-  status: {
-    success: boolean;
-    message: string;
-    code: string;
-  };
-  data: {
-    script: string;
-    format: string;
-  };
-}
-
 export const getServerIptablesScript = async (
   serverId: string, 
   params?: { onlyEnabled?: boolean; format?: string }
 ): Promise<ApiResponse<GetServerIptablesScriptResponse>> => {
-  const queryParams = new URLSearchParams();
-  if (params?.onlyEnabled) queryParams.append('onlyEnabled', params.onlyEnabled.toString());
-  if (params?.format) queryParams.append('format', params.format);
+  const queryParams: Record<string, string> = {};
+  if (params?.onlyEnabled !== undefined) queryParams.onlyEnabled = params.onlyEnabled.toString();
+  if (params?.format) queryParams.format = params.format;
   
-  const url = `/v1/servers/${serverId}/iptables/script${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-  return httpClient.get<GetServerIptablesScriptResponse>(url);
+  return httpClient.get<GetServerIptablesScriptResponse>(`/v1/servers/${serverId}/iptables/script`, queryParams);
 };
 
 // 重建服务器 iptables 配置
@@ -174,24 +148,6 @@ export const getRebuildTaskStatus = async (
 };
 
 // 清理服务器 iptables 配置
-export interface CleanupServerIptablesRequest {
-  tables?: string[];
-  chains?: string[];
-  force?: boolean;
-}
-
-export interface CleanupServerIptablesResponse {
-  status: {
-    success: boolean;
-    message: string;
-    code: string;
-  };
-  data: {
-    cleanedRules: number;
-    errors: string[];
-  };
-}
-
 export const cleanupServerIptables = async (
   serverId: string,
   request?: CleanupServerIptablesRequest
@@ -200,25 +156,6 @@ export const cleanupServerIptables = async (
 };
 
 // 验证服务器 iptables 配置
-export interface ValidateServerIptablesRequest {
-  configNames?: string[];
-  validateSyntax?: boolean;
-  validateConflicts?: boolean;
-}
-
-export interface ValidateServerIptablesResponse {
-  status: {
-    success: boolean;
-    message: string;
-    code: string;
-  };
-  data: {
-    isValid: boolean;
-    errors: string[];
-    warnings: string[];
-  };
-}
-
 export const validateServerIptables = async (
   serverId: string,
   request?: ValidateServerIptablesRequest
@@ -227,13 +164,13 @@ export const validateServerIptables = async (
 };
 
 // 获取转发路径规则相关的 iptables 配置（保留旧的API用于兼容性）
-export const getForwardPathRuleIptables = async (ruleId: string): Promise<ApiResponse<IptablesConfig[]>> => {
-  return httpClient.get<IptablesConfig[]>(`/v1/forward-path-rules/${ruleId}/iptables`);
+export const getForwardPathRuleIptables = async (ruleId: string): Promise<ApiResponse<IptablesConfigInfo[]>> => {
+  return httpClient.get<IptablesConfigInfo[]>(`/v1/forward-path-rules/${ruleId}/iptables`);
 };
 
 // 重建转发路径规则 iptables 配置
-export const rebuildForwardPathRuleIptables = async (ruleId: string, options?: { force?: boolean }): Promise<ApiResponse<IptablesRebuildTask>> => {
-  return httpClient.post<IptablesRebuildTask>(`/v1/forward-path-rules/${ruleId}/iptables/rebuild`, options || {});
+export const rebuildForwardPathRuleIptables = async (ruleId: string, options?: RebuildForwardPathRuleIptablesRequest): Promise<ApiResponse<RebuildForwardPathRuleIptablesResponse>> => {
+  return httpClient.post<RebuildForwardPathRuleIptablesResponse>(`/v1/forward-path-rules/${ruleId}/iptables/rebuild`, options || {});
 };
 
 // 获取 iptables 重建状态的中文描述
