@@ -46,21 +46,18 @@ interface ApiResponse<T = unknown> {
   };
 }
 
-// Proto API响应结构
+// Proto API响应结构（扁平化格式）
 interface ProtoApiResponse<T = unknown> {
-  status: {
-    success: boolean;
+  status?: {
+    success?: boolean;
     message?: string;
     errorCode?: string;
   };
   data?: T;
-  total?: number;
-  page?: number;
-  pageSize?: number;
   pagination?: {
-    current: number;
-    pageSize: number;
-    total: number;
+    total?: number;
+    page?: number;
+    pageSize?: number;
     totalPages?: number;
   };
 }
@@ -77,13 +74,8 @@ class ResponseHandler {
    * 统一处理API响应，转换为标准ApiResponse格式
    */
   static normalizeProtoResponse<T>(response: any): ApiResponse<T> {
-    // 如果已经是标准格式，直接返回
-    if (response.success !== undefined && !response.status) {
-      return response;
-    }
-
-    // 处理标准status格式响应: {status: {success, message}, data: [], pagination: {}}
-    if (response.status && typeof response.status === 'object') {
+    // 处理扁平化格式：{status: {success, message, errorCode}, data, pagination}
+    if (response && typeof response === 'object' && response.status) {
       const normalized: ApiResponse<T> = {
         success: response.status.success ?? false,
         message: response.status.message,
@@ -93,7 +85,7 @@ class ResponseHandler {
       // 处理分页信息
       if (response.pagination) {
         normalized.pagination = {
-          current: response.pagination.page || response.pagination.current || 1,
+          current: response.pagination.page || 1,
           pageSize: response.pagination.pageSize || 10,
           total: response.pagination.total || 0,
           totalPages: response.pagination.totalPages || Math.ceil((response.pagination.total || 0) / (response.pagination.pageSize || 10))
@@ -103,7 +95,7 @@ class ResponseHandler {
       return normalized;
     }
 
-    // 如果都不匹配，返回错误格式
+    // 如果不匹配标准格式，返回错误格式
     return {
       success: false,
       message: '响应格式不正确',
@@ -112,10 +104,11 @@ class ResponseHandler {
   }
 
   /**
-   * 检查是否为标准status响应格式
+   * 检查是否为标准响应格式
    */
   static isStatusResponse(response: any): boolean {
-    return response && typeof response === 'object' && response.status && typeof response.status.success === 'boolean';
+    return response && typeof response === 'object' && 
+           response.status && typeof response.status.success === 'boolean';
   }
 }
 
