@@ -19,11 +19,7 @@ import {
 import { message, handleApiResponse, OperationType } from '@/utils/message';
 import { 
   getServerIptablesConfigs,
-  rebuildServerIptables,
-  getIptablesRebuildStatusText,
-  getIptablesRebuildStatusColor,
-  type IptablesConfig,
-  type IptablesRebuildTask
+  type IptablesConfig
 } from '@/services/iptables';
 import { serverService } from '@/services/server';
 import { ServerItem } from '@/types/generated/api/servers/server_management';
@@ -33,8 +29,6 @@ const { Title, Text } = Typography;
 
 const IptablesManagement: React.FC = () => {
   const [selectedServer, setSelectedServer] = useState<string>('');
-  const [rebuildModalVisible, setRebuildModalVisible] = useState(false);
-  const [rebuildTask, setRebuildTask] = useState<IptablesRebuildTask | null>(null);
   const [configModalVisible, setConfigModalVisible] = useState(false);
   const [selectedConfig, setSelectedConfig] = useState<IptablesConfig | null>(null);
   const [loading, setLoading] = useState(false);
@@ -97,52 +91,6 @@ const IptablesManagement: React.FC = () => {
       setLoading(false);
     }
   }, []);
-
-  // 重建 iptables 配置
-  const handleRebuildIptables = useCallback(async (serverId: string, options: {
-    forceRebuild?: boolean;
-    backupExisting?: boolean;
-  } = {}) => {
-    if (!serverId) return;
-    
-    try {
-      const response = await rebuildServerIptables(serverId, {
-        serverId,
-        ...options
-      });
-      if (response.success && response.data?.data) {
-        setRebuildTask(response.data.data);
-        setRebuildModalVisible(true);
-        message.success('iptables 重建任务已启动');
-      } else {
-        message.error(response.message || '启动 iptables 重建任务失败');
-      }
-    } catch {
-      message.error('启动 iptables 重建任务失败');
-    }
-  }, []);
-
-  // 显示重建确认对话框
-  const showRebuildConfirm = useCallback((serverId: string) => {
-    Modal.confirm({
-      title: '确认重建 iptables',
-      icon: <ExclamationCircleOutlined />,
-      content: (
-        <div>
-          <p>您确定要重建选中服务器的 iptables 配置吗？</p>
-          <p style={{ color: '#ff4d4f', marginBottom: 0 }}>
-            <strong>警告：</strong>重建操作将会重新生成并应用所有 iptables 规则，可能会暂时影响网络连接。
-          </p>
-        </div>
-      ),
-      okText: '确认重建',
-      cancelText: '取消',
-      okType: 'danger',
-      onOk: () => {
-        handleRebuildIptables(serverId);
-      },
-    });
-  }, [handleRebuildIptables]);
 
   // 查看配置详情
   const handleViewConfig = useCallback((config: IptablesConfig) => {
@@ -270,18 +218,6 @@ const IptablesManagement: React.FC = () => {
     },
   ];
 
-  // 渲染重建状态图标
-  const renderRebuildStatusIcon = (status: any) => {
-    if (!status) return <ExclamationCircleOutlined style={{ color: '#d9d9d9' }} />;
-    
-    const statusStr = status.toString();
-    if (statusStr.includes('PENDING')) return <ClockCircleOutlined style={{ color: '#faad14' }} />;
-    if (statusStr.includes('RUNNING')) return <LoadingOutlined style={{ color: '#1890ff' }} />;
-    if (statusStr.includes('SUCCESS')) return <CheckCircleOutlined style={{ color: '#52c41a' }} />;
-    if (statusStr.includes('FAILED')) return <CloseCircleOutlined style={{ color: '#ff4d4f' }} />;
-    return <ExclamationCircleOutlined style={{ color: '#d9d9d9' }} />;
-  };
-
   return (
     <div style={{ padding: '24px' }}>
       <Title level={2}>iptables 配置管理</Title>
@@ -312,15 +248,6 @@ const IptablesManagement: React.FC = () => {
           >
             刷新配置
           </Button>
-          <Button 
-            type="primary" 
-            danger
-            icon={<SyncOutlined />}
-            onClick={() => showRebuildConfirm(selectedServer)}
-            disabled={!selectedServer}
-          >
-            重建 iptables
-          </Button>
         </Space>
       </ProCard>
 
@@ -345,73 +272,6 @@ const IptablesManagement: React.FC = () => {
         }}
         scroll={{ x: 'max-content' }}
       />
-
-      {/* 重建任务状态弹窗 */}
-      <Modal
-        title="iptables 重建任务"
-        open={rebuildModalVisible}
-        onCancel={() => setRebuildModalVisible(false)}
-        footer={[
-          <Button key="close" onClick={() => setRebuildModalVisible(false)}>
-            关闭
-          </Button>
-        ]}
-      >
-        {rebuildTask && (
-          <div>
-            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-              <div>
-                <Text strong>任务ID：</Text>
-                <Text code>{rebuildTask.taskId}</Text>
-              </div>
-              
-              <div>
-                <Text strong>状态：</Text>
-                <Space>
-                  {renderRebuildStatusIcon(rebuildTask.status)}
-                  <Tag color={getIptablesRebuildStatusColor(rebuildTask.status)}>
-                    {getIptablesRebuildStatusText(rebuildTask.status)}
-                  </Tag>
-                </Space>
-              </div>
-              
-              <div>
-                <Text strong>进度：</Text>
-                <Progress 
-                  percent={(rebuildTask.totalRules || 0) > 0 ? Math.round(((rebuildTask.processedRules || 0) / (rebuildTask.totalRules || 1)) * 100) : 0}
-                  format={() => `${rebuildTask.processedRules || 0}/${rebuildTask.totalRules || 0}`}
-                />
-              </div>
-              
-              {(rebuildTask.failedRules || 0) > 0 && (
-                <div>
-                  <Text strong>失败规则数：</Text>
-                  <Text type="danger">{rebuildTask.failedRules}</Text>
-                </div>
-              )}
-              
-              {rebuildTask.errorMessage && (
-                <div>
-                  <Text strong>错误信息：</Text>
-                  <Text type="danger">{rebuildTask.errorMessage}</Text>
-                </div>
-              )}
-              
-              <div>
-                <Text strong>开始时间：</Text>
-                <Text>{rebuildTask.startedAt ? new Date(Number(rebuildTask.startedAt) * 1000).toLocaleString() : '未知'}</Text>
-              </div>
-              
-              {rebuildTask.completedAt && (
-                <div>
-                  <Text strong>完成时间：</Text>
-                  <Text>{new Date(Number(rebuildTask.completedAt) * 1000).toLocaleString()}</Text>
-                </div>
-              )}
-            </Space>
-          </div>
-        )}
-      </Modal>
 
       {/* 配置详情弹窗 */}
       <Modal

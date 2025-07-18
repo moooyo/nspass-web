@@ -4,9 +4,7 @@ import { httpClient, ApiResponse } from '@/utils/http-client';
 import type {
   CreateForwardPathRuleRequest,
   UpdateForwardPathRuleRequest,
-  GetForwardPathRulesRequest,
-  RebuildAllIptablesRulesRequest,
-  RebuildAllIptablesRulesResponse
+  GetForwardPathRulesRequest
 } from '@/types/generated/api/forwardPath/forward_path_rule';
 
 import type {
@@ -25,9 +23,7 @@ export type {
   ForwardPathNode,
   CreateForwardPathRuleRequest,
   UpdateForwardPathRuleRequest,
-  GetForwardPathRulesRequest,
-  RebuildAllIptablesRulesRequest,
-  RebuildAllIptablesRulesResponse
+  GetForwardPathRulesRequest
 };
 
 export {
@@ -125,13 +121,6 @@ class ForwardPathRulesService {
     backupExisting?: boolean;
   } = {}): Promise<ApiResponse<any>> {
     return httpClient.post(`${this.endpoint}/${ruleId}/iptables/rebuild`, options);
-  }
-
-  /**
-   * 重建所有转发路径规则的iptables规则
-   */
-  async rebuildAllIptablesRules(request: RebuildAllIptablesRulesRequest = {}): Promise<ApiResponse<RebuildAllIptablesRulesResponse>> {
-    return httpClient.post<RebuildAllIptablesRulesResponse>(`${this.endpoint}/rebuild-iptables`, request);
   }
 }
 
