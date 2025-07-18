@@ -19,8 +19,9 @@ function getRoutesByType(type?: string): RouteItem[] {
 }
 
 // 查找线路（从所有线路中查找）
-function findRoute(id: string): RouteItem | undefined {
-  return [...customRoutes, ...systemRoutes].find(r => r.id === id || r.routeId === id);
+function findRoute(id: string | number): RouteItem | undefined {
+  const numId = typeof id === 'string' ? parseInt(id) : id;
+  return [...customRoutes, ...systemRoutes].find(r => r.id === numId);
 }
 
 export const routeHandlers = [
@@ -94,24 +95,8 @@ export const routeHandlers = [
       }, { status: 400 });
     }
 
-    // 检查线路ID冲突
-    if (body.routeId) {
-      const existingRoute = findRoute(body.routeId);
-      if (existingRoute) {
-        return HttpResponse.json({
-          success: false,
-          message: '线路ID已被使用',
-          errorCode: 'ROUTE_ID_CONFLICT'
-        }, { status: 409 });
-      }
-    }
-
-    // 生成线路ID（如果没有提供）
-    const routeId = body.routeId || `route${nextId.toString().padStart(3, '0')}`;
-
     const newRoute: RouteItem = {
-      id: nextId.toString(),
-      routeId,
+      id: nextId,
       routeName: body.routeName,
       entryPoint: body.entryPoint,
       port: body.port || (body.protocol === Protocol.PROTOCOL_SHADOWSOCKS ? 8388 : 6333),
@@ -157,7 +142,7 @@ export const routeHandlers = [
     const body = await request.json() as UpdateRouteData;
     
     // 只能更新自定义线路
-    const routeIndex = customRoutes.findIndex(r => r.id === id || r.routeId === id);
+    const routeIndex = customRoutes.findIndex(r => r.id === parseInt(id));
 
     if (routeIndex === -1) {
       return HttpResponse.json({
@@ -165,18 +150,6 @@ export const routeHandlers = [
         message: '线路不存在或不允许编辑',
         errorCode: 'ROUTE_NOT_FOUND'
       }, { status: 404 });
-    }
-
-    // 检查新的线路ID是否冲突
-    if (body.routeId && body.routeId !== customRoutes[routeIndex].routeId) {
-      const existingRoute = findRoute(body.routeId);
-      if (existingRoute) {
-        return HttpResponse.json({
-          success: false,
-          message: '线路ID已被使用',
-          errorCode: 'ROUTE_ID_CONFLICT'
-        }, { status: 409 });
-      }
     }
 
     // 更新线路
@@ -195,7 +168,7 @@ export const routeHandlers = [
     const id = params.id as string;
     
     // 只能删除自定义线路
-    const routeIndex = customRoutes.findIndex(r => r.id === id || r.routeId === id);
+    const routeIndex = customRoutes.findIndex(r => r.id === parseInt(id));
 
     if (routeIndex === -1) {
       return HttpResponse.json({
@@ -215,12 +188,12 @@ export const routeHandlers = [
 
   // 批量删除线路 - 匹配swagger接口 POST /v1/routes/batch/delete
   http.post('/v1/routes/batch/delete', async ({ request }) => {
-    const body = await request.json() as { ids: string[] };
+    const body = await request.json() as { ids: number[] };
     let deletedCount = 0;
     const deletedRoutes: string[] = [];
 
     body.ids.forEach(id => {
-      const index = customRoutes.findIndex(r => r.id === id || r.routeId === id);
+      const index = customRoutes.findIndex(r => r.id === id);
       if (index !== -1) {
         const deletedRoute = customRoutes.splice(index, 1)[0];
         deletedRoutes.push(deletedRoute.routeName ?? 'Unknown Route');
@@ -236,11 +209,11 @@ export const routeHandlers = [
 
   // 批量更新线路状态 - 匹配swagger接口 POST /v1/routes/batch/status
   http.post('/v1/routes/batch/status', async ({ request }) => {
-    const body = await request.json() as { ids: string[]; status: string };
+    const body = await request.json() as { ids: number[]; status: string };
     const updatedRoutes: RouteItem[] = [];
 
     body.ids.forEach(id => {
-      const index = customRoutes.findIndex(r => r.id === id || r.routeId === id);
+      const index = customRoutes.findIndex(r => r.id === id);
       if (index !== -1) {
         // 这里可以添加状态更新逻辑
         // customRoutes[index].status = body.status;
@@ -353,7 +326,7 @@ export const routeHandlers = [
     const id = params.id as string;
     const _body = await request.json() as { status: string };
     
-    const routeIndex = customRoutes.findIndex(r => r.id === id || r.routeId === id);
+    const routeIndex = customRoutes.findIndex(r => r.id === parseInt(id));
 
     if (routeIndex === -1) {
       return HttpResponse.json({

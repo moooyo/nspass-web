@@ -17,11 +17,8 @@ import type {
 // 重新导出枚举类型
 export { RouteType, Protocol, RouteStatus };
 
-// 路由项类型 - 使用proto生成的类型
-export interface RouteItem extends Omit<Route, 'id' | 'metadata'> {
-  id: React.Key; // 保持React.Key用于表格
-  metadata?: { [key: string]: string };
-}
+// 路由项类型 - 直接使用proto生成的类型
+export type RouteItem = Route;
 
 // 重新导出生成的类型，提供更简洁的导入路径
 export type CreateRouteData = CreateRouteRequest;
@@ -57,35 +54,35 @@ class RouteService {
   /**
    * 获取线路详情 - 匹配swagger接口 GET /v1/routes/{id}
    */
-  async getRouteById(id: React.Key): Promise<ApiResponse<RouteItem>> {
+  async getRouteById(id: number): Promise<ApiResponse<RouteItem>> {
     return httpClient.get<RouteItem>(`${this.endpoint}/${id}`);
   }
 
   /**
    * 更新线路信息 - 匹配swagger接口 PUT /v1/routes/{id}
    */
-  async updateRoute(id: React.Key, routeData: UpdateRouteData): Promise<ApiResponse<RouteItem>> {
+  async updateRoute(id: number, routeData: UpdateRouteData): Promise<ApiResponse<RouteItem>> {
     return httpClient.put<RouteItem>(`${this.endpoint}/${id}`, routeData);
   }
 
   /**
    * 删除线路 - 匹配swagger接口 DELETE /v1/routes/{id}
    */
-  async deleteRoute(id: React.Key): Promise<ApiResponse<void>> {
+  async deleteRoute(id: number): Promise<ApiResponse<void>> {
     return httpClient.delete<void>(`${this.endpoint}/${id}`);
   }
 
   /**
    * 批量删除线路 - 匹配swagger接口 POST /v1/routes/batch/delete
    */
-  async batchDeleteRoutes(ids: React.Key[]): Promise<ApiResponse<void>> {
+  async batchDeleteRoutes(ids: number[]): Promise<ApiResponse<void>> {
     return httpClient.post<void>(`${this.endpoint}/batch/delete`, { ids });
   }
 
   /**
    * 批量更新线路状态 - 匹配swagger接口 POST /v1/routes/batch/status
    */
-  async batchUpdateRouteStatus(ids: React.Key[], status: string): Promise<ApiResponse<RouteItem[]>> {
+  async batchUpdateRouteStatus(ids: number[], status: string): Promise<ApiResponse<RouteItem[]>> {
     return httpClient.post<RouteItem[]>(`${this.endpoint}/batch/status`, { ids, status });
   }
 

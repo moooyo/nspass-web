@@ -1,11 +1,10 @@
 import { RouteItem } from '@/services/routes';
-import { Protocol, ShadowsocksMethod, SnellVersion } from '@/types/generated/model/route';
+import { Protocol, ShadowsocksMethod, SnellVersion, RouteType, RouteStatus } from '@/types/generated/model/route';
 
 // 模拟自定义线路数据
 export const mockCustomRoutes: RouteItem[] = [
   {
-    id: '1',
-    routeId: 'route001',
+    id: 1,
     routeName: '自定义线路01',
     entryPoint: '203.0.113.1',
     port: 8388,
@@ -19,11 +18,15 @@ export const mockCustomRoutes: RouteItem[] = [
         otherParams: '{"timeout": 300, "fast_open": false}',
       }
     },
+    type: RouteType.ROUTE_TYPE_CUSTOM,
+    status: RouteStatus.ROUTE_STATUS_ACTIVE,
+    createdAt: Math.floor(Date.now() / 1000) - 86400,
+    updatedAt: Math.floor(Date.now() / 1000) - 3600,
+    createdBy: 'admin',
     description: '测试用自定义线路',
   },
   {
-    id: '2',
-    routeId: 'route002',
+    id: 2,
     routeName: '自定义线路02',
     entryPoint: 'example.com',
     port: 6333,
@@ -37,11 +40,15 @@ export const mockCustomRoutes: RouteItem[] = [
         otherParams: '{"obfs": "tls", "obfs_host": "bing.com"}',
       }
     },
+    type: RouteType.ROUTE_TYPE_CUSTOM,
+    status: RouteStatus.ROUTE_STATUS_ACTIVE,
+    createdAt: Math.floor(Date.now() / 1000) - 86400 * 2,
+    updatedAt: Math.floor(Date.now() / 1000) - 1800,
+    createdBy: 'admin',
     description: 'Snell v4 测试线路',
   },
   {
-    id: '3',
-    routeId: 'route003',
+    id: 3,
     routeName: '香港线路',
     entryPoint: 'hk.example.com',
     port: 443,
@@ -55,11 +62,15 @@ export const mockCustomRoutes: RouteItem[] = [
         otherParams: '{"timeout": 600, "plugin": "obfs-local", "plugin-opts": "obfs=tls"}',
       }
     },
+    type: RouteType.ROUTE_TYPE_CUSTOM,
+    status: RouteStatus.ROUTE_STATUS_ACTIVE,
+    createdAt: Math.floor(Date.now() / 1000) - 86400 * 3,
+    updatedAt: Math.floor(Date.now() / 1000) - 900,
+    createdBy: 'admin',
     description: '香港高速线路',
   },
   {
-    id: '4',
-    routeId: 'route004',
+    id: 4,
     routeName: '美国线路',
     entryPoint: 'us.proxy.example.com',
     port: 8443,
@@ -73,11 +84,15 @@ export const mockCustomRoutes: RouteItem[] = [
         otherParams: '{"obfs": "http", "obfs_host": "cloudflare.com"}',
       }
     },
+    type: RouteType.ROUTE_TYPE_CUSTOM,
+    status: RouteStatus.ROUTE_STATUS_ACTIVE,
+    createdAt: Math.floor(Date.now() / 1000) - 86400 * 4,
+    updatedAt: Math.floor(Date.now() / 1000) - 600,
+    createdBy: 'admin',
     description: '美国西海岸线路',
   },
   {
-    id: '5',
-    routeId: 'route005',
+    id: 5,
     routeName: '日本线路',
     entryPoint: 'jp.example.org',
     port: 9443,
@@ -91,6 +106,11 @@ export const mockCustomRoutes: RouteItem[] = [
         otherParams: '{"timeout": 300, "reuse_port": true}',
       }
     },
+    type: RouteType.ROUTE_TYPE_CUSTOM,
+    status: RouteStatus.ROUTE_STATUS_INACTIVE,
+    createdAt: Math.floor(Date.now() / 1000) - 86400 * 5,
+    updatedAt: Math.floor(Date.now() / 1000) - 300,
+    createdBy: 'admin',
     description: '日本东京线路',
   },
 ];
@@ -98,8 +118,7 @@ export const mockCustomRoutes: RouteItem[] = [
 // 模拟系统生成线路数据
 export const mockSystemRoutes: RouteItem[] = [
   {
-    id: '101',
-    routeId: 'sys_route001',
+    id: 101,
     routeName: '系统线路01',
     entryPoint: '198.51.100.1',
     port: 443,
@@ -113,11 +132,15 @@ export const mockSystemRoutes: RouteItem[] = [
         otherParams: '{"timeout": 600, "fast_open": false}',
       }
     },
+    type: RouteType.ROUTE_TYPE_SYSTEM,
+    status: RouteStatus.ROUTE_STATUS_ACTIVE,
+    createdAt: Math.floor(Date.now() / 1000) - 86400 * 10,
+    updatedAt: Math.floor(Date.now() / 1000) - 3600,
+    createdBy: 'system',
     description: '系统自动生成线路',
   },
   {
-    id: '102',
-    routeId: 'sys_route002',
+    id: 102,
     routeName: '系统线路02',
     entryPoint: '192.0.2.1',
     port: 8443,
@@ -131,11 +154,15 @@ export const mockSystemRoutes: RouteItem[] = [
         otherParams: '{"obfs": "http", "obfs_host": "microsoft.com"}',
       }
     },
+    type: RouteType.ROUTE_TYPE_SYSTEM,
+    status: RouteStatus.ROUTE_STATUS_ACTIVE,
+    createdAt: Math.floor(Date.now() / 1000) - 86400 * 8,
+    updatedAt: Math.floor(Date.now() / 1000) - 1800,
+    createdBy: 'system',
     description: '系统Snell线路',
   },
   {
-    id: '103',
-    routeId: 'sys_route003',
+    id: 103,
     routeName: '系统线路03',
     entryPoint: '203.0.113.50',
     port: 8388,
@@ -149,11 +176,15 @@ export const mockSystemRoutes: RouteItem[] = [
         otherParams: '{"timeout": 300, "no_delay": true}',
       }
     },
+    type: RouteType.ROUTE_TYPE_SYSTEM,
+    status: RouteStatus.ROUTE_STATUS_ACTIVE,
+    createdAt: Math.floor(Date.now() / 1000) - 86400 * 6,
+    updatedAt: Math.floor(Date.now() / 1000) - 900,
+    createdBy: 'system',
     description: '系统高性能线路',
   },
   {
-    id: '104',
-    routeId: 'sys_route004',
+    id: 104,
     routeName: '系统线路04',
     entryPoint: 'auto.system.example.com',
     port: 443,
@@ -167,6 +198,11 @@ export const mockSystemRoutes: RouteItem[] = [
         otherParams: '{"obfs": "tls", "obfs_host": "github.com"}',
       }
     },
+    type: RouteType.ROUTE_TYPE_SYSTEM,
+    status: RouteStatus.ROUTE_STATUS_ACTIVE,
+    createdAt: Math.floor(Date.now() / 1000) - 86400 * 4,
+    updatedAt: Math.floor(Date.now() / 1000) - 600,
+    createdBy: 'system',
     description: '系统备用线路',
   },
 ];

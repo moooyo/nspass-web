@@ -183,7 +183,7 @@ const Routes: React.FC = () => {
 
     // 复制整行数据
     const copyRouteData = (record: RouteItem) => {
-        const textToCopy = `${record.routeId} - ${record.routeName} (${record.entryPoint}:${record.port})`;
+        const textToCopy = `${record.id} - ${record.routeName} (${record.entryPoint}:${record.port})`;
         navigator.clipboard.writeText(textToCopy);
         message.success('线路信息已复制到剪贴板');
     };
@@ -196,6 +196,10 @@ const Routes: React.FC = () => {
 
     // 删除线路
     const deleteRoute = async (record: RouteItem) => {
+        if (!record.id) {
+            message.error('线路ID不存在');
+            return;
+        }
         try {
             const response = await routeService.deleteRoute(record.id);
             if (response.success) {
@@ -215,7 +219,6 @@ const Routes: React.FC = () => {
         
         // 根据协议设置表单初始值
         const formValues: any = {
-            routeId: record.routeId,
             routeName: record.routeName,
             entryPoint: record.entryPoint,
             port: record.port,
@@ -273,7 +276,6 @@ const Routes: React.FC = () => {
             }
             
             const updateData: UpdateRouteData = {
-                routeId: values.routeId,
                 routeName: values.routeName,
                 entryPoint: values.entryPoint,
                 port: values.port,
@@ -281,6 +283,11 @@ const Routes: React.FC = () => {
                 protocolParams: protocolParams,
                 description: values.description,
             };
+
+            if (!editingRecord.id) {
+                message.error('线路ID不存在');
+                return false;
+            }
 
             const response = await routeService.updateRoute(editingRecord.id, updateData);
             if (response.success) {
@@ -323,7 +330,6 @@ const Routes: React.FC = () => {
             }
 
             const createData: CreateRouteData = {
-                routeId: values.routeId,
                 routeName: values.routeName,
                 entryPoint: values.entryPoint,
                 port: values.port || (values.protocol === Protocol.PROTOCOL_SHADOWSOCKS ? 8388 : 6333),
@@ -351,7 +357,7 @@ const Routes: React.FC = () => {
     const generateColumns = (isEditable: boolean): ProColumns<RouteItem>[] => [
         {
             title: '线路ID',
-            dataIndex: 'routeId',
+            dataIndex: 'id',
             width: '12%',
         },
         {
@@ -586,12 +592,6 @@ const Routes: React.FC = () => {
                 form={form}
             >
                 <ProFormText
-                    name="routeId"
-                    label="线路ID"
-                    placeholder="请输入线路ID，不填将自动生成"
-                />
-                
-                <ProFormText
                     name="routeName"
                     label="线路名"
                     placeholder="请输入线路名称"
@@ -743,13 +743,6 @@ const Routes: React.FC = () => {
                 }}
                 form={editForm}
             >
-                <ProFormText
-                    name="routeId"
-                    label="线路ID"
-                    placeholder="请输入线路ID"
-                    rules={[{ required: true, message: '请输入线路ID' }]}
-                />
-                
                 <ProFormText
                     name="routeName"
                     label="线路名"
