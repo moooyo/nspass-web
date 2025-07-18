@@ -1,55 +1,12 @@
 import { http, HttpResponse } from 'msw';
 import { 
-  // mockIptablesConfigs, 
   getIptablesConfigsByServerId,
-  // getIptablesStats,
+  getIptablesServerOverview,
+  getIptablesGeneratedRules,
+  getIptablesScript,
+  getIptablesConfigInfo,
   type IptablesConfig
 } from '../data/iptables';
-
-// 生成 iptables 命令的辅助函数
-const _generateIptablesCommand = (config: IptablesConfig): string => {
-  const { tableName, chainName, ruleAction, sourceIp, sourcePort, destIp, destPort, protocol, interface: iface } = config;
-  
-  let command = `iptables`;
-  if (tableName !== 'filter') {
-    command += ` -t ${tableName}`;
-  }
-  command += ` -A ${chainName}`;
-  
-  if (protocol) {
-    command += ` -p ${protocol}`;
-  }
-  if (sourceIp) {
-    command += ` -s ${sourceIp}`;
-  }
-  if (sourcePort) {
-    command += ` --sport ${sourcePort}`;
-  }
-  if (destIp) {
-    command += ` -d ${destIp}`;
-  }
-  if (destPort) {
-    command += ` --dport ${destPort}`;
-  }
-  if (iface) {
-    if (chainName === 'INPUT' || chainName === 'FORWARD') {
-      command += ` -i ${iface}`;
-    } else if (chainName === 'OUTPUT' || chainName === 'POSTROUTING') {
-      command += ` -o ${iface}`;
-    }
-  }
-  
-  command += ` -j ${ruleAction}`;
-  
-  if (ruleAction === 'DNAT' && destIp) {
-    command += ` --to-destination ${destIp}`;
-    if (destPort && destPort !== '80' && destPort !== '443') {
-      command += `:${destPort}`;
-    }
-  }
-  
-  return command;
-};
 
 export const iptablesHandlers = [
   // 获取服务器 iptables 配置列表 - 支持分页和过滤
@@ -79,7 +36,7 @@ export const iptablesHandlers = [
     
     if (chainType && chainType !== 'IPTABLES_CHAIN_TYPE_UNSPECIFIED') {
       const filterChain = chainType.replace('IPTABLES_CHAIN_TYPE_', '');
-      configs = configs.filter((config: IptablesConfig) => config.chainName.toUpperCase() === filterChain);
+      configs = configs.filter((config: IptablesConfig) => config.chainName?.toUpperCase() === filterChain);
     }
     
     if (protocol && protocol !== 'IPTABLES_PROTOCOL_UNSPECIFIED') {
@@ -118,19 +75,19 @@ export const iptablesHandlers = [
   }),
 
   // 获取单个 iptables 配置
-  http.get('/v1/servers/:serverId/iptables/configs/:configName', ({ params }) => {
-    const { serverId, configName } = params;
+  http.get('/v1/servers/:serverId/iptables/configs/:configId', ({ params }) => {
+    const { serverId, configId } = params;
     
-    console.log(`[IPTABLES MOCK] 获取服务器 ${serverId} 的配置 ${configName}`);
+    console.log(`[IPTABLES MOCK] 获取服务器 ${serverId} 的配置 ${configId}`);
     
     const configs = getIptablesConfigsByServerId(serverId as string);
-    const config = configs.find((c: IptablesConfig) => c.configName === configName);
+    const config = configs.find((c: IptablesConfig) => c.id?.toString() === configId);
     
     if (!config) {
       return HttpResponse.json({
         status: {
           success: false,
-          message: `配置 ${configName} 不存在`,
+          message: `配置 ${configId} 不存在`,
           code: 'NOT_FOUND'
         }
       }, { status: 404 });
@@ -144,5 +101,89 @@ export const iptablesHandlers = [
       },
       data: config
     });
-  })
+  }),
+
+  // 获取服务器 iptables 概览
+  http.get('/v1/servers/:serverId/iptables/overview', ({ params }) => {
+    const { serverId } = params;
+    
+    console.log(`[IPTABLES MOCK] 获取服务器 ${serverId} 的 iptables 概览`);
+    
+    const overview = getIptablesServerOverview(serverId as string);
+    
+    return HttpResponse.json({
+      status: {
+        success: true,
+        message: '',
+        code: 'SUCCESS'
+      },
+      data: overview
+    });
+  }),
+
+  // 获取服务器 iptables 生成的规则
+  http.get('/v1/servers/:serverId/iptables/rules', ({ params, request }) => {
+    const { serverId } = params;
+    const url = new URL(request.url);
+    const onlyEnabled = url.searchParams.get('onlyEnabled') === 'true';
+    
+    console.log(`[IPTABLES MOCK] 获取服务器 ${serverId} 的 iptables 规则，仅启用: ${onlyEnabled}`);
+    
+    const rules = getIptablesGeneratedRules(serverId as string, onlyEnabled);
+    const totalRules = rules.length;
+    const validRules = rules.filter(rule => rule.isValid).length;
+    const invalidRules = totalRules - validRules;
+    
+    return HttpResponse.json({
+      status: {
+        success: true,
+        message: '',
+        code: 'SUCCESS'
+      },
+      data: rules,
+      totalRules,
+      validRules,
+      invalidRules
+    });
+  }),
+
+  // 获取服务器 iptables 脚本
+  http.get('/v1/servers/:serverId/iptables/script', ({ params, request }) => {
+    const { serverId } = params;
+    const url = new URL(request.url);
+    const onlyEnabled = url.searchParams.get('onlyEnabled') === 'true';
+    const format = url.searchParams.get('format') || 'shell';
+    
+    console.log(`[IPTABLES MOCK] 获取服务器 ${serverId} 的 iptables 脚本，仅启用: ${onlyEnabled}，格式: ${format}`);
+    
+    const script = getIptablesScript(serverId as string, onlyEnabled, format);
+    
+    return HttpResponse.json({
+      status: {
+        success: true,
+        message: '',
+        code: 'SUCCESS'
+      },
+      data: script
+    });
+  }),
+
+  // 获取转发路径规则iptables配置（兼容旧API）
+  http.get('/v1/forward-path-rules/:id/iptables', ({ params }) => {
+    const { id } = params;
+    
+    console.log(`[IPTABLES MOCK] 获取转发路径规则 ${id} 的 iptables 配置`);
+    
+    // 模拟返回一些配置信息
+    const iptablesConfigs = getIptablesConfigInfo('server-1');
+    
+    return HttpResponse.json({
+      status: {
+        success: true,
+        message: '获取iptables配置成功',
+        code: 'SUCCESS'
+      },
+      data: iptablesConfigs.slice(0, 2) // 返回前两个配置
+    });
+  }),
 ];

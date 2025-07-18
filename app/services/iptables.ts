@@ -22,12 +22,10 @@ import type {
   GetServerIptablesScriptResponse,
   GetIptablesConfigRequest,
   GetIptablesConfigResponse,
-  ValidateServerIptablesRequest,
-  ValidateServerIptablesResponse,
-  CleanupServerIptablesRequest,
-  CleanupServerIptablesResponse,
   GetForwardPathRuleIptablesRequest,
   GetForwardPathRuleIptablesResponse,
+  GetServerIptablesConfigRequest,
+  GetServerIptablesConfigResponse,
 } from '@/types/generated/api/iptables/iptables_config';
 
 // 重新导出枚举类型
@@ -50,19 +48,17 @@ export type {
   GetServerIptablesScriptResponse,
   GetIptablesConfigRequest,
   GetIptablesConfigResponse,
-  ValidateServerIptablesRequest,
-  ValidateServerIptablesResponse,
-  CleanupServerIptablesRequest,
-  CleanupServerIptablesResponse,
   GetForwardPathRuleIptablesRequest,
   GetForwardPathRuleIptablesResponse,
+  GetServerIptablesConfigRequest,
+  GetServerIptablesConfigResponse,
 };
 export type IptablesConfigListParams = GetServerIptablesConfigsRequest;
 
 // 获取服务器 iptables 配置列表 - 支持分页和过滤
 export const getServerIptablesConfigs = async (
   serverId: string,
-  params?: GetServerIptablesConfigsRequest
+  params?: Omit<GetServerIptablesConfigsRequest, 'serverId'>
 ): Promise<ApiResponse<IptablesConfig[]>> => {
   const queryParams: Record<string, string> = {};
   
@@ -77,17 +73,20 @@ export const getServerIptablesConfigs = async (
 };
 
 // 获取单个 iptables 配置
-export const getIptablesConfig = async (serverId: string, configName: string): Promise<ApiResponse<GetIptablesConfigResponse>> => {
-  return httpClient.get<GetIptablesConfigResponse>(`/v1/servers/${serverId}/iptables/configs/${configName}`);
+export const getIptablesConfig = async (serverId: string, configId: number): Promise<ApiResponse<IptablesConfig>> => {
+  return httpClient.get<IptablesConfig>(`/v1/servers/${serverId}/iptables/configs/${configId}`);
 };
 
 // 获取服务器 iptables 概览
-export const getServerIptablesOverview = async (serverId: string): Promise<ApiResponse<GetServerIptablesOverviewResponse>> => {
-  return httpClient.get<GetServerIptablesOverviewResponse>(`/v1/servers/${serverId}/iptables/overview`);
+export const getServerIptablesOverview = async (serverId: string): Promise<ApiResponse<IptablesServerConfig>> => {
+  return httpClient.get<IptablesServerConfig>(`/v1/servers/${serverId}/iptables/overview`);
 };
 
 // 获取服务器 iptables 生成的规则
-export const getServerIptablesRules = async (serverId: string, onlyEnabled?: boolean): Promise<ApiResponse<GetServerIptablesRulesResponse>> => {
+export const getServerIptablesRules = async (
+  serverId: string, 
+  onlyEnabled?: boolean
+): Promise<ApiResponse<GetServerIptablesRulesResponse>> => {
   const queryParams: Record<string, string> = {};
   if (onlyEnabled !== undefined) queryParams.onlyEnabled = onlyEnabled.toString();
   
@@ -98,15 +97,20 @@ export const getServerIptablesRules = async (serverId: string, onlyEnabled?: boo
 export const getServerIptablesScript = async (
   serverId: string, 
   params?: { onlyEnabled?: boolean; format?: string }
-): Promise<ApiResponse<GetServerIptablesScriptResponse>> => {
+): Promise<ApiResponse<IptablesScript>> => {
   const queryParams: Record<string, string> = {};
   if (params?.onlyEnabled !== undefined) queryParams.onlyEnabled = params.onlyEnabled.toString();
   if (params?.format) queryParams.format = params.format;
   
-  return httpClient.get<GetServerIptablesScriptResponse>(`/v1/servers/${serverId}/iptables/script`, queryParams);
+  return httpClient.get<IptablesScript>(`/v1/servers/${serverId}/iptables/script`, queryParams);
 };
 
-// 获取转发路径规则相关的 iptables 配置（保留旧的API用于兼容性）
+// 获取转发路径规则相关的 iptables 配置
 export const getForwardPathRuleIptables = async (ruleId: string): Promise<ApiResponse<IptablesConfigInfo[]>> => {
   return httpClient.get<IptablesConfigInfo[]>(`/v1/forward-path-rules/${ruleId}/iptables`);
+};
+
+// 获取服务器 iptables 配置（简化版，用于转发路径规则接口）
+export const getServerIptablesConfig = async (serverId: string): Promise<ApiResponse<IptablesConfigInfo[]>> => {
+  return httpClient.get<IptablesConfigInfo[]>(`/v1/servers/${serverId}/iptables/config`);
 };

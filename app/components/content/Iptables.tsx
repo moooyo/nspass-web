@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react';
-import { Button, Tag, Modal, Space, Typography, Progress, Divider, Select } from 'antd';
+import { Button, Tag, Modal, Space, Typography, Divider, Select, Row, Col } from 'antd';
 import {
     ProTable,
     ProColumns,
@@ -10,13 +10,10 @@ import {
 import { 
     SyncOutlined,
     EyeOutlined,
-    ExclamationCircleOutlined,
     CheckCircleOutlined,
     CloseCircleOutlined,
-    ClockCircleOutlined,
-    LoadingOutlined
 } from '@ant-design/icons';
-import { message, handleApiResponse, OperationType } from '@/utils/message';
+import { message, handleApiResponse } from '@/utils/message';
 import { 
   getServerIptablesConfigs,
   type IptablesConfig
@@ -82,7 +79,6 @@ const IptablesManagement: React.FC = () => {
       const handledResponse = handleApiResponse.fetch(response, '获取iptables配置');
       
       if (handledResponse.success && handledResponse.data) {
-        // API直接返回配置数组在data中
         setConfigs(handledResponse.data);
       }
     } catch {
@@ -115,10 +111,10 @@ const IptablesManagement: React.FC = () => {
   // 表格列定义
   const columns: ProColumns<IptablesConfig>[] = [
     {
-      title: '配置名称',
-      dataIndex: 'configName',
-      width: 150,
-      ellipsis: true,
+      title: 'ID',
+      dataIndex: 'id',
+      width: 80,
+      sorter: (a, b) => (a.id || 0) - (b.id || 0),
     },
     {
       title: '表/链',
@@ -136,7 +132,7 @@ const IptablesManagement: React.FC = () => {
       dataIndex: 'ruleAction',
       width: 100,
       render: (text) => (
-        <Tag color={text === 'ACCEPT' ? 'success' : text === 'DROP' ? 'error' : 'default'}>
+        <Tag color={text === 'ACCEPT' ? 'success' : text === 'DROP' ? 'error' : text === 'DNAT' ? 'processing' : 'default'}>
           {text}
         </Tag>
       ),
@@ -180,6 +176,12 @@ const IptablesManagement: React.FC = () => {
       ),
     },
     {
+      title: '接口',
+      dataIndex: 'interface',
+      width: 80,
+      render: (text) => text ? <Tag color="purple">{text}</Tag> : '-',
+    },
+    {
       title: '优先级',
       dataIndex: 'priority',
       width: 80,
@@ -190,7 +192,7 @@ const IptablesManagement: React.FC = () => {
       dataIndex: 'isEnabled',
       width: 80,
       render: (enabled) => (
-        <Tag color={enabled ? 'success' : 'default'}>
+        <Tag color={enabled ? 'success' : 'default'} icon={enabled ? <CheckCircleOutlined /> : <CloseCircleOutlined />}>
           {enabled ? '启用' : '禁用'}
         </Tag>
       ),
@@ -222,40 +224,46 @@ const IptablesManagement: React.FC = () => {
     <div style={{ padding: '24px' }}>
       <Title level={2}>iptables 配置管理</Title>
       <Text type="secondary">
-        管理服务器的 iptables 配置规则，查看当前配置并执行重建操作。
+        管理服务器的 iptables 配置规则，查看当前配置、生成的规则和脚本。
       </Text>
       
       <Divider />
       
       {/* 服务器选择和操作区域 */}
       <ProCard style={{ marginBottom: '16px' }}>
-        <Space size="middle">
-          <Text strong>选择服务器：</Text>
-          <Select
-            value={selectedServer}
-            onChange={(value: string) => setSelectedServer(value)}
-            options={serverOptions}
-            placeholder="选择服务器"
-            style={{ width: 200 }}
-            loading={serversLoading}
-          />
-          <Button 
-            type="primary" 
-            icon={<SyncOutlined />}
-            onClick={() => loadIptablesConfig(selectedServer)}
-            loading={loading}
-            disabled={!selectedServer}
-          >
-            刷新配置
-          </Button>
-        </Space>
+        <Row gutter={16} align="middle">
+          <Col>
+            <Text strong>选择服务器：</Text>
+          </Col>
+          <Col>
+            <Select
+              value={selectedServer}
+              onChange={(value: string) => setSelectedServer(value)}
+              options={serverOptions}
+              placeholder="选择服务器"
+              style={{ width: 200 }}
+              loading={serversLoading}
+            />
+          </Col>
+          <Col>
+            <Button 
+              type="primary" 
+              icon={<SyncOutlined />}
+              onClick={() => loadIptablesConfig(selectedServer)}
+              loading={loading}
+              disabled={!selectedServer}
+            >
+              刷新配置
+            </Button>
+          </Col>
+        </Row>
       </ProCard>
 
       {/* 配置表格 */}
       <ProTable<IptablesConfig>
         headerTitle="iptables 配置规则"
         actionRef={actionRef}
-        rowKey="configName"
+        rowKey="id"
         search={false}
         options={{
           density: false,
@@ -291,14 +299,14 @@ const IptablesManagement: React.FC = () => {
             dataSource={selectedConfig}
             columns={[
               {
-                title: '配置名称',
-                key: 'configName',
-                dataIndex: 'configName',
+                title: '配置ID',
+                key: 'id',
+                dataIndex: 'id',
               },
               {
-                title: '服务器名称',
-                key: 'serverName',
-                dataIndex: 'serverName',
+                title: '服务器ID',
+                key: 'serverId',
+                dataIndex: 'serverId',
               },
               {
                 title: '表名',
@@ -315,7 +323,7 @@ const IptablesManagement: React.FC = () => {
                 key: 'ruleAction',
                 dataIndex: 'ruleAction',
                 render: (text) => (
-                  <Tag color={text === 'ACCEPT' ? 'success' : text === 'DROP' ? 'error' : 'default'}>
+                  <Tag color={text === 'ACCEPT' ? 'success' : text === 'DROP' ? 'error' : text === 'DNAT' ? 'processing' : 'default'}>
                     {text}
                   </Tag>
                 ),
@@ -324,26 +332,37 @@ const IptablesManagement: React.FC = () => {
                 title: '源IP',
                 key: 'sourceIp',
                 dataIndex: 'sourceIp',
+                render: (text) => text || '-',
               },
               {
                 title: '源端口',
                 key: 'sourcePort',
                 dataIndex: 'sourcePort',
+                render: (text) => text || '-',
               },
               {
                 title: '目标IP',
                 key: 'destIp',
                 dataIndex: 'destIp',
+                render: (text) => text || '-',
               },
               {
                 title: '目标端口',
                 key: 'destPort',
                 dataIndex: 'destPort',
+                render: (text) => text || '-',
               },
               {
                 title: '协议',
                 key: 'protocol',
                 dataIndex: 'protocol',
+                render: (text) => text || 'all',
+              },
+              {
+                title: '网络接口',
+                key: 'interface',
+                dataIndex: 'interface',
+                render: (text) => text || '-',
               },
               {
                 title: '优先级',
@@ -355,28 +374,9 @@ const IptablesManagement: React.FC = () => {
                 key: 'isEnabled',
                 dataIndex: 'isEnabled',
                 render: (enabled) => (
-                  <Tag color={enabled ? 'success' : 'default'}>
+                  <Tag color={enabled ? 'success' : 'default'} icon={enabled ? <CheckCircleOutlined /> : <CloseCircleOutlined />}>
                     {enabled ? '启用' : '禁用'}
                   </Tag>
-                ),
-              },
-              {
-                title: '生成的规则',
-                key: 'generatedRule',
-                dataIndex: 'generatedRule',
-                span: 2,
-                render: (text) => (
-                  <div style={{ 
-                    backgroundColor: '#f6f8fa',
-                    border: '1px solid #d0d7de',
-                    borderRadius: '6px',
-                    padding: '12px',
-                    fontFamily: 'monospace',
-                    fontSize: '12px',
-                    overflowX: 'auto'
-                  }}>
-                    {text}
-                  </div>
                 ),
               },
               {
@@ -384,18 +384,19 @@ const IptablesManagement: React.FC = () => {
                 key: 'ruleComment',
                 dataIndex: 'ruleComment',
                 span: 2,
+                render: (text) => text || '-',
               },
               {
                 title: '创建时间',
                 key: 'createdAt',
                 dataIndex: 'createdAt',
-                render: (text) => text ? new Date(parseInt(text as string) * 1000).toLocaleString() : '-',
+                render: (text) => text ? new Date((text as number) * 1000).toLocaleString() : '-',
               },
               {
                 title: '更新时间',
                 key: 'updatedAt',
                 dataIndex: 'updatedAt',
-                render: (text) => text ? new Date(parseInt(text as string) * 1000).toLocaleString() : '-',
+                render: (text) => text ? new Date((text as number) * 1000).toLocaleString() : '-',
               },
             ]}
           />
