@@ -8,14 +8,10 @@ import type {
 } from '@/types/generated/api/users/user_management';
 
 // 用户数据类型定义（使用生成的类型）
-export interface User extends UserListItem {
-  // 扩展字段
-}
+export type User = UserListItem;
 
 // 详细用户信息类型
-export interface UserDetailInfo extends UserDetail {
-  // 扩展字段
-}
+export type UserDetailInfo = UserDetail;
 
 // 重新导出生成的类型，提供更简洁的导入路径
 export type CreateUserData = CreateUserRequest;

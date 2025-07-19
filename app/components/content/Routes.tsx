@@ -5,7 +5,7 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Button, Tag, Popconfirm, Tooltip, Space, Card, Typography, Input, Modal } from 'antd';
-import { handleApiResponse, message } from '@/utils/message';
+import { message } from '@/utils/message';
 import { routeService, RouteItem, CreateRouteData, UpdateRouteData } from '@/services/routes';
 import { 
   RouteType, 
@@ -38,10 +38,7 @@ import {
     EyeOutlined,
     ReloadOutlined,
 } from '@ant-design/icons';
-import { useApi } from '@/shared/hooks';
 import { securityUtils } from '@/shared/utils';
-import { ApiResponse } from '@/utils/http-client';
-import { StandardApiResponse } from '@/shared/types/common';
 
 const { Title } = Typography;
 
@@ -208,7 +205,7 @@ const Routes: React.FC = () => {
             } else {
                 // handleDataResponse.userAction('删除线路', false, response);
             }
-        } catch (error) {
+        } catch {
             // handleDataResponse.userAction('删除线路', false, undefined, error);
         }
     };
@@ -299,7 +296,7 @@ const Routes: React.FC = () => {
                 // handleDataResponse.error('线路更新失败', response.message);
                 return false;
             }
-        } catch (error) {
+        } catch {
             // handleDataResponse.error('线路更新', error);
             return false;
         }
@@ -347,7 +344,7 @@ const Routes: React.FC = () => {
                 // handleDataResponse.error('线路创建失败', response.message);
                 return false;
             }
-        } catch (error) {
+        } catch {
             // handleDataResponse.error('线路创建', error);
             return false;
         }

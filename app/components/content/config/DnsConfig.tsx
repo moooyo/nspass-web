@@ -20,11 +20,6 @@ import {
 } from '../../../services/dnsConfig';
 import { DnsProvider } from '@/types/generated/model/dnsConfig';
 
-// DNS提供商枚举映射
-const dnsProviderOptions = {
-    [DnsProvider.DNS_PROVIDER_CLOUDFLARE]: { text: 'Cloudflare', value: DnsProvider.DNS_PROVIDER_CLOUDFLARE },
-};
-
 const DnsConfig: React.FC = () => {
     const [editableKeys, setEditableKeys] = useState<React.Key[]>([]);
     const [dataSource, setDataSource] = useState<DnsConfigItem[]>([]);

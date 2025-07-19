@@ -20,8 +20,7 @@ import {
     ArrowRightOutlined,
     DragOutlined,
     GlobalOutlined,
-    ApiOutlined,
-    SyncOutlined
+    ApiOutlined
 } from '@ant-design/icons';
 import dynamic from 'next/dynamic';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
@@ -268,7 +267,7 @@ const ForwardRules: React.FC = () => {
                 // Error loading data
                 handleApiResponse.fetch(response, '获取转发规则');
             }
-        } catch (error) {
+        } catch {
             // 失败时清空数据，避免显示过期缓存
             setDataSource([]);
             // Error loading data
@@ -301,7 +300,7 @@ const ForwardRules: React.FC = () => {
                 setEgressConfigs([]);
                 handleApiResponse.fetch(response, '获取出口配置');
             }
-        } catch (error) {
+        } catch {
             setEgressConfigs([]);
             message.error('获取出口配置失败');
         } finally {
@@ -333,7 +332,7 @@ const ForwardRules: React.FC = () => {
             } else {
                 // // handleDataResponse.userAction('切换规则状态', false, response);
             }
-        } catch (error) {
+        } catch {
             // // handleDataResponse.userAction('切换规则状态', false, undefined, error);
         }
     }, [dataSource, setDataSource]);
@@ -371,7 +370,7 @@ const ForwardRules: React.FC = () => {
             } else {
                 // // handleDataResponse.userAction('删除规则', false, response);
             }
-        } catch (error) {
+        } catch {
             // // handleDataResponse.userAction('删除规则', false, undefined, error);
         }
     }, [dataSource, setDataSource]);
@@ -524,7 +523,7 @@ const ForwardRules: React.FC = () => {
                     // // handleDataResponse.userAction('创建转发路径规则', false, response);
                     message.error(response.message || '创建转发规则失败');
                 }
-            } catch (error) {
+            } catch {
                 // // handleDataResponse.userAction('创建转发路径规则', false, undefined, error);
                 message.error('创建转发规则时发生错误');
             }
@@ -564,7 +563,7 @@ const ForwardRules: React.FC = () => {
                     // // handleDataResponse.userAction('更新转发路径规则', false, response);
                     message.error(response.message || '更新转发规则失败');
                 }
-            } catch (error) {
+            } catch {
                 // // handleDataResponse.userAction('更新转发路径规则', false, undefined, error);
                 message.error('更新转发规则时发生错误');
             }
@@ -1006,7 +1005,7 @@ const ForwardRules: React.FC = () => {
                 setApiServers([]);
                 // // handleDataResponse.error('获取服务器列表', undefined, response);
             }
-        } catch (error) {
+        } catch {
             setApiServers([]);
             // // handleDataResponse.error('获取服务器列表', error);
         } finally {

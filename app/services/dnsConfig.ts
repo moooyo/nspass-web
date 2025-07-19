@@ -1,4 +1,3 @@
-import React from 'react';
 import { httpClient, ApiResponse } from '@/utils/http-client';
 import type { DnsConfig, DnsProvider } from '@/types/generated/model/dnsConfig';
 import type {
@@ -11,9 +10,7 @@ import type {
 export { DnsProvider };
 
 // DNS配置项数据类型定义（使用生成的类型）
-export interface DnsConfigItem extends DnsConfig {
-  // 扩展字段可以在这里添加
-}
+export type DnsConfigItem = DnsConfig;
 
 // 重新导出生成的类型，提供更简洁的导入路径
 export type CreateDnsConfigData = CreateDnsConfigRequest;

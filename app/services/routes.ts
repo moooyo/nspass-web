@@ -3,15 +3,12 @@ import {
   RouteType, 
   Protocol, 
   Route,
-  ProtocolParams,
   RouteStatus,
 } from '@/types/generated/model/route';
 import type {
   CreateRouteRequest,
   UpdateRouteRequest,
   ListRoutesRequest,
-  BatchDeleteRoutesRequest,
-  BatchUpdateRouteStatusRequest,
 } from '@/types/generated/api/routes/route_management';
 
 // 重新导出枚举类型

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { ApiOutlined } from '@ant-design/icons';
 import { useMSW } from './MSWProvider';
-import { message, handleApiResponse, OperationType } from '@/utils/message';
+import { handleApiResponse, OperationType } from '@/utils/message';
 
 export const MockToggle: React.FC = () => {
   // 使用新的MSWProvider中的useMSW hook

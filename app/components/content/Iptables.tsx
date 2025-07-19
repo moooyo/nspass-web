@@ -23,7 +23,6 @@ import {
 import { serverService } from '@/services/server';
 import { ServerItem } from '@/types/generated/api/servers/server_management';
 import { egressService } from '@/services/egress';
-import { EgressItem } from '@/types/generated/model/egressItem';
 import { useApiRefresh } from '@/utils/api-refresh-bus';
 
 const { Title, Text } = Typography;

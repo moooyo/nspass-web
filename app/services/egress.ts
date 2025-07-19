@@ -8,7 +8,6 @@ import type {
   GetEgressListRequest,
   TestEgressConnectionRequest,
   ValidateEgressConfigRequest,
-  GetEgressStatsRequest,
   AvailableServerItem
 } from '@/types/generated/api/egress/egress_management';
 

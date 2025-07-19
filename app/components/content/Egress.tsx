@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Button, Tag, Popconfirm, Tooltip } from 'antd';
-import { handleApiResponse, message } from '@/utils/message';
+import { message } from '@/utils/message';
 import {
     EditableProTable,
     ProColumns,
@@ -135,7 +135,7 @@ const Egress: React.FC = () => {
     const [serversLoading, setServersLoading] = useState<boolean>(false);
     
     // 统一错误处理
-    const { handleAsyncOperation, handleDataFetch, handleUserAction } = useApiErrorHandler();
+    const { handleAsyncOperation } = useApiErrorHandler();
     
     // 转换服务器数据为选项格式
     const serverOptions = servers.map(server => ({
@@ -173,7 +173,7 @@ const Egress: React.FC = () => {
     const loadEgressData = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await handleAsyncOperation(
+            await handleAsyncOperation(
                 egressService.getEgressList(),
                 '获取出口配置',
                 {
@@ -489,7 +489,7 @@ const Egress: React.FC = () => {
                     <br />
                     2. 检查创建记录时是否正确返回了自增ID
                     <br />
-                    3. 检查时间戳字段格式（当前返回字符串"0"，应该返回int64格式的时间戳）
+                    3. 检查时间戳字段格式（当前返回字符串&quot;0&quot;，应该返回int64格式的时间戳）
                 </div>
             )}
 
