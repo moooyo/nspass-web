@@ -22,6 +22,8 @@ import {
 } from '@/services/iptables';
 import { serverService } from '@/services/server';
 import { ServerItem } from '@/types/generated/api/servers/server_management';
+import { egressService } from '@/services/egress';
+import { EgressItem } from '@/types/generated/model/egressItem';
 import { useApiRefresh } from '@/utils/api-refresh-bus';
 
 const { Title, Text } = Typography;
@@ -34,6 +36,8 @@ const IptablesManagement: React.FC = () => {
   const [configs, setConfigs] = useState<IptablesConfig[]>([]);
   const [servers, setServers] = useState<ServerItem[]>([]);
   const [serversLoading, setServersLoading] = useState(false);
+  const [serverMap, setServerMap] = useState<Record<string, string>>({});
+  const [egressMap, setEgressMap] = useState<Record<string, string>>({});
   
   const actionRef = useRef<ActionType>(null);
 
@@ -56,10 +60,42 @@ const IptablesManagement: React.FC = () => {
     }
   }, []);
 
-  // 组件初始化时加载服务器列表
+  // 加载服务器和出口映射
+  const loadMappings = useCallback(async () => {
+    try {
+      // 加载所有服务器
+      const serverResult = await serverService.getList();
+      if (serverResult.success && serverResult.data) {
+        const sMap: Record<string, string> = {};
+        serverResult.data.forEach(server => {
+          if (server.id) {
+            sMap[server.id.toString()] = server.name || `服务器 ${server.id}`;
+          }
+        });
+        setServerMap(sMap);
+      }
+
+      // 加载所有出口
+      const egressResult = await egressService.getEgressList();
+      if (egressResult.success && egressResult.data) {
+        const eMap: Record<string, string> = {};
+        egressResult.data.forEach(egress => {
+          if (egress.id) {
+            eMap[egress.id.toString()] = egress.egressName || `出口 ${egress.id}`;
+          }
+        });
+        setEgressMap(eMap);
+      }
+    } catch (error) {
+      console.error('加载映射失败:', error);
+    }
+  }, []);
+
+  // 组件初始化时加载服务器列表和映射
   useEffect(() => {
     loadServers();
-  }, [loadServers]);
+    loadMappings();
+  }, [loadServers, loadMappings]);
 
   // 服务器选项
   const serverOptions = useMemo(() => {
@@ -157,31 +193,41 @@ const IptablesManagement: React.FC = () => {
     {
       title: '目标地址',
       dataIndex: 'destIp',
-      width: 180,
-      render: (text, record) => (
-        <div>
-          <div>{text || '-'}</div>
-          {record.destPort && (
-            <Text type="secondary" style={{ fontSize: '12px' }}>
-              端口: {record.destPort}
-            </Text>
-          )}
-          {(record.targetServerName || record.targetEgressName) && (
-            <div style={{ marginTop: 4 }}>
-              {record.targetServerName && (
+      width: 220,
+      render: (text, record) => {
+        const serverName = record.destServerId ? serverMap[record.destServerId.toString()] : undefined;
+        const egressName = record.destEgressId ? egressMap[record.destEgressId.toString()] : undefined;
+        
+        return (
+          <div>
+            {/* 优先显示服务器或出口信息 */}
+            {record.destServerId && (
+              <div style={{ marginBottom: 4 }}>
                 <Tag color="blue" icon={<DatabaseOutlined />} style={{ fontSize: '11px', padding: '1px 4px' }}>
-                  服务器: {record.targetServerName}
+                  服务器 {record.destServerId}: {serverName || '未知'}
                 </Tag>
-              )}
-              {record.targetEgressName && (
+              </div>
+            )}
+            {record.destEgressId && (
+              <div style={{ marginBottom: 4 }}>
                 <Tag color="orange" icon={<ExportOutlined />} style={{ fontSize: '11px', padding: '1px 4px' }}>
-                  出口: {record.targetEgressName}
+                  出口 {record.destEgressId}: {egressName || '未知'}
                 </Tag>
-              )}
-            </div>
-          )}
-        </div>
-      ),
+              </div>
+            )}
+            
+            {/* IP 地址 */}
+            <div>{text || '-'}</div>
+            
+            {/* 端口信息 */}
+            {record.destPort && (
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                端口: {record.destPort}
+              </Text>
+            )}
+          </div>
+        );
+      },
     },
     {
       title: '协议',
@@ -370,23 +416,31 @@ const IptablesManagement: React.FC = () => {
               },
               {
                 title: '目标服务器',
-                key: 'targetServerName',
-                dataIndex: 'targetServerName',
-                render: (text) => text ? (
-                  <Tag color="blue" icon={<DatabaseOutlined />}>
-                    {text}
-                  </Tag>
-                ) : '-',
+                key: 'destServerId',
+                dataIndex: 'destServerId',
+                render: (id) => {
+                  if (!id) return '-';
+                  const serverName = serverMap[id.toString()] || '未知';
+                  return (
+                    <Tag color="blue" icon={<DatabaseOutlined />}>
+                      服务器 {id}: {serverName}
+                    </Tag>
+                  );
+                },
               },
               {
                 title: '目标出口',
-                key: 'targetEgressName',
-                dataIndex: 'targetEgressName',
-                render: (text) => text ? (
-                  <Tag color="orange" icon={<ExportOutlined />}>
-                    {text}
-                  </Tag>
-                ) : '-',
+                key: 'destEgressId',
+                dataIndex: 'destEgressId',
+                render: (id) => {
+                  if (!id) return '-';
+                  const egressName = egressMap[id.toString()] || '未知';
+                  return (
+                    <Tag color="orange" icon={<ExportOutlined />}>
+                      出口 {id}: {egressName}
+                    </Tag>
+                  );
+                },
               },
               {
                 title: '协议',
