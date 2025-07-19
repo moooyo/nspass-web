@@ -12,6 +12,8 @@ import {
     EyeOutlined,
     CheckCircleOutlined,
     CloseCircleOutlined,
+    DatabaseOutlined,
+    ExportOutlined,
 } from '@ant-design/icons';
 import { message, handleApiResponse } from '@/utils/message';
 import { 
@@ -155,7 +157,7 @@ const IptablesManagement: React.FC = () => {
     {
       title: '目标地址',
       dataIndex: 'destIp',
-      width: 120,
+      width: 180,
       render: (text, record) => (
         <div>
           <div>{text || '-'}</div>
@@ -163,6 +165,20 @@ const IptablesManagement: React.FC = () => {
             <Text type="secondary" style={{ fontSize: '12px' }}>
               端口: {record.destPort}
             </Text>
+          )}
+          {(record.targetServerName || record.targetEgressName) && (
+            <div style={{ marginTop: 4 }}>
+              {record.targetServerName && (
+                <Tag color="blue" icon={<DatabaseOutlined />} style={{ fontSize: '11px', padding: '1px 4px' }}>
+                  服务器: {record.targetServerName}
+                </Tag>
+              )}
+              {record.targetEgressName && (
+                <Tag color="orange" icon={<ExportOutlined />} style={{ fontSize: '11px', padding: '1px 4px' }}>
+                  出口: {record.targetEgressName}
+                </Tag>
+              )}
+            </div>
           )}
         </div>
       ),
@@ -351,6 +367,26 @@ const IptablesManagement: React.FC = () => {
                 key: 'destPort',
                 dataIndex: 'destPort',
                 render: (text) => text || '-',
+              },
+              {
+                title: '目标服务器',
+                key: 'targetServerName',
+                dataIndex: 'targetServerName',
+                render: (text) => text ? (
+                  <Tag color="blue" icon={<DatabaseOutlined />}>
+                    {text}
+                  </Tag>
+                ) : '-',
+              },
+              {
+                title: '目标出口',
+                key: 'targetEgressName',
+                dataIndex: 'targetEgressName',
+                render: (text) => text ? (
+                  <Tag color="orange" icon={<ExportOutlined />}>
+                    {text}
+                  </Tag>
+                ) : '-',
               },
               {
                 title: '协议',

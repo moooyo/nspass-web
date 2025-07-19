@@ -25,6 +25,10 @@ export const mockIptablesConfigs: IptablesConfigType[] = [
     isEnabled: true,
     createdAt: Math.floor(Date.now() / 1000) - 86400,
     updatedAt: Math.floor(Date.now() / 1000) - 3600,
+    targetServerId: 'target-server-1',
+    targetServerName: '后端服务器1',
+    targetEgressId: undefined,
+    targetEgressName: undefined,
   },
   {
     id: 2,
@@ -43,6 +47,10 @@ export const mockIptablesConfigs: IptablesConfigType[] = [
     isEnabled: true,
     createdAt: Math.floor(Date.now() / 1000) - 86400 * 2,
     updatedAt: Math.floor(Date.now() / 1000) - 1800,
+    targetServerId: undefined,
+    targetServerName: undefined,
+    targetEgressId: undefined,
+    targetEgressName: undefined,
   },
   {
     id: 3,
@@ -61,6 +69,10 @@ export const mockIptablesConfigs: IptablesConfigType[] = [
     isEnabled: false,
     createdAt: Math.floor(Date.now() / 1000) - 86400 * 3,
     updatedAt: Math.floor(Date.now() / 1000) - 900,
+    targetServerId: undefined,
+    targetServerName: undefined,
+    targetEgressId: undefined,
+    targetEgressName: undefined,
   },
   {
     id: 4,
@@ -79,6 +91,10 @@ export const mockIptablesConfigs: IptablesConfigType[] = [
     isEnabled: true,
     createdAt: Math.floor(Date.now() / 1000) - 86400 * 1,
     updatedAt: Math.floor(Date.now() / 1000) - 1200,
+    targetServerId: undefined,
+    targetServerName: undefined,
+    targetEgressId: 'egress-1',
+    targetEgressName: '美国西部出口',
   },
   {
     id: 5,
@@ -97,6 +113,10 @@ export const mockIptablesConfigs: IptablesConfigType[] = [
     isEnabled: true,
     createdAt: Math.floor(Date.now() / 1000) - 86400 * 2,
     updatedAt: Math.floor(Date.now() / 1000) - 600,
+    targetServerId: undefined,
+    targetServerName: undefined,
+    targetEgressId: undefined,
+    targetEgressName: undefined,
   },
   {
     id: 6,
@@ -115,6 +135,10 @@ export const mockIptablesConfigs: IptablesConfigType[] = [
     isEnabled: true,
     createdAt: Math.floor(Date.now() / 1000) - 86400 * 1,
     updatedAt: Math.floor(Date.now() / 1000) - 300,
+    targetServerId: 'target-server-2',
+    targetServerName: 'Web服务器',
+    targetEgressId: undefined,
+    targetEgressName: undefined,
   },
 ];
 
@@ -245,6 +269,10 @@ export const getIptablesConfigInfo = (serverId: string): IptablesConfigInfo[] =>
     ...config,
     serverName: `Server ${serverId}`,
     generatedRule: generateIptablesRule(config),
+    targetServerId: config.targetServerId,
+    targetServerName: config.targetServerName,
+    targetEgressId: config.targetEgressId,
+    targetEgressName: config.targetEgressName,
   }));
 };
 
