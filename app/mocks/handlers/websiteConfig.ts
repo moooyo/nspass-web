@@ -82,4 +82,28 @@ export const websiteConfigHandlers = [
       data: { inviteCode: newInviteCode }
     });
   }),
+
+  // 获取Agent上报Base URL设置
+  http.get('/v1/settings/agent/report-base-url', () => {
+    return HttpResponse.json({
+      status: {
+        success: true,
+        message: '获取Agent上报Base URL成功'
+      },
+      baseUrl: 'https://api.custom.com'
+    });
+  }),
+
+  // 更新Agent上报Base URL设置
+  http.put('/v1/settings/agent/report-base-url', async ({ request }) => {
+    const { baseUrl } = await request.json() as { baseUrl: string };
+    
+    return HttpResponse.json({
+      status: {
+        success: true,
+        message: 'Agent上报Base URL更新成功'
+      },
+      baseUrl: baseUrl
+    });
+  }),
 ]; 

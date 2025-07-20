@@ -20,6 +20,7 @@ import {
   type ServerCreateData,
   type ServerUpdateData
 } from '@/services/server';
+import { websiteConfigService } from '@/services/websiteConfig';
 import type { ServerItem } from '@/types/generated/api/servers/server_management';
 import { ServerStatus } from '@/types/generated/api/servers/server_management';
 
@@ -246,8 +247,15 @@ const Servers: React.FC = () => {
                 return;
             }
 
+            // 获取Agent上报地址
+            const agentResponse = await websiteConfigService.getAgentReportBaseUrl();
+            if (!agentResponse.success || !agentResponse.data?.baseUrl) {
+                message.error('获取Agent上报地址失败，请先在设置中配置Agent上报Base URL');
+                return;
+            }
+
             // 生成安装命令 - 使用新的格式
-            const command = `curl -sSL https://raw.githubusercontent.com/nspass/nspass-agent/main/scripts/install.sh | sudo bash -s -- --server-id=${record.id} --token=${record.token}`;
+            const command = `curl -sSL https://raw.githubusercontent.com/nspass/nspass-agent/main/scripts/install.sh | sudo bash -s -- -sid ${record.id} -token ${record.token} -endpoint ${agentResponse.data.baseUrl}`;
             
             setInstallCommand(command);
             setInstallServerInfo(record);
@@ -617,7 +625,9 @@ const Servers: React.FC = () => {
                                     <li>确保服务器有 root 权限</li>
                                     <li>确保服务器可以访问 GitHub 和互联网</li>
                                     <li>支持的系统：Linux (Ubuntu 16+, CentOS 7+, Debian 9+)</li>
-                                    <li>命令会自动设置服务器ID和认证令牌</li>
+                                    <li><strong>-sid</strong>: 服务器ID，用于标识当前服务器</li>
+                                    <li><strong>-token</strong>: 认证令牌，用于服务器认证</li>
+                                    <li><strong>-endpoint</strong>: Agent上报地址，从设置管理中获取</li>
                                 </ul>
                             </div>
                         }
