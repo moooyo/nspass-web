@@ -346,5 +346,67 @@ export const serverHandlers = [
       success: true, 
       message: '服务器重启成功'
     });
+  }),
+
+  // 重新生成单个服务器token
+  http.post('/v1/servers/:id/regenerate-token', ({ params }) => {
+    const id = params.id as string;
+    const server = mockServers.find(s => s.id === id);
+
+    if (!server) {
+      return HttpResponse.json({
+        success: false,
+        message: '服务器不存在'
+      }, { status: 404 });
+    }
+
+    // 生成新的token
+    const generateToken = (serverId: string) => {
+      const header = btoa(JSON.stringify({ "alg": "HS256", "typ": "JWT" }));
+      const payload = btoa(JSON.stringify({
+        "server_id": serverId,
+        "name": server.name,
+        "iat": Math.floor(Date.now() / 1000),
+        "exp": Math.floor(Date.now() / 1000) + 31536000 // 1年后过期
+      }));
+      const signature = btoa(Math.random().toString(36).substring(2, 15));
+      return `${header}.${payload}.${signature}`;
+    };
+
+    // 更新服务器token
+    server.token = generateToken(id);
+
+    return HttpResponse.json({
+      success: true,
+      message: '服务器token重新生成成功',
+      data: server
+    });
+  }),
+
+  // 重新生成所有服务器token
+  http.post('/v1/servers/regenerate-all-tokens', () => {
+    // 生成新的token
+    const generateToken = (serverId: string, serverName: string) => {
+      const header = btoa(JSON.stringify({ "alg": "HS256", "typ": "JWT" }));
+      const payload = btoa(JSON.stringify({
+        "server_id": serverId,
+        "name": serverName,
+        "iat": Math.floor(Date.now() / 1000),
+        "exp": Math.floor(Date.now() / 1000) + 31536000 // 1年后过期
+      }));
+      const signature = btoa(Math.random().toString(36).substring(2, 15));
+      return `${header}.${payload}.${signature}`;
+    };
+
+    // 为所有服务器重新生成token
+    mockServers.forEach(server => {
+      server.token = generateToken(server.id!, server.name!);
+    });
+
+    return HttpResponse.json({
+      success: true,
+      message: '所有服务器token重新生成成功',
+      data: mockServers
+    });
   })
 ]; 

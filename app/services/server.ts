@@ -1,5 +1,5 @@
 import { BaseService, QueryParams, StandardApiResponse } from './base';
-import { ServerItem, ServerStatus, CreateServerRequest, UpdateServerRequest } from '@/types/generated/api/servers/server_management';
+import { ServerItem, ServerStatus, CreateServerRequest, UpdateServerRequest, RegenerateServerTokenRequest, RegenerateAllServerTokensRequest, RegenerateServerTokenResponse, RegenerateAllServerTokensResponse } from '@/types/generated/api/servers/server_management';
 
 // 服务器查询参数
 export interface ServerQueryParams extends QueryParams {
@@ -343,6 +343,28 @@ class UnifiedServerService extends BaseService<ServerItem, ServerCreateData, Ser
       return await this.httpClient.get(`${this.endpoint}/${id}/logs`, queryParams);
     } catch (error) {
       return this.handleError(error, '获取服务器日志');
+    }
+  }
+
+  /**
+   * 重新生成单个服务器token
+   */
+  async regenerateServerToken(id: string | number): Promise<StandardApiResponse<ServerItem>> {
+    try {
+      return await this.httpClient.post<ServerItem>(`${this.endpoint}/${id}/regenerate-token`, {});
+    } catch (error) {
+      return this.handleError(error, '重新生成服务器token');
+    }
+  }
+
+  /**
+   * 重新生成所有服务器token
+   */
+  async regenerateAllServerTokens(): Promise<StandardApiResponse<ServerItem[]>> {
+    try {
+      return await this.httpClient.post<ServerItem[]>(`${this.endpoint}/regenerate-all-tokens`, {});
+    } catch (error) {
+      return this.handleError(error, '重新生成所有服务器token');
     }
   }
 }

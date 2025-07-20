@@ -10,7 +10,7 @@ import {
     ProFormDatePicker,
     ActionType
 } from '@ant-design/pro-components';
-import { PlusOutlined, EditOutlined, CopyOutlined, DeleteOutlined, CheckOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, CopyOutlined, DeleteOutlined, CheckOutlined, SyncOutlined, ReloadOutlined } from '@ant-design/icons';
 import ReactCountryFlag from 'react-country-flag';
 import { message } from '@/utils/message';
 import { 
@@ -246,8 +246,8 @@ const Servers: React.FC = () => {
                 return;
             }
 
-            // 生成安装命令 - 使用环境变量的方式传递参数
-            const command = `export NSPASS_SERVER_ID="${record.id}" && export NSPASS_TOKEN="${record.token}" && curl -sSL https://raw.githubusercontent.com/nspass/nspass-agent/main/scripts/install.sh | bash`;
+            // 生成安装命令 - 使用新的格式
+            const command = `curl -sSL https://raw.githubusercontent.com/nspass/nspass-agent/main/scripts/install.sh | sudo bash -s -- --server-id=${record.id} --token=${record.token}`;
             
             setInstallCommand(command);
             setInstallServerInfo(record);
@@ -256,6 +256,38 @@ const Servers: React.FC = () => {
         } catch (error) {
             console.error('生成安装命令失败:', error);
             message.error(error instanceof Error ? error.message : '生成安装命令失败');
+        }
+    }, []);
+
+    // 刷新单个服务器token
+    const handleRefreshToken = useCallback(async (record: ServerItem) => {
+        try {
+            const result = await serverService.regenerateServerToken(record.id!);
+            if (result.success) {
+                message.success(`服务器 ${record.name} 的token已刷新`);
+                actionRef.current?.reload();
+            } else {
+                message.error(result.message || '刷新token失败');
+            }
+        } catch (error) {
+            console.error('刷新token失败:', error);
+            message.error(error instanceof Error ? error.message : '刷新token失败');
+        }
+    }, []);
+
+    // 刷新所有服务器token
+    const handleRefreshAllTokens = useCallback(async () => {
+        try {
+            const result = await serverService.regenerateAllServerTokens();
+            if (result.success) {
+                message.success(`已成功刷新 ${result.data?.length || 0} 个服务器的token`);
+                actionRef.current?.reload();
+            } else {
+                message.error(result.message || '刷新所有token失败');
+            }
+        } catch (error) {
+            console.error('刷新所有token失败:', error);
+            message.error(error instanceof Error ? error.message : '刷新所有token失败');
         }
     }, []);
 
@@ -416,6 +448,16 @@ const Servers: React.FC = () => {
                         </Button>
                     )}
                     <Button
+                        key="refresh-token"
+                        type="link"
+                        size="small"
+                        icon={<SyncOutlined />}
+                        onClick={() => handleRefreshToken(record)}
+                        title="刷新Token"
+                    >
+                        刷新Token
+                    </Button>
+                    <Button
                         key="delete"
                         type="link"
                         size="small"
@@ -428,7 +470,7 @@ const Servers: React.FC = () => {
                 </div>
             ),
         },
-    ], [countryValueEnum, groupValueEnum, openEditModal, handleInstall, deleteServer]);
+    ], [countryValueEnum, groupValueEnum, openEditModal, handleInstall, handleRefreshToken, deleteServer]);
 
     return (
         <div>
@@ -629,6 +671,14 @@ const Servers: React.FC = () => {
                 scroll={{ x: 1200 }}
                 actionRef={actionRef}
                 toolBarRender={() => [
+                    <Button
+                        key="refresh-all-tokens"
+                        icon={<ReloadOutlined />}
+                        onClick={handleRefreshAllTokens}
+                        type="default"
+                    >
+                        刷新所有Token
+                    </Button>,
                     <Button
                         key="button"
                         icon={<PlusOutlined />}
