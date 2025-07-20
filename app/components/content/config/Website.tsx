@@ -17,6 +17,7 @@ import { message } from '@/utils/message';
 
 const Website: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
+  const [agentReportBaseUrl, setAgentReportBaseUrl] = useState<string>('');
   const [form] = ProForm.useForm();
 
   // 加载网站配置
@@ -37,10 +38,23 @@ const Website: React.FC = () => {
     }
   }, [form]);
 
+  // 加载Agent上报Base URL
+  const loadAgentReportBaseUrl = useCallback(async () => {
+    try {
+      const response = await websiteConfigService.getAgentReportBaseUrl();
+      if (response.success && response.data?.baseUrl) {
+        setAgentReportBaseUrl(response.data.baseUrl);
+      }
+    } catch (error) {
+      console.error('加载Agent上报Base URL失败:', error);
+    }
+  }, []);
+
   // 初始化加载配置
   useEffect(() => {
     loadConfig();
-  }, [loadConfig]);
+    loadAgentReportBaseUrl();
+  }, [loadConfig, loadAgentReportBaseUrl]);
 
   const handleSubmit = async (values: UpdateWebsiteConfigData) => {
     try {
@@ -97,6 +111,25 @@ const Website: React.FC = () => {
     }
   };
 
+  // 更新Agent上报Base URL
+  const handleAgentReportBaseUrlSubmit = async (baseUrl: string) => {
+    try {
+      setLoading(true);
+      const response = await websiteConfigService.updateAgentReportBaseUrl(baseUrl);
+      if (response.success) {
+        setAgentReportBaseUrl(baseUrl);
+        message.success('Agent上报Base URL已保存');
+      } else {
+        message.error(response.message || '保存Agent上报Base URL失败');
+      }
+    } catch (error) {
+      console.error('保存Agent上报Base URL失败:', error);
+      message.error('保存Agent上报Base URL失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div>
       <Card 
@@ -120,6 +153,7 @@ const Website: React.FC = () => {
             </Button>
           </Space>
         }
+        style={{ marginBottom: 16 }}
       >
         <ProForm
           form={form}
@@ -223,6 +257,54 @@ const Website: React.FC = () => {
               return null;
             }}
           </ProFormDependency>
+        </ProForm>
+      </Card>
+
+      <Card 
+        title="Agent配置" 
+        variant="outlined"
+        extra={
+          <Button 
+            icon={<ReloadOutlined />} 
+            onClick={loadAgentReportBaseUrl}
+            loading={loading}
+          >
+            刷新
+          </Button>
+        }
+      >
+        <ProForm
+          initialValues={{ agentReportBaseUrl }}
+          key={agentReportBaseUrl} // 使用key强制重新渲染表单
+          onFinish={async (values) => {
+            await handleAgentReportBaseUrlSubmit(values.agentReportBaseUrl);
+          }}
+          loading={loading}
+          submitter={{
+            searchConfig: {
+              submitText: '保存配置',
+              resetText: '取消',
+            },
+            resetButtonProps: {
+              style: {
+                marginLeft: 8,
+              },
+            },
+          }}
+        >
+          <ProFormText
+            name="agentReportBaseUrl"
+            label="Agent上报Base URL"
+            placeholder="请输入Agent上报的Base URL地址"
+            tooltip="用于配置Agent客户端向服务器上报数据时使用的基础URL地址"
+            rules={[
+              { required: true, message: '请输入Agent上报Base URL' },
+              { type: 'url', message: '请输入有效的URL地址' }
+            ]}
+            fieldProps={{
+              defaultValue: agentReportBaseUrl,
+            }}
+          />
         </ProForm>
       </Card>
     </div>

@@ -1,4 +1,9 @@
 import { httpClient, ApiResponse } from '@/utils/http-client';
+import type { 
+  GetAgentReportBaseUrlResponse,
+  UpdateAgentReportBaseUrlRequest,
+  UpdateAgentReportBaseUrlResponse 
+} from '@/types/generated/api/settings/settings_management';
 
 // 网站配置数据类型定义
 export interface WebsiteConfig {
@@ -60,6 +65,21 @@ class WebsiteConfigService {
    */
   async generateInviteCode(): Promise<ApiResponse<{ inviteCode: string }>> {
     return httpClient.post<{ inviteCode: string }>(`${this.endpoint}/inviteCode`);
+  }
+
+  /**
+   * 获取Agent上报Base URL设置
+   */
+  async getAgentReportBaseUrl(): Promise<ApiResponse<GetAgentReportBaseUrlResponse>> {
+    return httpClient.get<GetAgentReportBaseUrlResponse>(`${this.endpoint}/agent/report-base-url`);
+  }
+
+  /**
+   * 更新Agent上报Base URL设置
+   */
+  async updateAgentReportBaseUrl(baseUrl: string): Promise<ApiResponse<UpdateAgentReportBaseUrlResponse>> {
+    const requestData: UpdateAgentReportBaseUrlRequest = { baseUrl };
+    return httpClient.put<UpdateAgentReportBaseUrlResponse>(`${this.endpoint}/agent/report-base-url`, requestData);
   }
 }
 
