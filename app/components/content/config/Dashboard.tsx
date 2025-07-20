@@ -9,7 +9,7 @@ import type {
   SystemOverview, 
   TrafficTrendItem, 
   UserTrafficItem 
-} from '@/services/dashboard';
+} from '@/types/generated/api/dashboard/dashboard_service';
 import { message } from '@/utils/message';
 
 const { Title } = Typography;

@@ -212,30 +212,4 @@ class DashboardService {
 
 // 创建并导出服务实例
 export const dashboardService = new DashboardService();
-export default DashboardService;
-
-// 导出常用类型和枚举
-export type {
-  SystemOverview,
-  TrafficTrendItem,
-  UserTrafficItem,
-  ServerStatusItem,
-  RuleStatusStats,
-  SystemPerformance,
-  RealTimeTraffic,
-  SystemAlert,
-  TopRule,
-  LogSummary,
-  TrafficByRegion,
-  SystemHealth,
-  GetTrafficTrendRequest,
-  GetUserTrafficStatsRequest,
-  GetTopRulesRequest,
-  GetLogSummaryRequest
-} from '@/types/generated/api/dashboard/dashboard_service';
-
-// 单独导出枚举作为值
-export {
-  TimePeriod,
-  LogLevel
-} from '@/types/generated/api/dashboard/dashboard_service'; 
+export default DashboardService; 
