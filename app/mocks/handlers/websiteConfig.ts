@@ -90,7 +90,13 @@ export const websiteConfigHandlers = [
         success: true,
         message: '获取Agent上报Base URL成功'
       },
-      baseUrl: 'https://api.custom.com'
+      data: {
+        status: {
+          success: true,
+          message: '获取Agent上报Base URL成功'
+        },
+        baseUrl: 'https://api.agent.com.cn'
+      }
     });
   }),
 
@@ -103,7 +109,13 @@ export const websiteConfigHandlers = [
         success: true,
         message: 'Agent上报Base URL更新成功'
       },
-      baseUrl: baseUrl
+      data: {
+        status: {
+          success: true,
+          message: 'Agent上报Base URL更新成功'
+        },
+        baseUrl: baseUrl
+      }
     });
   }),
 ]; 
