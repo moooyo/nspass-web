@@ -22,14 +22,13 @@
     ],
     "paths": {
       "@/*": ["./app/*"],
-      "@mock/*": ["./app/mocks/*"]
+      "@mock/*": ["./app/mocks/*"],
+      "@/types/generated/*": ["./types/generated/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "types/**/*.ts"],
   "exclude": [
-    "node_modules",
-    ".next/types/app/types/generated/model/route.ts",
-    "app/types/generated/model/route.ts"
+    "node_modules"
   ],
   "ts-node": {
     "compilerOptions": {

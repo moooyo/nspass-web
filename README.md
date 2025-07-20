@@ -2,9 +2,26 @@
 
 > 一个基于 Next.js 和 Ant Design 的现代化网络管理平台
 
+[![Deploy to Cloudflare Pages](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/moooyo/nspass-web)
+[![Next.js](https://img.shields.io/badge/Next.js-15.3.5-black)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.0.0-blue)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://typescriptlang.org/)
+[![Ant Design](https://img.shields.io/badge/Ant%20Design-5.26.3-red)](https://ant.design/)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 ## 🚀 项目简介
 
 NSPass Web 是一个功能完善的网络管理平台，提供用户管理、路由配置、DNS 设置、服务器监控等核心功能。项目采用现代化的技术栈，具有美观的用户界面和良好的用户体验。
+
+## 🚀 快速部署
+
+### 一键部署到 Cloudflare Pages
+
+点击下方按钮即可快速部署到 Cloudflare Pages：
+
+[![Deploy to Cloudflare Pages](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/moooyo/nspass-web)
+
+> **使用说明**: 点击按钮后会自动 Fork 仓库到你的 GitHub 账户，并引导你在 Cloudflare Pages 中完成部署配置。部署过程中记得在 Settings > Functions 中添加 `nodejs_compat` 兼容性标志。
 
 ## ✨ 主要特性
 
@@ -255,26 +272,4 @@ NEXT_PUBLIC_ENABLE_DEV_TOOLS=true
 
 **开发者**: moooyo  
 **版本**: 0.1.0  
-**最后更新**: 2025-07-06
-
-## 🚀 部署
-
-### Cloudflare Pages 部署
-
-项目已配置支持 Cloudflare Pages 部署：
-
-```bash
-# 1. 安装 Wrangler CLI
-npm install -g wrangler
-
-# 2. 构建项目
-npm run build:cloudflare
-
-# 3. 部署到 Cloudflare Pages
-wrangler pages deploy .vercel/output/static --project-name your-project-name
-```
-
-配置说明：
-- 使用 `wrangler.toml` 文件配置项目设置
-- 支持 Edge Runtime 环境
-- 图片优化已配置为兼容 Cloudflare Pages
+**最后更新**: 2025-07-21
