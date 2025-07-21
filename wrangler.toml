@@ -5,5 +5,5 @@ compatibility_flags = ["nodejs_compat"]
 
 # 构建配置
 [build]
-command = "npm run build:cloudflare:safe"
+command = "git submodule update --init --recursive --depth 1 || echo 'Submodule update failed, continuing...' && npm run build:cloudflare:safe"
 publish = ".vercel/output/static"
