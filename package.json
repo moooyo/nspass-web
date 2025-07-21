@@ -1,0 +1,77 @@
+{
+  "name": "nspass-web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm run proto:check && next dev",
+    "dev:turbo": "npm run proto:check && next dev --turbopack",
+    "build": "npm run proto:clean && npm run proto:generate && next build",
+    "build:cloudflare": "npm run proto:clean && npm run proto:generate && npx @cloudflare/next-on-pages",
+    "build:cloudflare:safe": "npm run proto:clean && npm run proto:generate && SKIP_TYPE_CHECK=true npx @cloudflare/next-on-pages",
+    "start": "next start",
+    "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "type-check": "tsc --noEmit",
+    "type-check:skip": "echo 'Skipping type check for deployment'",
+    "clean": "rm -rf .next && rm -rf node_modules/.cache",
+    "proto:clean": "rm -rf ./types/generated",
+    "proto:generate": "mkdir -p ./types/generated && protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./types/generated --ts_proto_opt=stringEnums=true,snakeToCamel=true,useOptionals=all,onlyTypes=true --proto_path=./proto $(find proto -name '*.proto')",
+    "proto:check": "[ -d ./types/generated ] && [ -n \"$(ls -A ./types/generated 2>/dev/null)\" ] || npm run proto:generate",
+    "msw:init": "npx msw init public/ --save",
+    "predev": "npm run proto:check",
+    "prebuild": "if [ \"$SKIP_TYPE_CHECK\" = \"true\" ]; then echo 'Skipping type check'; else npm run type-check; fi"
+  },
+  "dependencies": {
+    "@ant-design/charts": "^2.6.0",
+    "@ant-design/graphs": "^2.1.0",
+    "@ant-design/plots": "^2.6.0",
+    "@ant-design/pro-components": "^2.8.9",
+    "@ant-design/v5-patch-for-react-19": "^1.0.3",
+    "@types/bcryptjs": "^2.4.6",
+    "antd": "^5.26.3",
+    "bcryptjs": "^3.0.2",
+    "country-flag-emoji": "^1.0.3",
+    "leaflet": "^1.9.4",
+    "next": "^15.3.5",
+    "react": "^19.0.0",
+    "react-country-flag": "^3.1.0",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
+    "react-dom": "^19.0.0",
+    "react-leaflet": "^5.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/next-on-pages": "^1.13.12",
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/leaflet": "^1.9.17",
+    "@types/node": "^22.16.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "chokidar-cli": "^3.0.0",
+    "eslint": "^9",
+    "eslint-config-next": "^15.3.5",
+    "msw": "^2.10.3",
+    "tailwindcss": "^4",
+    "ts-proto": "^2.7.5",
+    "typescript": "^5",
+    "wrangler": "^4.23.0"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
+  },
+  "resolutions": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19"
+  },
+  "overrides": {
+    "cookie": "^0.7.0",
+    "esbuild": "^0.25.5",
+    "path-to-regexp": "^8.0.0",
+    "undici": "^6.21.0"
+  }
+}
