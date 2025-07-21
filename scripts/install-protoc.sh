@@ -24,14 +24,16 @@ curl -LO $PROTOC_URL
 # 解压到临时目录
 unzip $PROTOC_ZIP
 
-# 将 protoc 复制到 /usr/local/bin （如果有权限）或者当前项目的 node_modules/.bin
+# 将 protoc 和 include 目录复制到 /usr/local （如果有权限）或者当前项目的 node_modules/.bin
 if [ -w "/usr/local/bin" ]; then
     cp bin/protoc /usr/local/bin/
+    cp -r include /usr/local/
     echo "protoc installed to /usr/local/bin/protoc"
 else
     # 复制到项目的 node_modules/.bin 目录
     mkdir -p "${OLDPWD}/node_modules/.bin"
     cp bin/protoc "${OLDPWD}/node_modules/.bin/"
+    cp -r include "${OLDPWD}/node_modules/.bin/"
     echo "protoc installed to node_modules/.bin/protoc"
 fi
 

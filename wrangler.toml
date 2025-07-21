@@ -5,5 +5,5 @@ compatibility_flags = ["nodejs_compat"]
 
 # 构建配置
 [build]
-command = "SKIP_TYPE_CHECK=true npm run build"
+command = "SKIP_TYPE_CHECK=true npm run proto:clean && SKIP_TYPE_CHECK=true npm run proto:generate && SKIP_TYPE_CHECK=true npm run build"
 publish = ".vercel/output/static"
