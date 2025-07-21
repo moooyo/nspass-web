@@ -29,6 +29,17 @@ export default function RootLayout({
   return (
     <html lang="zh">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        {/* 直接注入环境变量 - 在构建时确定 */}
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            window.__ENV__ = {
+              NEXT_PUBLIC_API_BASE_URL: "${process.env.NEXT_PUBLIC_API_BASE_URL || ''}",
+              NODE_ENV: "${process.env.NODE_ENV || 'production'}"
+            };
+            console.log('🌍 运行时环境变量已注入:', window.__ENV__);
+          `
+        }} />
+        {/* 原有的调试脚本 */}
         <script dangerouslySetInnerHTML={{
           __html: `
             console.log('🚀 Layout加载完成，JavaScript执行正常');

@@ -1,4 +1,4 @@
-# 环境变量配置指南
+# 环境变量配置指南 - 更新版
 
 ## 问题描述
 
@@ -6,135 +6,113 @@
 
 ## 根本原因
 
-1. **环境变量未正确设置**: `NEXT_PUBLIC_API_BASE_URL` 环境变量在 Cloudflare Pages 中未正确配置
-2. **构建时环境变量处理**: Next.js 在构建时需要正确处理环境变量
+**Cloudflare Pages 静态导出模式的限制**：
+
+1. **环境变量时机问题**: `output: 'export'` 模式下，环境变量必须在构建时确定
+2. **运行时环境变量不可用**: Cloudflare Pages 的环境变量是运行时设置的，但Next.js已经构建完成
 3. **MSW Provider 干扰**: 开发时的 Mock Service Worker 可能覆盖了生产环境的 API URL
 
-## 解决方案
+## 🔧 最新解决方案
 
-### 1. 在 Cloudflare Pages 控制台中设置环境变量
+我已经实现了一套**运行时环境变量获取系统**，通过以下步骤解决问题：
+
+### 1. 多级环境变量获取策略
+
+新的系统会按以下顺序获取API URL：
+
+1. **window.__ENV__** (运行时注入的环境变量)
+2. **process.env.NEXT_PUBLIC_API_BASE_URL** (构建时环境变量)
+3. **localStorage** (用户手动配置)
+4. **域名推断** (根据当前域名自动推断)
+5. **默认回退** (开发环境用localhost，生产环境用默认API)
+
+### 2. 在 Cloudflare Pages 中正确设置环境变量
 
 1. 登录 Cloudflare Pages 控制台
-2. 选择你的项目 (`nspass-web`)
+2. 选择项目 `nspass-web`
 3. 进入 **Settings** > **Environment variables**
-4. 添加以下环境变量:
+4. 在 **Production** 环境中添加:
+   ```
+   NEXT_PUBLIC_API_BASE_URL = https://api.nspass.xforward.de
+   ```
+   (使用你的实际API域名)
 
-```
-NEXT_PUBLIC_API_BASE_URL = https://your-api-domain.com
-```
+5. 在 **Preview** 环境中也添加相同配置
 
-**注意**: 
-- 必须使用完整的 URL (包含 `https://`)
-- 不要使用 `localhost` 或 `127.0.0.1`
-- 确保在 **Production** 和 **Preview** 环境中都设置
+### 3. 验证部署结果
 
-### 2. 本地开发环境配置
-
-创建 `.env.local` 文件:
-
-```bash
-# .env.local
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
-```
-
-### 3. 验证配置
-
-#### 方法 1: 使用部署前检查脚本
-
-```bash
-npm run pre-deploy-check
-```
-
-#### 方法 2: 查看浏览器控制台
-
-部署后，打开浏览器控制台，查看以下输出:
+部署完成后，打开浏览器控制台，应该看到：
 
 ```
 🚀 Layout加载完成，JavaScript执行正常
-🔍 Environment Debug:
-  NODE_ENV: production
-  NEXT_PUBLIC_API_BASE_URL: https://your-api-domain.com
-  Build time: 2025-01-XX...
-
+🌍 运行时环境变量已注入: {NEXT_PUBLIC_API_BASE_URL: "https://api.nspass.xforward.de", NODE_ENV: "production"}
 🔧 Environment Initializer
-🔧 使用环境变量 NEXT_PUBLIC_API_BASE_URL: https://your-api-domain.com
-✅ API Base URL 验证通过: https://your-api-domain.com
-🔗 HTTP Client Base URL: https://your-api-domain.com
+� 环境变量检查结果:
+  window.__ENV__: {NEXT_PUBLIC_API_BASE_URL: "https://api.nspass.xforward.de", NODE_ENV: "production"}
+  process.env.NEXT_PUBLIC_API_BASE_URL: undefined
+  最终选择的API URL: https://api.nspass.xforward.de
+  HTTP Client Base URL: https://api.nspass.xforward.de
+✅ API URL 配置正确: https://api.nspass.xforward.de
 ```
 
-如果看到 `localhost` 或 `undefined`，说明环境变量未正确设置。
+### 4. 故障排除
 
-### 4. 常见问题排查
+#### 如果仍显示 `localhost`：
 
-#### 问题 1: 环境变量显示为 `undefined`
+1. **清除缓存**: 强制刷新页面 (Ctrl+Shift+R)
+2. **检查环境变量**: 确保在正确的环境（Production/Preview）中设置
+3. **重新部署**: 在 Cloudflare Pages 控制台手动重新部署
+4. **检查控制台**: 查看是否有运行时错误
 
-**原因**: Cloudflare Pages 中未设置环境变量
+#### 如果控制台显示警告：
 
-**解决**: 在 Cloudflare Pages 控制台中正确设置 `NEXT_PUBLIC_API_BASE_URL`
-
-#### 问题 2: API 仍然指向 localhost
-
-**原因**: MSW Provider 或缓存问题
-
-**解决**: 
-1. 清除浏览器缓存
-2. 检查 MSW 是否在生产环境中禁用
-3. 强制重新部署
-
-#### 问题 3: 环境变量设置正确但构建时未生效
-
-**原因**: Next.js 构建配置问题
-
-**解决**: 确保使用正确的构建命令:
-
-```bash
-npm run build:cloudflare
+```
+⚠️ 生产环境警告: API URL 仍指向 localhost
 ```
 
-### 5. 部署流程
+这表明环境变量未正确传递，需要：
+1. 重新检查 Cloudflare Pages 的环境变量设置
+2. 确保变量名完全匹配：`NEXT_PUBLIC_API_BASE_URL`
+3. 重新部署项目
 
-1. **设置环境变量**: 在 Cloudflare Pages 控制台中设置
-2. **运行检查脚本**: `npm run pre-deploy-check`
-3. **提交代码**: 推送到 Git 仓库
-4. **自动部署**: Cloudflare Pages 自动构建和部署
-5. **验证部署**: 检查浏览器控制台输出
+### 5. 新增功能
 
-### 6. 调试工具
+#### 运行时调试
+- **开发环境**: 右上角显示当前API地址状态
+- **生产环境**: 如果检测到配置错误，会显示警告横幅
 
-#### 浏览器控制台调试
+#### 手动配置支持（备用方案）
+如果环境变量仍有问题，可以使用代码中的 `setApiBaseUrl()` 函数：
 
 ```javascript
-// 检查当前 API 配置
-console.log('API Base URL:', httpClient.getCurrentBaseURL());
-
-// 检查环境变量
-console.log('Environment:', {
-  NODE_ENV: process.env.NODE_ENV,
-  NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL
-});
+// 在浏览器控制台中执行
+setApiBaseUrl('https://api.nspass.xforward.de');
 ```
 
-#### 网络请求监控
+### 6. 部署检查清单
 
-在浏览器开发者工具的 **Network** 标签中，查看 API 请求的实际 URL。
+- [ ] 在 Cloudflare Pages 控制台设置 `NEXT_PUBLIC_API_BASE_URL`
+- [ ] 推送代码触发重新部署
+- [ ] 检查浏览器控制台输出
+- [ ] 验证网络请求指向正确的API地址
+- [ ] 如果有问题，查看控制台错误信息
 
-### 7. 项目文件修改说明
+### 7. 修改的文件列表
 
-以下文件已被修改以解决环境变量问题:
+以下文件已被修改/新增：
 
-- `next.config.ts`: 添加环境变量处理
-- `wrangler.toml`: 添加 Cloudflare 配置
-- `app/utils/http-client.ts`: 增强调试输出
-- `app/utils/env-debug.ts`: 新增环境变量调试工具
-- `app/components/EnvInitializer.tsx`: 新增环境变量初始化组件
-- `app/layout.tsx`: 添加调试输出和初始化组件
-- `scripts/pre-deploy-check.sh`: 新增部署前检查脚本
+- ✅ `app/utils/runtime-env.ts` - 运行时环境变量获取
+- ✅ `app/utils/http-client.ts` - 支持运行时API URL获取
+- ✅ `app/components/EnvInitializer.tsx` - 环境变量初始化和调试
+- ✅ `app/components/ApiConfigModal.tsx` - 手动API配置界面(备用)
+- ✅ `app/layout.tsx` - 运行时环境变量注入
+- ✅ `next.config.ts` - 构建配置优化
+- ✅ `wrangler.toml` - Cloudflare Pages 配置
 
-### 8. 后续维护
+## 🚀 立即行动
 
-定期检查:
-1. Cloudflare Pages 中的环境变量设置
-2. API 域名是否发生变化
-3. 新环境部署时的配置
+1. **确认环境变量设置**: 检查 Cloudflare Pages 控制台
+2. **重新部署**: 推送代码或手动重新部署
+3. **验证结果**: 检查浏览器控制台输出
 
-如果问题仍然存在，请提供浏览器控制台的完整输出以便进一步诊断。
+如果按照以上步骤操作后问题仍然存在，请提供浏览器控制台的完整输出，以便进一步诊断。
