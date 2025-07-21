@@ -7,19 +7,13 @@
 
 // 从多个来源获取API基础URL
 export function getRuntimeApiBaseUrl(): string {
-  // 1. 尝试从window.__ENV__获取（如果有设置的话）
-  if (typeof window !== 'undefined' && (window as any).__ENV__?.NEXT_PUBLIC_API_BASE_URL) {
-    console.log('🔧 从 window.__ENV__ 获取API URL:', (window as any).__ENV__.NEXT_PUBLIC_API_BASE_URL);
-    return (window as any).__ENV__.NEXT_PUBLIC_API_BASE_URL;
-  }
-
-  // 2. 尝试从构建时环境变量获取
+  // 1. 优先使用构建时环境变量
   if (process.env.NEXT_PUBLIC_API_BASE_URL) {
-    console.log('🔧 从构建时环境变量获取API URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
+    console.log('🔧 使用环境变量 NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
     return process.env.NEXT_PUBLIC_API_BASE_URL;
   }
 
-  // 3. 尝试从localStorage获取（用户手动配置）
+  // 2. 尝试从localStorage获取（用户手动配置）
   if (typeof window !== 'undefined') {
     const stored = localStorage.getItem('nspass-api-base-url');
     if (stored) {
@@ -28,25 +22,15 @@ export function getRuntimeApiBaseUrl(): string {
     }
   }
 
-  // 4. 根据当前环境推断
+  // 3. 开发环境默认值
   if (process.env.NODE_ENV === 'development') {
     console.log('🔧 开发环境，使用默认localhost');
     return 'http://localhost:8080';
   }
 
-  // 5. 生产环境的备用方案 - 根据当前域名推断
-  if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname;
-    const inferredUrl = hostname.includes('localhost') 
-      ? 'http://localhost:8080'
-      : `https://api.${hostname.replace('nspass.', '').replace('www.', '')}`;
-    
-    console.log('🔧 根据当前域名推断API URL:', inferredUrl);
-    return inferredUrl;
-  }
-
-  console.error('❌ 无法确定API Base URL，使用默认值');
-  return 'https://api.nspass.com';
+  // 4. 生产环境必须配置环境变量
+  console.error('❌ 生产环境未配置 NEXT_PUBLIC_API_BASE_URL 环境变量');
+  throw new Error('NEXT_PUBLIC_API_BASE_URL 环境变量未配置，请在部署时设置正确的API地址');
 }
 
 // 手动设置API URL的函数
