@@ -4,10 +4,6 @@ name = "nspass-web"
 # Pages 项目配置 - 仅用于 Pages 部署
 pages_build_output_dir = "out"
 
-# 构建配置
-[build]
-command = "npm run build:cloudflare"
-
 # 生产环境变量配置
 [env.production.vars]
 SKIP_TYPE_CHECK = "true"
