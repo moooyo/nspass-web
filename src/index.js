@@ -8,7 +8,8 @@ export default {
     
     // API 代理（如果需要）
     if (url.pathname.startsWith('/api/')) {
-      const apiUrl = url.pathname.replace('/api', 'https://api.nspass.xforward.de')
+      const apiBaseUrl = env.API_BASE_URL || 'https://api.nspass.xforward.de'
+      const apiUrl = url.pathname.replace('/api', apiBaseUrl)
       const response = await fetch(new Request(apiUrl + url.search, request))
       
       // 添加 CORS 头
