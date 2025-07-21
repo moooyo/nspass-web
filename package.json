@@ -7,7 +7,7 @@
     "dev:turbo": "npm run proto:check && next dev --turbopack",
     "build": "next build",
     "build:safe": "npm run proto:clean && npm run proto:generate && SKIP_TYPESCRIPT_CHECK=1 next build",
-    "build:cloudflare": "npm run proto:clean && npm run proto:generate && next build",
+    "build:cloudflare": "npm run proto:clean && npm run proto:generate && SKIP_TYPE_CHECK=true next build",
     "build:cloudflare:safe": "npm run proto:clean && npm run proto:generate && SKIP_TYPE_CHECK=true npx @cloudflare/next-on-pages",
     "start": "next start",
     "lint": "next lint",

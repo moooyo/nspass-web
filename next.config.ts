@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
     esmExternals: true,
   },
   
+  // 启用静态导出 - Cloudflare Pages 需要
+  output: 'export',
+  
   // 图片优化配置 - 支持 Cloudflare Pages
   images: {
     unoptimized: true,
