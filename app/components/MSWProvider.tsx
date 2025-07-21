@@ -62,7 +62,7 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // 获取环境变量作为默认值
   const getDefaultBackendConfig = useCallback((): BackendConfig => {
-    const envUrl = process.env.NEXT_PUBLIC_REAL_API_URL || 'http://localhost:8080';
+    const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
     try {
       const url = new URL(envUrl);
       return {

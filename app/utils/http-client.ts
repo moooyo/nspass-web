@@ -1,7 +1,7 @@
 // HTTP客户端配置
-// 支持构建时传入或环境变量，默认为 http://localhost:8080
+// 优先使用环境变量 NEXT_PUBLIC_API_BASE_URL
 const getApiBaseUrl = (): string => {
-  // 1. 优先使用构建时传入的环境变量
+  // 1. 优先使用环境变量
   if (process.env.NEXT_PUBLIC_API_BASE_URL) {
     return process.env.NEXT_PUBLIC_API_BASE_URL;
   }
@@ -11,8 +11,9 @@ const getApiBaseUrl = (): string => {
     return 'http://localhost:8080';
   }
   
-  // 3. 生产环境默认值
-  return 'https://api.nspass.com';
+  // 3. 生产环境必须设置环境变量，这里不应该到达
+  console.error('NEXT_PUBLIC_API_BASE_URL environment variable is not set in production');
+  return 'https://api.nspass.com'; // 仅作为最后的备选，应该在部署时设置环境变量
 };
 
 const API_BASE_URL = getApiBaseUrl();

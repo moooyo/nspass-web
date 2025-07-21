@@ -6,10 +6,8 @@ pages_build_output_dir = "out"
 
 # 生产环境变量配置
 [env.production.vars]
-NEXT_PUBLIC_API_BASE_URL = "https://api.nspass.com"
 SKIP_TYPE_CHECK = "true"
 
 # 预览环境变量配置
 [env.preview.vars]
-NEXT_PUBLIC_API_BASE_URL = "https://staging-api.nspass.com"
 SKIP_TYPE_CHECK = "true"
