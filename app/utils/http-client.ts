@@ -6,23 +6,13 @@ const getApiBaseUrl = (): string => {
     return process.env.NEXT_PUBLIC_API_BASE_URL;
   }
   
-  // 2. 兼容旧的环境变量名
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL;
-  }
-  
-  // 3. 开发环境下检查是否配置了真实后端地址
+  // 2. 开发环境默认值
   if (process.env.NODE_ENV === 'development') {
-    // 如果设置了 NEXT_PUBLIC_REAL_API_URL，即使在开发环境也使用真实后端
-    if (process.env.NEXT_PUBLIC_REAL_API_URL) {
-      return process.env.NEXT_PUBLIC_REAL_API_URL;
-    }
-    // 开发环境默认使用localhost:8080，MSW会在初始化时动态更新
     return 'http://localhost:8080';
   }
   
-  // 4. 生产环境默认值
-  return 'http://localhost:8080';
+  // 3. 生产环境默认值
+  return 'https://api.nspass.com';
 };
 
 const API_BASE_URL = getApiBaseUrl();

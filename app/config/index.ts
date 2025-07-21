@@ -76,8 +76,7 @@ export const defaultConfig: ProjectConfig = {
   
   api: {
     baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 
-             process.env.NEXT_PUBLIC_API_URL || 
-             (process.env.NODE_ENV === 'development' ? '/api' : 'http://localhost:8080'),
+             (process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : 'https://api.nspass.com'),
     timeout: 10000,
     retryAttempts: 3,
     retryDelay: 1000
