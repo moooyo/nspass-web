@@ -39,7 +39,9 @@ export default function RootLayout({
             console.log('🌍 运行时环境变量已注入:', window.__ENV__);
           `
         }} />
-        {/* 运行时配置文件加载 */}
+        {/* Cloudflare Pages 环境变量注入脚本 */}
+        <script src="/cf-pages-env.js"></script>
+        {/* 运行时配置文件加载（备用） */}
         <script src="/runtime-config.js" defer></script>
         
         {/* 调试信息脚本 */}

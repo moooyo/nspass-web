@@ -17,10 +17,10 @@ const nextConfig: NextConfig = {
   // 禁用 trailing slash 以避免路由问题
   trailingSlash: false,
   
-  // 环境变量配置 - 确保在构建时可用
-  env: {
-    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
-  },
+  // 环境变量配置 - 在运行时动态获取，不依赖构建时
+  // env: {
+  //   NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  // },
   
   // TypeScript 配置 - 在 Cloudflare 部署时可以跳过类型检查
   typescript: {

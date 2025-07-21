@@ -7,30 +7,47 @@
 
 // 从运行时配置获取API基础URL
 export function getRuntimeApiBaseUrl(): string {
-  // 1. 优先使用运行时配置文件中的变量（构建时注入）
-  if (typeof window !== 'undefined' && (window as any).__RUNTIME_CONFIG__?.NEXT_PUBLIC_API_BASE_URL) {
-    const runtimeUrl = (window as any).__RUNTIME_CONFIG__.NEXT_PUBLIC_API_BASE_URL;
-    console.log('🔧 使用运行时配置文件:', runtimeUrl);
-    return runtimeUrl;
-  }
-
-  // 2. 检查 Cloudflare Pages 环境变量（有时在页面级别可用）
-  if (typeof window !== 'undefined') {
-    // 检查页面中是否有环境变量信息
-    const cfEnvUrl = (window as any).CF_PAGES_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
-    if (cfEnvUrl && !cfEnvUrl.includes('cf-pages')) {
-      console.log('🔧 使用 Cloudflare Pages 环境变量:', cfEnvUrl);
-      return cfEnvUrl;
+  // 1. 优先使用全局API获取函数（由 cf-pages-env.js 提供）
+  if (typeof window !== 'undefined' && (window as any).__GET_API_BASE_URL__) {
+    const apiUrl = (window as any).__GET_API_BASE_URL__();
+    if (apiUrl) {
+      console.log('🔧 使用全局API获取函数:', apiUrl);
+      return apiUrl;
     }
   }
 
-  // 3. 开发环境默认值
+  // 2. 使用运行时配置文件中的变量
+  if (typeof window !== 'undefined' && (window as any).__RUNTIME_CONFIG__?.NEXT_PUBLIC_API_BASE_URL) {
+    const runtimeUrl = (window as any).__RUNTIME_CONFIG__.NEXT_PUBLIC_API_BASE_URL;
+    if (runtimeUrl && runtimeUrl !== '' && runtimeUrl !== 'undefined') {
+      console.log('🔧 使用运行时配置文件:', runtimeUrl);
+      return runtimeUrl;
+    }
+  }
+
+  // 3. 检查 Next.js 环境变量（开发环境）
+  if (process.env.NEXT_PUBLIC_API_BASE_URL && process.env.NEXT_PUBLIC_API_BASE_URL !== '') {
+    console.log('🔧 使用 Next.js 环境变量:', process.env.NEXT_PUBLIC_API_BASE_URL);
+    return process.env.NEXT_PUBLIC_API_BASE_URL;
+  }
+
+  // 4. 开发环境默认值
   if (process.env.NODE_ENV === 'development') {
     console.log('🔧 开发环境，使用默认localhost');
     return 'http://localhost:8080';
   }
 
-  // 4. 生产环境必须配置环境变量
+  // 5. 生产环境根据域名推断
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname.includes('nspass')) {
+      const inferredUrl = 'https://api.nspass.com';
+      console.log('🔧 根据域名推断API地址:', inferredUrl);
+      return inferredUrl;
+    }
+  }
+
+  // 6. 生产环境默认值
   console.error('❌ 生产环境未找到有效的API配置');
   console.error('📝 请在 Cloudflare Pages 控制台的环境变量中设置 NEXT_PUBLIC_API_BASE_URL');
   
