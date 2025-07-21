@@ -5,5 +5,9 @@ compatibility_flags = ["nodejs_compat"]
 
 # 构建配置
 [build]
-command = "SKIP_TYPE_CHECK=true npm run proto:clean && SKIP_TYPE_CHECK=true npm run proto:generate && SKIP_TYPE_CHECK=true npm run build"
+command = "npm run build:cloudflare"
 publish = ".vercel/output/static"
+
+# 环境变量
+[env.production]
+SKIP_TYPE_CHECK = "true"
