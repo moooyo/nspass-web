@@ -4,6 +4,7 @@ import "./globals.css";
 import { MSWProvider } from "./components/MSWProvider";
 import { AntdProvider } from "./components/AntdProvider";
 import { ThemeProvider } from "./components/hooks/useTheme";
+import EnvInitializer from "./components/EnvInitializer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,11 +30,18 @@ export default function RootLayout({
     <html lang="zh">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <script dangerouslySetInnerHTML={{
-          __html: `console.log('🚀 Layout加载完成，JavaScript执行正常');`
+          __html: `
+            console.log('🚀 Layout加载完成，JavaScript执行正常');
+            console.log('🔍 Environment Debug:');
+            console.log('  NODE_ENV:', '${process.env.NODE_ENV}');
+            console.log('  NEXT_PUBLIC_API_BASE_URL:', '${process.env.NEXT_PUBLIC_API_BASE_URL || 'undefined'}');
+            console.log('  Build time:', '${new Date().toISOString()}');
+          `
         }} />
         <ThemeProvider>
           <MSWProvider>
             <AntdProvider>
+              <EnvInitializer />
               {children}
             </AntdProvider>
           </MSWProvider>

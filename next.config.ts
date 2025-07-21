@@ -17,6 +17,11 @@ const nextConfig: NextConfig = {
   // 禁用 trailing slash 以避免路由问题
   trailingSlash: false,
   
+  // 环境变量配置 - 确保在构建时可用
+  env: {
+    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  },
+  
   // TypeScript 配置 - 在 Cloudflare 部署时可以跳过类型检查
   typescript: {
     ignoreBuildErrors: process.env.SKIP_TYPE_CHECK === 'true',
@@ -38,6 +43,15 @@ const nextConfig: NextConfig = {
         crypto: false,
       };
     }
+    
+    // 确保环境变量在客户端代码中可用
+    config.plugins = config.plugins || [];
+    config.plugins.push(
+      new config.webpack.DefinePlugin({
+        'process.env.NEXT_PUBLIC_API_BASE_URL': JSON.stringify(process.env.NEXT_PUBLIC_API_BASE_URL),
+      })
+    );
+    
     return config;
   },
 };

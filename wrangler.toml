@@ -7,7 +7,12 @@ pages_build_output_dir = "out"
 # 生产环境变量配置
 [env.production.vars]
 SKIP_TYPE_CHECK = "true"
+# NEXT_PUBLIC_API_BASE_URL 应该在 Cloudflare Pages 控制台中设置
 
 # 预览环境变量配置
 [env.preview.vars]
 SKIP_TYPE_CHECK = "true"
+# NEXT_PUBLIC_API_BASE_URL 应该在 Cloudflare Pages 控制台中设置
+
+# 兼容性设置
+compatibility_date = "2023-10-30"

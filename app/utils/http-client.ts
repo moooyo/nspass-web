@@ -3,16 +3,23 @@
 const getApiBaseUrl = (): string => {
   // 1. 优先使用环境变量
   if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    console.log('🔧 使用环境变量 NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
     return process.env.NEXT_PUBLIC_API_BASE_URL;
   }
   
   // 2. 开发环境默认值
   if (process.env.NODE_ENV === 'development') {
+    console.log('🔧 开发环境，使用默认 localhost:8080');
     return 'http://localhost:8080';
   }
   
   // 3. 生产环境必须设置环境变量，这里不应该到达
-  console.error('NEXT_PUBLIC_API_BASE_URL environment variable is not set in production');
+  console.error('❌ NEXT_PUBLIC_API_BASE_URL environment variable is not set in production');
+  console.error('📝 请在 Cloudflare Pages 控制台中设置 NEXT_PUBLIC_API_BASE_URL 环境变量');
+  console.error('📝 当前环境变量:', {
+    NODE_ENV: process.env.NODE_ENV,
+    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  });
   return 'https://api.nspass.com'; // 仅作为最后的备选，应该在部署时设置环境变量
 };
 
