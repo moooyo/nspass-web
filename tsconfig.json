@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -21,12 +25,25 @@
       }
     ],
     "paths": {
-      "@/*": ["./app/*"],
-      "@mock/*": ["./app/mocks/*"],
-      "@/types/generated/*": ["./types/generated/*"]
+      "@/*": [
+        "./app/*"
+      ],
+      "@mock/*": [
+        "./app/mocks/*"
+      ],
+      "@/types/generated/*": [
+        "./types/generated/*"
+      ]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "types/**/*.ts"],
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "next-env.d.ts",
+    "types/**/*.ts",
+    "out/types/**/*.ts"
+  ],
   "exclude": [
     "node_modules"
   ],
