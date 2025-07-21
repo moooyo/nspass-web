@@ -107,7 +107,7 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateBaseURL = useCallback((enabled: boolean) => {
     const url = enabled 
       ? window.location.origin 
-      : `http://${backendConfig.url}:${backendConfig.port}`;
+      : `${backendConfig.port === '443' ? 'https' : 'http'}://${backendConfig.url}${backendConfig.port === '443' || backendConfig.port === '80' ? '' : ':' + backendConfig.port}`;
     
     httpClient.clearCache();
     httpClient.updateBaseURL(url);
@@ -122,7 +122,7 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // 立即应用新配置到httpClient（无论MSW是否启用）
     const url = enabled 
       ? window.location.origin 
-      : `http://${config.url}:${config.port}`;
+      : `${config.port === '443' ? 'https' : 'http'}://${config.url}${config.port === '443' || config.port === '80' ? '' : ':' + config.port}`;
     
     httpClient.clearCache();
     httpClient.updateBaseURL(url);
@@ -259,7 +259,7 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setStatus('stopped');
         // 更新baseURL为后端API模式
         setTimeout(() => {
-          const url = `http://${backendConfig.url}:${backendConfig.port}`;
+          const url = `${backendConfig.port === '443' ? 'https' : 'http'}://${backendConfig.url}${backendConfig.port === '443' || backendConfig.port === '80' ? '' : ':' + backendConfig.port}`;
           httpClient.clearCache();
           httpClient.updateBaseURL(url);
           console.log('🎯 MSW保持停止，baseURL设置为:', url);
@@ -305,7 +305,7 @@ const ConfigForm: React.FC<{
     updateBackendConfig(values);
     const newUrl = enabled 
       ? window.location.origin 
-      : `http://${values.url}:${values.port}`;
+      : `${values.port === '443' ? 'https' : 'http'}://${values.url}${values.port === '443' || values.port === '80' ? '' : ':' + values.port}`;
     
     message.success(`后端配置已保存，当前API地址：${newUrl}`);
   };
@@ -423,7 +423,7 @@ export const MSWToggle: React.FC = () => {
       };
     }
     return {
-      url: `http://${backendConfig.url}:${backendConfig.port}`,
+      url: `${backendConfig.port === '443' ? 'https' : 'http'}://${backendConfig.url}${backendConfig.port === '443' || backendConfig.port === '80' ? '' : ':' + backendConfig.port}`,
       type: '真实API'
     };
   }, [enabled, isClient, backendConfig]);
