@@ -18,15 +18,16 @@ console.log('📋 当前环境变量:');
 console.log('  NODE_ENV:', NODE_ENV);
 console.log('  NEXT_PUBLIC_API_BASE_URL:', NEXT_PUBLIC_API_BASE_URL || '❌ 未设置');
 
+// 如果环境变量未设置，创建一个占位符配置
+// Cloudflare Pages 有时在构建过程的后期才注入环境变量
 if (!NEXT_PUBLIC_API_BASE_URL) {
-  console.error('❌ 错误: NEXT_PUBLIC_API_BASE_URL 环境变量未设置');
-  console.log('📝 请在 Cloudflare Pages 控制台设置此变量');
-  process.exit(1);
+  console.warn('⚠️ 警告: NEXT_PUBLIC_API_BASE_URL 环境变量未设置');
+  console.log('📝 将创建占位符配置，请确保在 Cloudflare Pages 控制台中设置了此变量');
 }
 
 // 创建运行时配置文件
 const runtimeConfig = {
-  NEXT_PUBLIC_API_BASE_URL,
+  NEXT_PUBLIC_API_BASE_URL: NEXT_PUBLIC_API_BASE_URL || null,
   NODE_ENV,
   BUILD_TIME: new Date().toISOString()
 };
