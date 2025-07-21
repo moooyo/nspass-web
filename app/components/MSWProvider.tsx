@@ -6,6 +6,7 @@ import { ApiOutlined, CheckCircleOutlined, ExclamationCircleOutlined, LoadingOut
 import { useTheme } from './hooks/useTheme';
 import { httpClient } from '@/utils/http-client';
 import { apiRefreshEventBus } from '@/utils/api-refresh-bus';
+import { getRuntimeApiBaseUrl } from '@/utils/runtime-env';
 
 const { Text } = Typography;
 
@@ -62,9 +63,10 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // 获取环境变量作为默认值
   const getDefaultBackendConfig = useCallback((): BackendConfig => {
-    const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+    // 使用运行时环境变量获取函数
+    const runtimeApiUrl = getRuntimeApiBaseUrl();
     try {
-      const url = new URL(envUrl);
+      const url = new URL(runtimeApiUrl);
       return {
         url: url.hostname,
         port: url.port || (url.protocol === 'https:' ? '443' : '80')
