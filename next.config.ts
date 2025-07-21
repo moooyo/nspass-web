@@ -44,14 +44,6 @@ const nextConfig: NextConfig = {
       };
     }
     
-    // 确保环境变量在客户端代码中可用
-    config.plugins = config.plugins || [];
-    config.plugins.push(
-      new config.webpack.DefinePlugin({
-        'process.env.NEXT_PUBLIC_API_BASE_URL': JSON.stringify(process.env.NEXT_PUBLIC_API_BASE_URL),
-      })
-    );
-    
     return config;
   },
 };
