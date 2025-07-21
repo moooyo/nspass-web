@@ -27,17 +27,16 @@ export const EnvInitializer: React.FC = () => {
     
     // 输出调试信息
     console.log('📊 环境变量检查结果:');
-    console.log('  window.__ENV__:', (window as any).__ENV__);
-    console.log('  process.env.NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
+    console.log('  window.__RUNTIME_CONFIG__:', (window as any).__RUNTIME_CONFIG__);
     console.log('  最终选择的API URL:', runtimeApiUrl);
     console.log('  HTTP Client Base URL:', httpClient.getCurrentBaseURL());
     
     // 验证API URL
     if (runtimeApiUrl.includes('localhost') && process.env.NODE_ENV === 'production') {
       console.error('⚠️ 生产环境警告: API URL 仍指向 localhost');
-      console.error('🔧 这表明环境变量可能未正确设置');
+      console.error('🔧 这表明运行时配置可能未正确生成');
       console.error('📝 请检查 Cloudflare Pages 控制台中的环境变量配置');
-    } else if (runtimeApiUrl !== 'https://api.nspass.com') {
+    } else {
       console.log('✅ API URL 配置正确:', runtimeApiUrl);
     }
     
@@ -45,24 +44,7 @@ export const EnvInitializer: React.FC = () => {
     setInitialized(true);
   }, []);
 
-  // 监听API URL变化事件
-  useEffect(() => {
-    const handleApiUrlChange = (event: CustomEvent) => {
-      const newUrl = event.detail.url || getRuntimeApiBaseUrl();
-      setCurrentApiUrl(newUrl);
-      httpClient.updateBaseURL(newUrl);
-      console.log('� API URL已更新:', newUrl);
-    };
-
-    if (typeof window !== 'undefined') {
-      window.addEventListener('api-url-changed' as any, handleApiUrlChange);
-      return () => {
-        window.removeEventListener('api-url-changed' as any, handleApiUrlChange);
-      };
-    }
-  }, []);
-
-  // 在开发环境中显示调试信息和配置按钮
+  // 在开发环境中显示当前API URL
   if (process.env.NODE_ENV === 'development' && initialized) {
     return (
       <div style={{
@@ -77,12 +59,9 @@ export const EnvInitializer: React.FC = () => {
         borderRadius: '0 0 0 8px',
         fontFamily: 'monospace',
         maxWidth: '300px',
-        wordBreak: 'break-all',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px'
+        wordBreak: 'break-all'
       }}>
-        <span>API: {currentApiUrl.replace(/^https?:\/\//, '')}</span>
+        API: {currentApiUrl.replace(/^https?:\/\//, '')}
       </div>
     );
   }

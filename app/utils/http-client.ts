@@ -1,11 +1,11 @@
 // HTTP客户端配置
-// 优先使用环境变量 NEXT_PUBLIC_API_BASE_URL
+// 使用统一的运行时配置方案
 const getApiBaseUrl = (): string => {
-  // 在服务端或构建时使用传统方法
+  // 在服务端或构建时使用环境变量（SSR/构建时）
   if (typeof window === 'undefined') {
-    // 1. 优先使用环境变量
+    // 1. 优先使用构建时环境变量
     if (process.env.NEXT_PUBLIC_API_BASE_URL) {
-      console.log('🔧 (SSR) 使用环境变量 NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
+      console.log('🔧 (SSR) 使用构建时环境变量:', process.env.NEXT_PUBLIC_API_BASE_URL);
       return process.env.NEXT_PUBLIC_API_BASE_URL;
     }
     
@@ -15,10 +15,12 @@ const getApiBaseUrl = (): string => {
       return 'http://localhost:8080';
     }
     
+    // 3. 生产环境回退值
+    console.warn('⚠️ (SSR) 未找到环境变量，使用默认API地址');
     return 'https://api.nspass.com';
   }
 
-  // 在客户端使用运行时环境获取
+  // 在客户端使用运行时配置
   const { getRuntimeApiBaseUrl } = require('./runtime-env');
   return getRuntimeApiBaseUrl();
 };
