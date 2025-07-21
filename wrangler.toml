@@ -1,13 +1,15 @@
 # Cloudflare Pages 配置文件
 name = "nspass-web"
-compatibility_date = "2024-12-01"
-compatibility_flags = ["nodejs_compat"]
 
-# 构建配置
-[build]
-command = "npm run build:cloudflare"
-publish = "out"
+# Pages 项目配置 - 仅用于 Pages 部署
+pages_build_output_dir = "out"
 
-# 环境变量
-[env.production]
+# 生产环境变量配置
+[env.production.vars]
+NEXT_PUBLIC_API_BASE_URL = "https://api.nspass.com"
+SKIP_TYPE_CHECK = "true"
+
+# 预览环境变量配置
+[env.preview.vars]
+NEXT_PUBLIC_API_BASE_URL = "https://staging-api.nspass.com"
 SKIP_TYPE_CHECK = "true"
