@@ -83,10 +83,7 @@ npm run worker:dev
 ### 本地构建
 
 ```bash
-# 构建用于 Cloudflare Workers 部署
-npm run worker:build
-
-# 构建标准 Next.js 版本
+# 构建静态文件
 npm run build
 ```
 
@@ -96,14 +93,14 @@ npm run build
 # 登录 Cloudflare 账户
 npx wrangler login
 
-# 部署到生产环境
+# 一键部署（构建 + 部署）
 npm run worker:deploy
 
-# 部署到预演环境
-npm run worker:deploy:staging
+# 查看实时日志
+npm run worker:tail
 ```
 
-详细的部署指南请参阅：[📘 Cloudflare Workers 部署指南](WORKERS_DEPLOYMENT_GUIDE.md)
+📘 **详细部署指南**: [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
 
 ## 🚀 快速部署
 
@@ -119,6 +116,10 @@ git clone <your-repo-url>
 cd nspass-web
 npm install
 
+# 2. 一键部署
+npm run worker:deploy
+```
+
 # 2. 登录 Cloudflare
 npx wrangler login
 
@@ -126,17 +127,20 @@ npx wrangler login
 npm run worker:deploy
 ```
 
-## 🔧 Protocol Buffers
+## 🔧 开发命令
 
 ```bash
-# 生成类型定义
+# 本地开发
+npm run dev
+
+# 本地测试 Workers 环境
+npm run worker:dev
+
+# 查看 Workers 实时日志
+npm run worker:tail
+
+# Protocol Buffers 类型生成
 npm run proto:generate
-
-# 清理生成的类型
-npm run proto:clean
-
-# 检查 proto 文件并生成（如果需要）
-npm run proto:check
 ```
 
 ## 🎭 Mock 服务
