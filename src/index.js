@@ -1,6 +1,6 @@
 /**
  * 极简静态文件托管 Workers
- * 专门为构建出静态文件的项目设计
+ * 使用新的 Assets 功能，更简单直观
  */
 export default {
   async fetch(request, env, ctx) {
@@ -17,59 +17,35 @@ export default {
       newResponse.headers.set('Access-Control-Allow-Origin', '*')
       return newResponse
     }
-    
-    // 静态文件处理
+
+    // 静态文件处理 - 使用新的 Assets 功能
     try {
-      // 获取文件路径
-      let filePath = url.pathname.slice(1) || 'index.html'
+      // 直接尝试获取静态资源
+      const assetResponse = await env.ASSETS.fetch(request)
       
-      // SPA 路由处理：如果不是文件且不存在，返回 index.html
-      if (!filePath.includes('.')) {
-        filePath = 'index.html'
-      }
-      
-      // 从 KV 获取文件
-      const file = await env.__STATIC_CONTENT.get(filePath)
-      if (!file) {
-        // 404 时返回 index.html（支持 SPA 路由）
-        const indexFile = await env.__STATIC_CONTENT.get('index.html')
-        if (indexFile) {
-          return new Response(indexFile, {
-            headers: { 'Content-Type': 'text/html; charset=utf-8' }
+      if (assetResponse.status === 404) {
+        // SPA 路由回退：如果文件不存在，返回 index.html
+        const indexRequest = new Request(new URL('/index.html', request.url), request)
+        const indexResponse = await env.ASSETS.fetch(indexRequest)
+        
+        if (indexResponse.ok) {
+          return new Response(indexResponse.body, {
+            ...indexResponse,
+            headers: {
+              ...indexResponse.headers,
+              'Content-Type': 'text/html; charset=utf-8'
+            }
           })
         }
+        
         return new Response('Not Found', { status: 404 })
       }
       
-      // 设置正确的 Content-Type
-      const contentType = getContentType(filePath)
-      const headers = new Headers({
-        'Content-Type': contentType,
-        'Cache-Control': filePath.endsWith('.html') 
-          ? 'public, max-age=0, must-revalidate' 
-          : 'public, max-age=31536000' // 1年
-      })
-      
-      return new Response(file, { headers })
+      return assetResponse
       
     } catch (error) {
-      console.error('Error serving file:', error)
+      console.error('Error serving asset:', error)
       return new Response('Internal Server Error', { status: 500 })
     }
   }
-}
-
-// 简单的 Content-Type 检测
-function getContentType(filePath) {
-  if (filePath.endsWith('.html')) return 'text/html; charset=utf-8'
-  if (filePath.endsWith('.css')) return 'text/css'
-  if (filePath.endsWith('.js')) return 'application/javascript'
-  if (filePath.endsWith('.json')) return 'application/json'
-  if (filePath.endsWith('.png')) return 'image/png'
-  if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) return 'image/jpeg'
-  if (filePath.endsWith('.svg')) return 'image/svg+xml'
-  if (filePath.endsWith('.ico')) return 'image/x-icon'
-  if (filePath.endsWith('.woff2')) return 'font/woff2'
-  if (filePath.endsWith('.woff')) return 'font/woff'
-  return 'application/octet-stream'
 }
