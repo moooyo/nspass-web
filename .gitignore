@@ -44,8 +44,9 @@ next-env.d.ts
 /app/types/generated/
 /types/generated/
 
-# Cloudflare Pages
+# Cloudflare Workers
 .wrangler/
+wrangler.toml.backup
 /.vercel/
 
 # Logs

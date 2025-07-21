@@ -1,27 +1,18 @@
 # NSPass Web
 
-> 一个基于 Next.js 和 Ant Design 的现代化网络管理平台
+> 一个基于 Next.js 和 Ant Design 的现代化网络管理平台，现已部署在 Cloudflare Workers 上
 
-[![Deploy to Cloudflare Pages](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/moooyo/nspass-web)
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/moooyo/nspass-web)
 [![Next.js](https://img.shields.io/badge/Next.js-15.3.5-black)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.0.0-blue)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://typescriptlang.org/)
 [![Ant Design](https://img.shields.io/badge/Ant%20Design-5.26.3-red)](https://ant.design/)
+[![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-orange)](https://workers.cloudflare.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 ## 🚀 项目简介
 
-NSPass Web 是一个功能完善的网络管理平台，提供用户管理、路由配置、DNS 设置、服务器监控等核心功能。项目采用现代化的技术栈，具有美观的用户界面和良好的用户体验。
-
-## 🚀 快速部署
-
-### 一键部署到 Cloudflare Pages
-
-点击下方按钮即可快速部署到 Cloudflare Pages：
-
-[![Deploy to Cloudflare Pages](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/moooyo/nspass-web)
-
-> **使用说明**: 点击按钮后会自动 Fork 仓库到你的 GitHub 账户，并引导你在 Cloudflare Pages 中完成部署配置。部署过程中记得在 Settings > Functions 中添加 `nodejs_compat` 兼容性标志。
+NSPass Web 是一个功能完善的网络管理平台，提供用户管理、路由配置、DNS 设置、服务器监控等核心功能。项目采用现代化的技术栈，部署在 Cloudflare Workers 上，享受全球边缘计算的极致性能。
 
 ## ✨ 主要特性
 
@@ -34,13 +25,19 @@ NSPass Web 是一个功能完善的网络管理平台，提供用户管理、路
 - 🔧 **Protocol Buffers** - 基于 protobuf 的类型生成
 - 🎭 **Mock 服务** - 集成 MSW 进行 API 模拟
 - 📊 **数据可视化** - 丰富的图表和统计功能
+- ⚡ **边缘计算** - 基于 Cloudflare Workers 的全球分发
 
 ## 🛠️ 技术栈
 
 ### 前端框架
-- **Next.js 15** - React 全栈框架
+- **Next.js 15** - React 全栈框架，静态站点导出
 - **React 19** - 用户界面库
 - **TypeScript** - 类型安全的 JavaScript
+
+### 部署平台
+- **Cloudflare Workers** - 边缘计算平台
+- **Cloudflare KV** - 键值对存储
+- **Wrangler** - Cloudflare 开发工具
 
 ### UI 组件
 - **Ant Design 5** - 企业级 UI 组件库
@@ -53,12 +50,6 @@ NSPass Web 是一个功能完善的网络管理平台，提供用户管理、路
 - **React DnD** - 拖拽功能
 - **Leaflet** - 地图组件
 - **bcryptjs** - 密码加密
-
-### 开发工具
-- **ESLint** - 代码检查
-- **TypeScript** - 类型检查
-- **Protocol Buffers** - 接口定义
-- **Chokidar** - 文件监听
 
 ## 📦 安装
 
@@ -77,33 +68,62 @@ npm run msw:init
 ## 🚀 开发
 
 ```bash
-# 启动开发服务器
+# 启动 Next.js 开发服务器
 npm run dev
-
-# 快速启动（跳过 proto 检查）
-npm run dev:fast
 
 # 启动开发服务器（使用 Turbopack）
 npm run dev:turbo
 
-# 清理并重新启动
-npm run dev:clean
+# 启动 Cloudflare Workers 本地开发环境
+npm run worker:dev
 ```
 
-## 🏗️ 构建
+## 🏗️ 构建和部署
+
+### 本地构建
 
 ```bash
-# 构建生产版本
+# 构建用于 Cloudflare Workers 部署
+npm run worker:build
+
+# 构建标准 Next.js 版本
 npm run build
+```
 
-# 构建 Cloudflare Pages 版本
-npm run build:cloudflare
+### 部署到 Cloudflare Workers
 
-# 构建并分析包大小
-npm run build:analyze
+```bash
+# 登录 Cloudflare 账户
+npx wrangler login
 
-# 启动生产服务器
-npm start
+# 部署到生产环境
+npm run worker:deploy
+
+# 部署到预演环境
+npm run worker:deploy:staging
+```
+
+详细的部署指南请参阅：[📘 Cloudflare Workers 部署指南](WORKERS_DEPLOYMENT_GUIDE.md)
+
+## 🚀 快速部署
+
+### 方式一：一键部署按钮
+
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/moooyo/nspass-web)
+
+### 方式二：命令行部署
+
+```bash
+# 1. 克隆并安装
+git clone <your-repo-url>
+cd nspass-web
+npm install
+
+# 2. 登录 Cloudflare
+npx wrangler login
+
+# 3. 一键构建和部署
+npm run worker:deploy
 ```
 
 ## 🔧 Protocol Buffers
@@ -115,44 +135,39 @@ npm run proto:generate
 # 清理生成的类型
 npm run proto:clean
 
-# 监听 proto 文件变化
-npm run proto:watch
-
-# 开发模式（自动监听）
-npm run proto:dev
+# 检查 proto 文件并生成（如果需要）
+npm run proto:check
 ```
 
 ## 🎭 Mock 服务
 
 ```bash
-# 重置 MSW 配置
-npm run msw:reset
-
-# 强制重置（清理缓存）
-npm run msw:force-reset
-
-# 修复 MSW 问题
-npm run fix:msw
+# 初始化 MSW
+npm run msw:init
 ```
 
 ## 📋 可用脚本
 
 | 命令 | 描述 |
 |------|------|
-| `npm run dev` | 启动开发服务器 |
-| `npm run build` | 构建生产版本 |
-| `npm run build:cloudflare` | 构建 Cloudflare Pages 版本 |
+| `npm run dev` | 启动 Next.js 开发服务器 |
+| `npm run worker:dev` | 启动 Cloudflare Workers 本地开发 |
+| `npm run worker:build` | 构建用于 Workers 部署 |
+| `npm run worker:deploy` | 部署到 Cloudflare Workers |
+| `npm run worker:deploy:staging` | 部署到预演环境 |
+| `npm run build` | 构建 Next.js 静态站点 |
 | `npm run start` | 启动生产服务器 |
 | `npm run lint` | 代码检查 |
 | `npm run lint:fix` | 修复代码问题 |
 | `npm run type-check` | 类型检查 |
 | `npm run clean` | 清理缓存 |
-| `npm run clean:all` | 完全清理并重新安装 |
 
 ## 🏗️ 项目结构
 
 ```
 nspass-web/
+├── src/                      # Cloudflare Workers 源码
+│   └── index.js             # Workers 入口文件
 ├── app/                      # Next.js 应用目录
 │   ├── components/           # 组件目录
 │   │   ├── common/          # 通用组件
@@ -168,8 +183,34 @@ nspass-web/
 │   ├── api/                 # API 定义
 │   └── model/               # 数据模型
 ├── public/                  # 静态资源
-└── scripts/                 # 构建脚本
+├── out/                     # 构建输出（静态站点）
+├── scripts/                 # 构建脚本
+└── wrangler.toml            # Cloudflare Workers 配置
 ```
+
+## ⚡ Cloudflare Workers 架构
+
+### 请求处理流程
+
+1. **静态资源** (`/assets/*`, `*.css`, `*.js`) → 直接从边缘缓存提供
+2. **API 请求** (`/api/*`) → 代理到后端 API 服务器
+3. **SPA 路由** (`/dashboard`, `/login`, etc.) → 返回 `index.html`
+
+### API 代理配置
+
+Workers 自动代理所有 `/api/*` 请求到后端 API。API 地址解析顺序：
+
+1. **环境变量**: `API_BASE_URL`
+2. **域名映射**:
+   - `nspass.com` → `https://api.nspass.com`
+   - `localhost` → `http://localhost:8080`
+3. **默认**: `https://api.nspass.com`
+
+### 缓存策略
+
+- **静态资源**: 1天边缘缓存 + 1天浏览器缓存
+- **HTML文件**: 不缓存，确保 SPA 路由正常
+- **API请求**: 不缓存，实时代理
 
 ## 🌟 主要功能
 
@@ -209,7 +250,8 @@ nspass-web/
 - 密码加密存储
 - 会话超时保护
 - 登录尝试限制
-- CSRF 保护
+- CORS 自动配置
+- CSP 安全策略
 
 ## 🎨 主题系统
 
@@ -220,30 +262,47 @@ nspass-web/
 - 自定义主题色彩
 - 组件级主题定制
 
-## 🔧 开发配置
+## 🔧 环境配置
 
-### 环境变量
+### Cloudflare Workers 环境变量
+
+```bash
+# 设置 API 基础 URL（可选）
+npx wrangler secret put API_BASE_URL
+# 输入: https://your-api-server.com
+
+# 查看环境变量
+npx wrangler secret list
+```
+
+### 本地开发环境变量
 
 创建 `.env.local` 文件：
 
 ```env
 # API 配置
-NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
 NEXT_PUBLIC_API_TIMEOUT=30000
 
 # 功能开关
 NEXT_PUBLIC_ENABLE_MOCK=true
-NEXT_PUBLIC_ENABLE_DEV_TOOLS=true
 ```
 
-### TypeScript 配置
+## 📊 性能优化
 
-项目使用严格的 TypeScript 配置，确保类型安全：
+### Cloudflare Workers 优势
 
-- 严格空值检查
-- 严格函数类型
-- 严格属性初始化
-- 禁止隐式 any
+- **全球边缘分发** - 200+ 个数据中心
+- **零冷启动时间** - V8 引擎直接运行
+- **自动缩放** - 按需分配资源
+- **内置 CDN** - 静态资源全球缓存
+
+### 优化措施
+
+- 静态资源压缩和缓存
+- API 请求代理优化
+- SPA 路由智能处理
+- 图片和资源懒加载
 
 ## 📱 浏览器支持
 
@@ -252,6 +311,41 @@ NEXT_PUBLIC_ENABLE_DEV_TOOLS=true
 - Safari >= 14
 - Edge >= 88
 
+## 🚨 故障排除
+
+### 常见问题
+
+1. **构建失败**
+   ```bash
+   npm run clean
+   npm run worker:build
+   ```
+
+2. **Workers 部署失败**
+   ```bash
+   npx wrangler logout
+   npx wrangler login
+   ```
+
+3. **API 代理不工作**
+   ```bash
+   # 查看 Workers 日志
+   npx wrangler tail
+   ```
+
+### 监控和调试
+
+```bash
+# 实时日志监控
+npx wrangler tail
+
+# 本地调试模式
+npm run worker:dev
+
+# 检查 Workers 状态
+npx wrangler dev --inspect
+```
+
 ## 🤝 贡献指南
 
 1. Fork 本仓库
@@ -259,6 +353,14 @@ NEXT_PUBLIC_ENABLE_DEV_TOOLS=true
 3. 提交变更 (`git commit -m 'Add some amazing feature'`)
 4. 推送到分支 (`git push origin feature/amazing-feature`)
 5. 创建 Pull Request
+
+## 📚 相关文档
+
+- [📘 Cloudflare Workers 部署指南](WORKERS_DEPLOYMENT_GUIDE.md)
+- [🔧 Cloudflare Workers 文档](https://developers.cloudflare.com/workers/)
+- [⚡ Wrangler CLI 文档](https://developers.cloudflare.com/workers/wrangler/)
+- [🎨 Ant Design 文档](https://ant.design/)
+- [⚛️ Next.js 文档](https://nextjs.org/docs)
 
 ## 📄 许可证
 
@@ -272,4 +374,5 @@ NEXT_PUBLIC_ENABLE_DEV_TOOLS=true
 
 **开发者**: moooyo  
 **版本**: 0.1.0  
-**最后更新**: 2025-07-21
+**最后更新**: 2025-07-21  
+**部署平台**: Cloudflare Workers

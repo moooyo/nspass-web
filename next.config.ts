@@ -6,21 +6,16 @@ const nextConfig: NextConfig = {
     esmExternals: true,
   },
   
-  // 启用静态导出 - Cloudflare Pages 需要
+  // 启用静态导出 - Cloudflare Workers 需要
   output: 'export',
   
-  // 图片优化配置 - 支持 Cloudflare Pages
+  // 图片优化配置 - 支持 Cloudflare Workers
   images: {
     unoptimized: true,
   },
   
   // 禁用 trailing slash 以避免路由问题
   trailingSlash: false,
-  
-  // 环境变量配置 - 在运行时动态获取，不依赖构建时
-  // env: {
-  //   NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
-  // },
   
   // TypeScript 配置 - 在 Cloudflare 部署时可以跳过类型检查
   typescript: {
@@ -31,6 +26,9 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: process.env.SKIP_TYPE_CHECK === 'true',
   },
+  
+  // 导出配置
+  distDir: 'out',
   
   // Webpack 配置 - 支持 Edge Runtime
   webpack: (config, { isServer }) => {

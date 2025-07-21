@@ -27,15 +27,15 @@ export const EnvInitializer: React.FC = () => {
     
     // 输出调试信息
     console.log('📊 环境变量检查结果:');
-    console.log('  window.__RUNTIME_CONFIG__:', (window as any).__RUNTIME_CONFIG__);
+    console.log('  window.__ENV__:', (window as any).__ENV__);
     console.log('  最终选择的API URL:', runtimeApiUrl);
     console.log('  HTTP Client Base URL:', httpClient.getCurrentBaseURL());
+    console.log('  部署平台: Cloudflare Workers');
     
     // 验证API URL
     if (runtimeApiUrl.includes('localhost') && process.env.NODE_ENV === 'production') {
       console.error('⚠️ 生产环境警告: API URL 仍指向 localhost');
-      console.error('🔧 这表明运行时配置可能未正确生成');
-      console.error('📝 请检查 Cloudflare Pages 控制台中的环境变量配置');
+      console.error('🔧 请检查环境变量配置');
     } else {
       console.log('✅ API URL 配置正确:', runtimeApiUrl);
     }

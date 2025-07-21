@@ -1,18 +1,28 @@
-# Cloudflare Pages 配置文件
+# Cloudflare Workers 配置文件
+name = "nspass-web"
+main = "src/index.js"
+compatibility_date = "2023-10-30"
+
+# 静态资源配置
+[site]
+bucket = "./out"
+
+# 环境变量配置
+[vars]
+NODE_ENV = "production"
+
+# 生产环境变量
+[env.production]
 name = "nspass-web"
 
-# Pages 项目配置 - 仅用于 Pages 部署
-pages_build_output_dir = "out"
-
-# 生产环境变量配置
 [env.production.vars]
-SKIP_TYPE_CHECK = "true"
-# NEXT_PUBLIC_API_BASE_URL 应该在 Cloudflare Pages 控制台中设置
+NODE_ENV = "production"
+ENVIRONMENT = "production"
 
-# 预览环境变量配置
-[env.preview.vars]
-SKIP_TYPE_CHECK = "true"
-# NEXT_PUBLIC_API_BASE_URL 应该在 Cloudflare Pages 控制台中设置
+# 预览环境变量
+[env.staging]
+name = "nspass-web-staging"
 
-# 兼容性设置
-compatibility_date = "2023-10-30"
+[env.staging.vars]
+NODE_ENV = "production"
+ENVIRONMENT = "staging"
