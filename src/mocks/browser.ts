@@ -48,17 +48,24 @@ async function clearAllServiceWorkers(): Promise<void> {
 function isStaticResource(url: URL): boolean {
   const pathname = url.pathname;
   
-  // Next.js 静态资源路径
-  const nextjsPatterns = [
-    '/_next/',           // Next.js 构建产物
-    '/_nextjs_original-stack-frames', // Next.js 错误堆栈
-    '/static/',          // 静态文件目录
-    '/public/',          // 公共文件目录
+  // Vite 开发服务器特殊路径
+  const vitePatterns = [
+    '/@vite/',           // Vite HMR
+    '/@fs/',             // Vite 文件系统
+    '/@id/',             // Vite 模块 ID
+    '/src/',             // 开发模式下的源文件路径
+    '/node_modules/',    // 依赖模块
   ];
   
-  // Next.js 字体路径
+  // 静态文件目录
+  const staticPatterns = [
+    '/static/',          // 静态文件目录
+    '/public/',          // 公共文件目录
+    '/assets/',          // 资源目录
+  ];
+  
+  // 字体路径
   const fontPatterns = [
-    '/_nextjs_font/',    // Next.js 字体优化
     '/fonts/',           // 字体目录
   ];
   
@@ -76,8 +83,8 @@ function isStaticResource(url: URL): boolean {
     '.html', '.htm',                           // HTML文件
   ];
   
-  // 检查Next.js相关路径
-  for (const pattern of [...nextjsPatterns, ...fontPatterns]) {
+  // 检查Vite和静态资源相关路径
+  for (const pattern of [...vitePatterns, ...staticPatterns, ...fontPatterns]) {
     if (pathname.startsWith(pattern)) {
       return true;
     }
@@ -90,8 +97,8 @@ function isStaticResource(url: URL): boolean {
     }
   }
   
-  // 特殊处理：Next.js chunks（无扩展名的情况）
-  if (pathname.includes('/chunks/') || pathname.includes('/static/')) {
+  // 特殊处理：Vite构建产物和静态资源
+  if (pathname.includes('/assets/') || pathname.includes('/chunks/') || pathname.includes('/static/')) {
     return true;
   }
   
@@ -116,7 +123,7 @@ function isAPIRequest(url: URL): boolean {
   
   // API路径模式
   const apiPatterns = [
-    '/api/',              // Next.js API routes
+    '/api/',              // API 接口
     '/v1/',               // 版本化API
     '/v2/',               // 版本化API
     '/graphql',           // GraphQL

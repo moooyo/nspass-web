@@ -6,38 +6,53 @@ import path from 'path'
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: [
-      {
-        find: '@/types/generated',
-        replacement: path.resolve(__dirname, './types/generated')
-      },
-      {
-        find: '@',
-        replacement: path.resolve(__dirname, './src')
-      },
-      {
-        find: '@mock',
-        replacement: path.resolve(__dirname, './src/mocks')
-      }
-    ],
-    extensions: ['.js', '.ts', '.tsx', '.json']
+    alias: {
+      '@/types/generated': path.resolve(__dirname, './types/generated'),
+      '@': path.resolve(__dirname, './src'),
+      '@mock': path.resolve(__dirname, './src/mocks'),
+    },
   },
   build: {
     outDir: 'out',
     emptyOutDir: true,
     sourcemap: false,
+    minify: 'esbuild',
+    target: 'esnext',
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom'],
-          antd: ['antd'],
-          leaflet: ['leaflet', 'react-leaflet']
-        }
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          antd: ['antd', '@ant-design/pro-components'],
+          charts: ['@ant-design/charts', '@ant-design/plots'],
+          leaflet: ['leaflet', 'react-leaflet'],
+        },
+        // 静态资源文件名模板
+        assetFileNames: (assetInfo) => {
+          const extType = path.extname(assetInfo.name).replace('.', '');
+          const assetTypes = {
+            'css': 'css',
+            'woff2': 'fonts',
+            'woff': 'fonts',
+            'ttf': 'fonts',
+            'otf': 'fonts',
+            'png': 'images',
+            'jpg': 'images',
+            'jpeg': 'images',
+            'svg': 'images',
+            'webp': 'images',
+            'gif': 'images'
+          };
+          const folder = assetTypes[extType] || 'assets';
+          return `${folder}/[name]-[hash][extname]`;
+        },
+        chunkFileNames: 'js/[name]-[hash].js',
+        entryFileNames: 'js/[name]-[hash].js',
       }
     }
   },
   server: {
     port: 3000,
+    host: true, // 允许外部访问
     open: true,
     proxy: {
       '/api': {
@@ -62,6 +77,27 @@ export default defineConfig({
     global: 'globalThis',
   },
   css: {
-    postcss: './postcss.config.mjs'
-  }
+    postcss: './postcss.config.mjs',
+    preprocessorOptions: {
+      less: {
+        javascriptEnabled: true,
+      },
+    },
+  },
+  // 优化依赖预构建
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      'antd',
+      '@ant-design/pro-components',
+      'leaflet',
+    ],
+  },
+  // 性能相关配置
+  esbuild: {
+    // 生产环境移除 console.log
+    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
+  },
 })

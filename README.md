@@ -1,9 +1,9 @@
 # NSPass Web
 
-> 一个基于 Next.js 和 Ant Design 的现代化网络管理平台，现已部署在 Cloudflare Workers 上
+> 一个基于 React 和 Ant Design 的现代化网络管理平台，部署在 Cloudflare Workers 上
 
 [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/moooyo/nspass-web)
-[![Next.js](https://img.shields.io/badge/Next.js-15.3.5-black)](https://nextjs.org/)
+[![Vite](https://img.shields.io/badge/Vite-5.1.0-646CFF)](https://vitejs.dev/)
 [![React](https://img.shields.io/badge/React-19.0.0-blue)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://typescriptlang.org/)
 [![Ant Design](https://img.shields.io/badge/Ant%20Design-5.26.3-red)](https://ant.design/)
@@ -30,7 +30,7 @@ NSPass Web 是一个功能完善的网络管理平台，提供用户管理、路
 ## 🛠️ 技术栈
 
 ### 前端框架
-- **Next.js 15** - React 全栈框架，静态站点导出
+- **Vite 5** - 现代化前端构建工具
 - **React 19** - 用户界面库
 - **TypeScript** - 类型安全的 JavaScript
 
@@ -60,19 +60,13 @@ cd nspass-web
 
 # 安装依赖
 npm install
-
-# 初始化 MSW
-npm run msw:init
 ```
 
 ## 🚀 开发
 
 ```bash
-# 启动 Next.js 开发服务器
+# 启动 Vite 开发服务器
 npm run dev
-
-# 启动开发服务器（使用 Turbopack）
-npm run dev:turbo
 
 # 启动 Cloudflare Workers 本地开发环境
 npm run worker:dev
@@ -145,26 +139,25 @@ npm run proto:generate
 
 ## 🎭 Mock 服务
 
-```bash
-# 初始化 MSW
-npm run msw:init
-```
+项目集成了 MSW (Mock Service Worker) 用于API模拟：
+
+- 开发环境自动启动 MSW
+- 支持实时切换 Mock/真实API
+- 完整的数据模拟和响应处理
 
 ## 📋 可用脚本
 
 | 命令 | 描述 |
 |------|------|
-| `npm run dev` | 启动 Next.js 开发服务器 |
+| `npm run dev` | 启动 Vite 开发服务器 |
 | `npm run worker:dev` | 启动 Cloudflare Workers 本地开发 |
 | `npm run worker:build` | 构建用于 Workers 部署 |
 | `npm run worker:deploy` | 部署到 Cloudflare Workers |
-| `npm run worker:deploy:staging` | 部署到预演环境 |
-| `npm run build` | 构建 Next.js 静态站点 |
-| `npm run start` | 启动生产服务器 |
+| `npm run build` | 构建静态站点 |
+| `npm run preview` | 预览构建结果 |
 | `npm run lint` | 代码检查 |
 | `npm run lint:fix` | 修复代码问题 |
 | `npm run type-check` | 类型检查 |
-| `npm run clean` | 清理缓存 |
 
 ## 🏗️ 项目结构
 
@@ -172,7 +165,7 @@ npm run msw:init
 nspass-web/
 ├── src/                      # Cloudflare Workers 源码
 │   └── index.js             # Workers 入口文件
-├── app/                      # Next.js 应用目录
+├── src/                      # React 应用源码
 │   ├── components/           # 组件目录
 │   │   ├── common/          # 通用组件
 │   │   ├── content/         # 页面内容组件
@@ -285,11 +278,11 @@ npx wrangler secret list
 
 ```env
 # API 配置
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
-NEXT_PUBLIC_API_TIMEOUT=30000
+VITE_API_BASE_URL=http://localhost:8080
+VITE_API_TIMEOUT=30000
 
 # 功能开关
-NEXT_PUBLIC_ENABLE_MOCK=true
+VITE_ENABLE_MOCK=true
 ```
 
 ## 📊 性能优化

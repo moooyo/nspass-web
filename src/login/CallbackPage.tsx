@@ -49,8 +49,8 @@ function OAuth2CallbackContent() {
 
         console.log('OAuth2 Callback - 提供商:', provider);
 
-        // 获取 OAuth2 服务实例
-        const oauth2Service = OAuth2Factory.getService(provider);
+        // 获取 OAuth2 服务实例 (暂时使用占位符配置)
+        const oauth2Service = OAuth2Factory.getService(provider, 'placeholder', window.location.origin);
         if (!oauth2Service) {
           setError(`不支持的 OAuth2 提供商: ${provider}`);
           setLoading(false);

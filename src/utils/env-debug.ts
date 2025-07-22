@@ -1,11 +1,11 @@
 /**
  * 环境变量调试工具
- * 用于检查和调试环境变量在不同环境中的设置情况
+ * 用于检查和调试环境变量配置
  */
 
 export interface EnvDebugInfo {
   NODE_ENV: string;
-  NEXT_PUBLIC_API_BASE_URL: string | undefined;
+  VITE_API_BASE_URL: string | undefined;
   isClient: boolean;
   userAgent?: string;
   location?: string;
@@ -17,7 +17,7 @@ export function getEnvDebugInfo(): EnvDebugInfo {
   
   return {
     NODE_ENV: import.meta.env.MODE || 'unknown',
-    NEXT_PUBLIC_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+    VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
     isClient,
     userAgent: isClient ? window.navigator.userAgent : undefined,
     location: isClient ? window.location.href : undefined,
@@ -30,7 +30,7 @@ export function logEnvDebugInfo(): EnvDebugInfo {
   
   console.group('🔍 Environment Debug Information');
   console.log('Environment:', info.NODE_ENV);
-  console.log('API Base URL:', info.NEXT_PUBLIC_API_BASE_URL || '❌ Not set');
+  console.log('API Base URL:', info.VITE_API_BASE_URL || '❌ Not set');
   console.log('Is Client:', info.isClient);
   if (info.isClient) {
     console.log('Location:', info.location);
@@ -53,7 +53,7 @@ export function validateApiBaseUrl(): {
   let source = 'environment variable';
   
   if (!value) {
-    issues.push('NEXT_PUBLIC_API_BASE_URL is not set');
+    issues.push('VITE_API_BASE_URL is not set');
     source = 'fallback';
   } else {
     try {

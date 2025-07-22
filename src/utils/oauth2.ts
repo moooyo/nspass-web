@@ -242,4 +242,26 @@ export class OAuth2Factory {
       config
     };
   }
+
+  /**
+   * 根据提供商名称创建服务实例
+   */
+  static getService(provider: string, clientId?: string, redirectUri?: string): OAuth2Provider | null {
+    if (!clientId || !redirectUri) {
+      // 返回基础配置，具体使用时需要完整配置
+      console.warn(`OAuth2Factory.getService: ${provider} 缺少完整配置`);
+      return null;
+    }
+
+    switch (provider.toLowerCase()) {
+      case 'github':
+        return this.createGitHubProvider(clientId, redirectUri);
+      case 'google':
+        return this.createGoogleProvider(clientId, redirectUri);
+      case 'microsoft':
+        return this.createMicrosoftProvider(clientId, redirectUri);
+      default:
+        return null;
+    }
+  }
 } 

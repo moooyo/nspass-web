@@ -1,14 +1,12 @@
 // 认证相关的API服务
 import { httpClient } from '@/utils/http-client';
-import { 
+import {
   LoginType,
   type LoginRequest as GeneratedLoginRequest,
   type RegisterRequest as GeneratedRegisterRequest,
   type LoginResponse as GeneratedLoginResponse,
   type RegisterResponse as GeneratedRegisterResponse,
-} from '@/types/generated/api/users/user_auth';
-
-// 重新导出枚举类型
+} from '@/types/generated/api/users/user_auth';// 重新导出枚举类型
 export { LoginType };
 
 // 重新导出生成的类型，提供更简洁的导入路径

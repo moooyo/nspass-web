@@ -13,9 +13,9 @@
 # testing
 /coverage
 
-# next.js
-/.next/
+# Vite build output
 /out/
+/dist/
 
 # production
 /build
@@ -33,21 +33,15 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
-# vercel
-.vercel
-
 # typescript
 *.tsbuildinfo
-next-env.d.ts
 
-# generated files
-/app/types/generated/
+# generated protobuf files
 /types/generated/
 
 # Cloudflare Workers
 .wrangler/
 wrangler.toml.backup
-/.vercel/
 
 # Logs
 *.log
