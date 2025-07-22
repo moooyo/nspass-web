@@ -1,6 +1,6 @@
 import { httpClient, ApiResponse } from '@/utils/http-client';
 import type { 
-  GetAgentReportBaseUrlResponse,
+  AgentReportBaseUrlData,
   UpdateAgentReportBaseUrlRequest,
   UpdateAgentReportBaseUrlResponse 
 } from '@/types/generated/api/settings/settings_management';
@@ -70,8 +70,8 @@ class WebsiteConfigService {
   /**
    * 获取Agent上报Base URL设置
    */
-  async getAgentReportBaseUrl(): Promise<ApiResponse<GetAgentReportBaseUrlResponse>> {
-    return httpClient.get<GetAgentReportBaseUrlResponse>(`${this.endpoint}/agent/report-base-url`);
+  async getAgentReportBaseUrl(): Promise<ApiResponse<AgentReportBaseUrlData>> {
+    return httpClient.get<AgentReportBaseUrlData>(`${this.endpoint}/agent/report-base-url`);
   }
 
   /**

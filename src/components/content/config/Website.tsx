@@ -45,8 +45,9 @@ const Website: React.FC = () => {
       const response = await websiteConfigService.getAgentReportBaseUrl();
       console.log('Agent上报Base URL响应:', response);
       
-      if (response.success && response.data?.data?.baseUrl) {
-        const baseUrl = response.data.data.baseUrl;
+      // response.data 现在直接是 AgentReportBaseUrlData 类型
+      if (response.success && response.data?.baseUrl) {
+        const baseUrl = response.data.baseUrl;
         setAgentReportBaseUrl(baseUrl);
         agentForm.setFieldsValue({ agentReportBaseUrl: baseUrl });
         console.log('设置Agent上报Base URL:', baseUrl);
