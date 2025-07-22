@@ -91,11 +91,9 @@ export const websiteConfigHandlers = [
         message: '获取Agent上报Base URL成功'
       },
       data: {
-        status: {
-          success: true,
-          message: '获取Agent上报Base URL成功'
-        },
-        baseUrl: 'https://agent.nspass.xforward.de'
+        data: {
+          baseUrl: 'https://agent.nspass.xforward.de'
+        }
       }
     });
   }),
@@ -110,11 +108,9 @@ export const websiteConfigHandlers = [
         message: 'Agent上报Base URL更新成功'
       },
       data: {
-        status: {
-          success: true,
-          message: 'Agent上报Base URL更新成功'
-        },
-        baseUrl: baseUrl
+        data: {
+          baseUrl: baseUrl
+        }
       }
     });
   }),

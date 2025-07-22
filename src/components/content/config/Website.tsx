@@ -44,11 +44,28 @@ const Website: React.FC = () => {
     try {
       const response = await websiteConfigService.getAgentReportBaseUrl();
       console.log('Agent上报Base URL响应:', response); // 添加日志
-      if (response.success && response.data?.data?.baseUrl) {
-        setAgentReportBaseUrl(response.data.data.baseUrl);
-        // 同时更新表单字段
-        agentForm.setFieldsValue({ agentReportBaseUrl: response.data.data.baseUrl });
-        console.log('设置Agent上报Base URL:', response.data.data.baseUrl); // 添加日志
+      
+      // 根据实际API响应结构修正数据访问路径
+      let baseUrl = '';
+      if (response.success && response.data) {
+        // 根据TypeScript类型定义，正确的路径是 response.data.data?.baseUrl
+        if (response.data.data?.baseUrl) {
+          baseUrl = response.data.data.baseUrl;
+          console.log('从 response.data.data.baseUrl 获取:', baseUrl);
+        } else if ((response.data as any).baseUrl) {
+          // 兼容可能的不同数据结构
+          baseUrl = (response.data as any).baseUrl;
+          console.log('从 response.data.baseUrl 获取 (兼容模式):', baseUrl);
+        }
+        
+        if (baseUrl) {
+          setAgentReportBaseUrl(baseUrl);
+          // 同时更新表单字段
+          agentForm.setFieldsValue({ agentReportBaseUrl: baseUrl });
+          console.log('设置Agent上报Base URL:', baseUrl); // 添加日志
+        } else {
+          console.log('无法从响应中获取 baseUrl，响应数据:', response.data);
+        }
       } else {
         console.log('Agent上报Base URL响应失败或为空:', response); // 添加日志
       }
