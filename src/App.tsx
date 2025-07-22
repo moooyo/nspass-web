@@ -37,28 +37,15 @@ function App() {
         <AntdProvider>
           <EnvInitializer />
           <Routes>
+            {/* 登录相关路由 */}
             <Route path="/login" element={<LoginPageFixed />} />
             <Route path="/login/callback" element={<CallbackPage />} />
-            <Route 
-              path="/" 
-              element={<Navigate to="/home" replace />} 
-            />
-            <Route path="/home" element={<MainLayoutFixed />} />
-            <Route path="/dashboard" element={<MainLayoutFixed />} />
-            <Route path="/user" element={<MainLayoutFixed />} />
-            <Route path="/forward_rules" element={<MainLayoutFixed />} />
-            <Route path="/rules" element={<MainLayoutFixed />} />
-            <Route path="/egress" element={<MainLayoutFixed />} />
-            <Route path="/iptables" element={<MainLayoutFixed />} />
-            <Route path="/routes" element={<MainLayoutFixed />} />
-            <Route path="/website" element={<MainLayoutFixed />} />
-            <Route path="/users" element={<MainLayoutFixed />} />
-            <Route path="/user_groups" element={<MainLayoutFixed />} />
-            <Route path="/groups" element={<MainLayoutFixed />} />
-            <Route path="/servers" element={<MainLayoutFixed />} />
-            <Route path="/dns_config" element={<MainLayoutFixed />} />
-            <Route path="/dns" element={<MainLayoutFixed />} />
-            <Route path="*" element={<Navigate to="/home" replace />} />
+            
+            {/* 主应用路由 - 使用嵌套路由 */}
+            <Route path="/*" element={<MainLayoutFixed />} />
+            
+            {/* 根路径重定向 */}
+            <Route path="/" element={<Navigate to="/home" replace />} />
           </Routes>
         </AntdProvider>
       </MSWProvider>
