@@ -35,9 +35,9 @@ const MainLayoutFixed: React.FC = () => {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
-  // 检查登录状态
+  // 检查登录状态 - 优化日志输出
   useEffect(() => {
-    console.log('MainLayoutFixed - Auth状态检查:', { isLoading, isAuthenticated, user: user?.name });
+    // console.log('MainLayoutFixed - Auth状态检查:', { isLoading, isAuthenticated, user: user?.name });
     if (!isLoading && !isAuthenticated) {
       console.log('用户未登录，重定向到登录页');
       navigate('/login');

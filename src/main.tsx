@@ -20,9 +20,16 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
+  // 在开发环境中禁用 StrictMode 以减少不必要的重复渲染
+  import.meta.env.DEV ? (
     <BrowserRouter>
       <App />
     </BrowserRouter>
-  </React.StrictMode>,
+  ) : (
+    <React.StrictMode>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </React.StrictMode>
+  )
 )

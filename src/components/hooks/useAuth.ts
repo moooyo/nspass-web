@@ -56,7 +56,7 @@ export const useAuth = (): UseAuthReturn => {
     }, 50); // 50ms延迟，足够小以保持响应性，但避免过度频繁的写入
   }, []);
 
-  // 从localStorage加载用户信息 - 优化为异步
+  // 从localStorage加载用户信息 - 优化为异步，移除依赖数组避免无限循环
   const loadUserFromStorage = useCallback(() => {
     // 使用requestIdleCallback或setTimeout来异步加载，避免阻塞初始渲染
     const loadAsync = () => {
@@ -100,7 +100,7 @@ export const useAuth = (): UseAuthReturn => {
     } else {
       setTimeout(loadAsync, 0);
     }
-  }, []);
+  }, []); // 空依赖数组，避免无限重新创建
 
   console.log('useAuth 状态:', { isLoading: state.isLoading, isAuthenticated: state.isAuthenticated, user: state.user?.name });
 
@@ -141,16 +141,18 @@ export const useAuth = (): UseAuthReturn => {
     }
   }, [saveToStorageAsync]);
 
-  // 刷新用户信息
+  // 刷新用户信息 - 使用 useCallback 避免无限重新创建
   const refreshUser = useCallback(() => {
-    isInitializedRef.current = false;
-    loadUserFromStorage();
-  }, [loadUserFromStorage]);
+    if (isInitializedRef.current) {
+      isInitializedRef.current = false;
+      loadUserFromStorage();
+    }
+  }, []);
 
-  // 组件挂载时加载用户信息
+  // 组件挂载时加载用户信息 - 只执行一次
   useEffect(() => {
     loadUserFromStorage();
-  }, [loadUserFromStorage]);
+  }, []); // 空依赖数组，只在组件挂载时执行一次
 
   // 监听localStorage变化（多标签页同步） - 优化为throttled
   useEffect(() => {
@@ -164,8 +166,10 @@ export const useAuth = (): UseAuthReturn => {
         }
         
         throttleTimeout = setTimeout(() => {
-          isInitializedRef.current = false;
-          loadUserFromStorage();
+          if (isInitializedRef.current) {
+            isInitializedRef.current = false;
+            loadUserFromStorage();
+          }
         }, 100);
       }
     };
@@ -183,7 +187,7 @@ export const useAuth = (): UseAuthReturn => {
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, []); // 移除 loadUserFromStorage 依赖
+  }, []); // 移除 loadUserFromStorage 依赖，避免无限循环
 
   return {
     ...state,
