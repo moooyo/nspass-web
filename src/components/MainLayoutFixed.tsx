@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense, useMemo } from 'react';
-import { useNavigate, useLocation, Routes, Route } from 'react-router-dom';
+import { useNavigate, useLocation, Routes as RouterRoutes, Route } from 'react-router-dom';
 import { 
   HomeOutlined, 
   MenuFoldOutlined, 
@@ -10,7 +10,11 @@ import {
   DashboardOutlined, 
   SettingOutlined, 
   TeamOutlined,
-  CloudServerOutlined
+  CloudServerOutlined,
+  ApiOutlined,
+  SafetyCertificateOutlined,
+  UsergroupAddOutlined,
+  CloudOutlined
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { Button, Layout, Menu, theme, Dropdown, Avatar, Space, Typography, Spin } from 'antd';
@@ -19,6 +23,20 @@ import { useAuth } from '@/components/hooks/useAuth';
 import { useTheme } from '@/components/hooks/useTheme';
 import ThemeToggle from '@/components/ThemeToggle';
 import { MSWToggle } from '@/components/MSWProvider';
+
+// 使用 React.lazy 懒加载组件
+const HomeContent = React.lazy(() => import('./content/Home'));
+const UserInfo = React.lazy(() => import('./content/UserInfo'));
+const ForwardRules = React.lazy(() => import('./content/ForwardRules'));
+const Egress = React.lazy(() => import('./content/Egress'));
+const Iptables = React.lazy(() => import('./content/Iptables'));
+const Routes = React.lazy(() => import('./content/Routes'));
+const Dashboard = React.lazy(() => import('./content/config/Dashboard'));
+const Website = React.lazy(() => import('./content/config/Website'));
+const Users = React.lazy(() => import('./content/config/Users'));
+const UserGroups = React.lazy(() => import('./content/config/UserGroups'));
+const Servers = React.lazy(() => import('./content/config/Servers'));
+const DnsConfig = React.lazy(() => import('./content/config/DnsConfig'));
 
 const { Header, Sider, Footer } = Layout;
 const { Text } = Typography;
@@ -42,57 +60,23 @@ function getItem(
 }
 
 const items: MenuItem[] = [
-  getItem('仪表盘', 'dashboard', <DashboardOutlined />),
+  getItem('首页', 'home', <HomeOutlined />),
   getItem('用户信息', 'user', <UserOutlined />),
   getItem('转发规则', 'forward_rules', <UnorderedListOutlined />),
-  getItem('系统设置', 'settings', <SettingOutlined />),
-  getItem('用户管理', 'user_management', <TeamOutlined />),
+  getItem('出口配置', 'egress', <ApiOutlined />),
+  getItem('iptables 管理', 'iptables', <SafetyCertificateOutlined />),
+  getItem('查看线路', 'routes', <UnorderedListOutlined />),
+  
+  // 分隔线，分隔基础功能和系统管理功能
+  { type: 'divider' },
+  
+  getItem('仪表盘', 'dashboard', <DashboardOutlined />),
+  getItem('网站配置', 'website', <SettingOutlined />),
+  getItem('用户管理', 'users', <TeamOutlined />),
+  getItem('用户组管理', 'user_groups', <UsergroupAddOutlined />),
   getItem('服务器管理', 'servers', <CloudServerOutlined />),
+  getItem('DNS配置', 'dns_config', <CloudOutlined />),
 ];
-
-// 简单的内容组件
-const DashboardContent = () => (
-  <div style={{ padding: '24px' }}>
-    <h2>仪表盘</h2>
-    <p>欢迎使用 NSPass 密码管理平台!</p>
-    <p>这是从 Next.js 迁移到 Vite 后的仪表盘页面。</p>
-  </div>
-);
-
-const UserInfoContent = () => (
-  <div style={{ padding: '24px' }}>
-    <h2>用户信息</h2>
-    <p>用户配置文件和设置页面</p>
-  </div>
-);
-
-const ForwardRulesContent = () => (
-  <div style={{ padding: '24px' }}>
-    <h2>转发规则</h2>
-    <p>网络转发规则管理</p>
-  </div>
-);
-
-const SettingsContent = () => (
-  <div style={{ padding: '24px' }}>
-    <h2>系统设置</h2>
-    <p>系统配置和设置</p>
-  </div>
-);
-
-const UserManagementContent = () => (
-  <div style={{ padding: '24px' }}>
-    <h2>用户管理</h2>
-    <p>管理系统用户</p>
-  </div>
-);
-
-const ServersContent = () => (
-  <div style={{ padding: '24px' }}>
-    <h2>服务器管理</h2>
-    <p>服务器配置和管理</p>
-  </div>
-);
 
 const MainLayoutFixed: React.FC = () => {
   const navigate = useNavigate();
@@ -119,13 +103,19 @@ const MainLayoutFixed: React.FC = () => {
     const path = location.pathname;
     console.log('Current path:', path);
     
-    if (path === '/' || path === '/dashboard') return 'dashboard';
-    if (path.startsWith('/user')) return 'user';
-    if (path.startsWith('/forward_rules')) return 'forward_rules';
-    if (path.startsWith('/settings')) return 'settings';
-    if (path.startsWith('/user_management')) return 'user_management';
+    if (path === '/' || path === '/home') return 'home';
+    if (path === '/dashboard') return 'dashboard';
+    if (path.startsWith('/user') && !path.startsWith('/user_')) return 'user';
+    if (path.startsWith('/forward_rules') || path.startsWith('/rules')) return 'forward_rules';
+    if (path.startsWith('/egress')) return 'egress';
+    if (path.startsWith('/iptables')) return 'iptables';
+    if (path.startsWith('/routes')) return 'routes';
+    if (path.startsWith('/website')) return 'website';
+    if (path.startsWith('/users')) return 'users';
+    if (path.startsWith('/user_groups') || path.startsWith('/groups')) return 'user_groups';
     if (path.startsWith('/servers')) return 'servers';
-    return 'dashboard';
+    if (path.startsWith('/dns') || path.startsWith('/dns_config')) return 'dns_config';
+    return 'home';
   };
 
   const [selectedKeys, setSelectedKeys] = useState([getCurrentMenuKey()]);
@@ -142,6 +132,9 @@ const MainLayoutFixed: React.FC = () => {
     
     // 根据菜单项导航到相应路由
     switch (key) {
+      case 'home':
+        navigate('/');
+        break;
       case 'dashboard':
         navigate('/dashboard');
         break;
@@ -151,17 +144,32 @@ const MainLayoutFixed: React.FC = () => {
       case 'forward_rules':
         navigate('/forward_rules');
         break;
-      case 'settings':
-        navigate('/settings');
+      case 'egress':
+        navigate('/egress');
         break;
-      case 'user_management':
-        navigate('/user_management');
+      case 'iptables':
+        navigate('/iptables');
+        break;
+      case 'routes':
+        navigate('/routes');
+        break;
+      case 'website':
+        navigate('/website');
+        break;
+      case 'users':
+        navigate('/users');
+        break;
+      case 'user_groups':
+        navigate('/user_groups');
         break;
       case 'servers':
         navigate('/servers');
         break;
+      case 'dns_config':
+        navigate('/dns_config');
+        break;
       default:
-        navigate('/dashboard');
+        navigate('/');
     }
   };
 
@@ -197,15 +205,21 @@ const MainLayoutFixed: React.FC = () => {
     const path = location.pathname;
     console.log('Rendering content for path:', path);
     
-    if (path === '/' || path === '/dashboard') return <DashboardContent />;
-    if (path.startsWith('/user')) return <UserInfoContent />;
-    if (path.startsWith('/forward_rules')) return <ForwardRulesContent />;
-    if (path.startsWith('/settings')) return <SettingsContent />;
-    if (path.startsWith('/user_management')) return <UserManagementContent />;
-    if (path.startsWith('/servers')) return <ServersContent />;
+    if (path === '/' || path === '/home') return <HomeContent />;
+    if (path === '/dashboard') return <Dashboard />;
+    if (path.startsWith('/user') && !path.startsWith('/user_')) return <UserInfo />;
+    if (path.startsWith('/forward_rules') || path.startsWith('/rules')) return <ForwardRules />;
+    if (path.startsWith('/egress')) return <Egress />;
+    if (path.startsWith('/iptables')) return <Iptables />;
+    if (path.startsWith('/routes')) return <Routes />;
+    if (path.startsWith('/website')) return <Website />;
+    if (path.startsWith('/users')) return <Users />;
+    if (path.startsWith('/user_groups') || path.startsWith('/groups')) return <UserGroups />;
+    if (path.startsWith('/servers')) return <Servers />;
+    if (path.startsWith('/dns') || path.startsWith('/dns_config')) return <DnsConfig />;
     
-    // 默认显示仪表盘
-    return <DashboardContent />;
+    // 默认显示首页
+    return <HomeContent />;
   };
 
   // 如果正在加载，显示加载状态
@@ -332,18 +346,6 @@ const MainLayoutFixed: React.FC = () => {
           NSPass ©{new Date().getFullYear()} Created by NSPass Team
         </Footer>
       </Layout>
-      
-      {/* 为了React Router兼容性，保留Routes组件但不实际使用 */}
-      <div style={{ display: 'none' }}>
-        <Routes>
-          <Route path="/dashboard" element={<DashboardContent />} />
-          <Route path="/user" element={<UserInfoContent />} />
-          <Route path="/forward_rules" element={<ForwardRulesContent />} />
-          <Route path="/settings" element={<SettingsContent />} />
-          <Route path="/user_management" element={<UserManagementContent />} />
-          <Route path="/servers" element={<ServersContent />} />
-        </Routes>
-      </div>
     </Layout>
   );
 };
