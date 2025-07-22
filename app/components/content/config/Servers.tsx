@@ -249,13 +249,13 @@ const Servers: React.FC = () => {
 
             // 获取Agent上报地址
             const agentResponse = await websiteConfigService.getAgentReportBaseUrl();
-            if (!agentResponse.success || !agentResponse.data?.baseUrl) {
+            if (!agentResponse.success || !agentResponse.data?.data?.baseUrl) {
                 message.error('获取Agent上报地址失败，请先在设置中配置Agent上报Base URL');
                 return;
             }
 
             // 生成安装命令 - 使用新的格式
-            const command = `curl -sSL https://raw.githubusercontent.com/nspass/nspass-agent/main/scripts/install.sh | sudo bash -s -- -sid ${record.id} -token ${record.token} -endpoint ${agentResponse.data.baseUrl}`;
+            const command = `curl -sSL https://raw.githubusercontent.com/moooyo/nspass-agent/main/scripts/install.sh | sudo bash -s -- -sid ${record.id} -token ${record.token} -endpoint ${agentResponse.data.data.baseUrl}`;
             
             setInstallCommand(command);
             setInstallServerInfo(record);

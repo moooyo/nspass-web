@@ -44,11 +44,11 @@ const Website: React.FC = () => {
     try {
       const response = await websiteConfigService.getAgentReportBaseUrl();
       console.log('Agent上报Base URL响应:', response); // 添加日志
-      if (response.success && response.data?.baseUrl) {
-        setAgentReportBaseUrl(response.data.baseUrl);
+      if (response.success && response.data?.data?.baseUrl) {
+        setAgentReportBaseUrl(response.data.data.baseUrl);
         // 同时更新表单字段
-        agentForm.setFieldsValue({ agentReportBaseUrl: response.data.baseUrl });
-        console.log('设置Agent上报Base URL:', response.data.baseUrl); // 添加日志
+        agentForm.setFieldsValue({ agentReportBaseUrl: response.data.data.baseUrl });
+        console.log('设置Agent上报Base URL:', response.data.data.baseUrl); // 添加日志
       } else {
         console.log('Agent上报Base URL响应失败或为空:', response); // 添加日志
       }
