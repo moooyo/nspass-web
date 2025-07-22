@@ -19,6 +19,7 @@ const Website: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [agentReportBaseUrl, setAgentReportBaseUrl] = useState<string>('');
   const [form] = ProForm.useForm();
+  const [agentForm] = ProForm.useForm(); // 为Agent表单单独创建Form实例
 
   // 加载网站配置
   const loadConfig = useCallback(async () => {
@@ -42,13 +43,27 @@ const Website: React.FC = () => {
   const loadAgentReportBaseUrl = useCallback(async () => {
     try {
       const response = await websiteConfigService.getAgentReportBaseUrl();
+      console.log('Agent上报Base URL响应:', response); // 添加日志
       if (response.success && response.data?.baseUrl) {
         setAgentReportBaseUrl(response.data.baseUrl);
+        // 同时更新表单字段
+        agentForm.setFieldsValue({ agentReportBaseUrl: response.data.baseUrl });
+        console.log('设置Agent上报Base URL:', response.data.baseUrl); // 添加日志
+      } else {
+        console.log('Agent上报Base URL响应失败或为空:', response); // 添加日志
       }
     } catch (error) {
       console.error('加载Agent上报Base URL失败:', error);
     }
-  }, []);
+  }, [agentForm]);
+
+  // 监听agentReportBaseUrl变化并更新表单
+  useEffect(() => {
+    if (agentReportBaseUrl && agentForm) {
+      console.log('更新Agent表单字段值:', agentReportBaseUrl); // 添加日志
+      agentForm.setFieldsValue({ agentReportBaseUrl });
+    }
+  }, [agentReportBaseUrl, agentForm]);
 
   // 初始化加载配置
   useEffect(() => {
@@ -115,12 +130,16 @@ const Website: React.FC = () => {
   const handleAgentReportBaseUrlSubmit = async (baseUrl: string) => {
     try {
       setLoading(true);
+      console.log('正在保存Agent上报Base URL:', baseUrl); // 添加日志
       const response = await websiteConfigService.updateAgentReportBaseUrl(baseUrl);
       if (response.success) {
         setAgentReportBaseUrl(baseUrl);
+        agentForm.setFieldsValue({ agentReportBaseUrl: baseUrl }); // 确保表单显示最新值
         message.success('Agent上报Base URL已保存');
+        console.log('Agent上报Base URL保存成功'); // 添加日志
       } else {
         message.error(response.message || '保存Agent上报Base URL失败');
+        console.log('Agent上报Base URL保存失败:', response); // 添加日志
       }
     } catch (error) {
       console.error('保存Agent上报Base URL失败:', error);
@@ -274,8 +293,9 @@ const Website: React.FC = () => {
         }
       >
         <ProForm
+          form={agentForm} // 使用专用的Form实例
           initialValues={{ agentReportBaseUrl }}
-          key={agentReportBaseUrl} // 使用key强制重新渲染表单
+          key={`agent-form-${agentReportBaseUrl}`} // 使用更明确的key
           onFinish={async (values) => {
             await handleAgentReportBaseUrlSubmit(values.agentReportBaseUrl);
           }}
@@ -301,9 +321,6 @@ const Website: React.FC = () => {
               { required: true, message: '请输入Agent上报Base URL' },
               { type: 'url', message: '请输入有效的URL地址' }
             ]}
-            fieldProps={{
-              defaultValue: agentReportBaseUrl,
-            }}
           />
         </ProForm>
       </Card>

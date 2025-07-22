@@ -95,7 +95,7 @@ export const websiteConfigHandlers = [
           success: true,
           message: '获取Agent上报Base URL成功'
         },
-        baseUrl: 'https://api.agent.com.cn'
+        baseUrl: 'https://agent.nspass.xforward.de'
       }
     });
   }),
