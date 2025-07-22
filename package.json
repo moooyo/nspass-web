@@ -2,6 +2,7 @@
   "name": "nspass-web",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "npm run proto:check && vite",
     "build": "npm run proto:check && npm run type-check && vite build",
