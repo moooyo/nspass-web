@@ -102,8 +102,11 @@ export const useAuth = (): UseAuthReturn => {
     }
   }, []);
 
+  console.log('useAuth 状态:', { isLoading: state.isLoading, isAuthenticated: state.isAuthenticated, user: state.user?.name });
+
   // 登录 - 优化存储操作
   const login = useCallback((user: User, method: string) => {
+    console.log('useAuth.login 被调用:', { user: user.name, method });
     // 立即更新UI状态
     setState({
       user,

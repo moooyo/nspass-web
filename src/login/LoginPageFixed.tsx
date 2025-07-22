@@ -32,7 +32,9 @@ const LoginPageFixed = () => {
 
   // 如果已登录，重定向到主页
   useEffect(() => {
+    console.log('LoginPageFixed - Auth状态检查:', { isLoading, isAuthenticated });
     if (!isLoading && isAuthenticated) {
+      console.log('用户已登录，重定向到首页');
       navigate('/');
     }
   }, [isLoading, isAuthenticated, navigate]);
@@ -72,6 +74,7 @@ const LoginPageFixed = () => {
         authLogin(user, loginType);
         
         message.success(response.status?.message || '登录成功！');
+        console.log('登录成功，准备跳转到首页');
         navigate('/');
       } else {
         message.error(response.status?.message || '登录失败');

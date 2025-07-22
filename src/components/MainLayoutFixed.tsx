@@ -97,13 +97,22 @@ const ServersContent = () => (
 const MainLayoutFixed: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated, isLoading } = useAuth();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
   const [collapsed, setCollapsed] = useState(false);
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+
+  // 检查登录状态
+  useEffect(() => {
+    console.log('MainLayoutFixed - Auth状态检查:', { isLoading, isAuthenticated, user: user?.name });
+    if (!isLoading && !isAuthenticated) {
+      console.log('用户未登录，重定向到登录页');
+      navigate('/login');
+    }
+  }, [isLoading, isAuthenticated, navigate, user]);
 
   // 从路径获取当前选中的菜单项
   const getCurrentMenuKey = () => {
@@ -198,6 +207,29 @@ const MainLayoutFixed: React.FC = () => {
     // 默认显示仪表盘
     return <DashboardContent />;
   };
+
+  // 如果正在加载，显示加载状态
+  if (isLoading) {
+    console.log('MainLayoutFixed - 显示加载状态');
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh' 
+      }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+
+  // 如果未登录，不渲染内容（useEffect会处理跳转）
+  if (!isAuthenticated) {
+    console.log('MainLayoutFixed - 用户未认证，不渲染内容');
+    return null;
+  }
+
+  console.log('MainLayoutFixed - 渲染主布局，用户:', user?.name);
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
