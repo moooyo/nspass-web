@@ -7,8 +7,8 @@ import { routeService, RouteItem } from '@/services/routes';
 import { egressService, EgressItem } from '@/services/egress';
 
 // 导入国家数据
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const countryFlagEmoji = require('country-flag-emoji');
+// @ts-ignore
+import countryFlagEmoji from 'country-flag-emoji';
 
 const { Title, Text } = Typography;
 
@@ -300,7 +300,7 @@ const RoutesSummary: React.FC<RoutesSummaryProps> = ({ style, onRouteStatsChange
 
       // 并发加载线路和出口数据
       const [routesRes, egressRes] = await Promise.all([
-        routeService.getRouteList({ 'pagination.pageSize': 20 }),
+        routeService.getRouteList({ pagination: { pageSize: 20 } }),
         egressService.getEgressList({ pageSize: 20 })
       ]);
 

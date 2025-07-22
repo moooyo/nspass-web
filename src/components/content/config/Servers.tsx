@@ -28,8 +28,8 @@ const { TextArea } = Input;
 const { Title, Text } = Typography;
 
 // 导入国家数据
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const countryFlagEmoji = require('country-flag-emoji');
+// @ts-ignore
+import countryFlagEmoji from 'country-flag-emoji';
 
 // 从第三方库获取所有国家数据
 const allCountries = countryFlagEmoji.list;
