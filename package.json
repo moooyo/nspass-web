@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "./scripts/dev-server.sh",
     "dev:watch": "npm run proto:check && rolldown -c rolldown.config.ts -w",
-    "build": "npm run proto:check && rolldown -c rolldown.config.ts && cp index.prod.html dist/index.html && node scripts/process-html.js",
+    "build": "npm run proto:check && rolldown -c rolldown.config.ts && cp index.prod.html dist/index.html && cp src/favicon.ico dist/favicon.ico && node scripts/process-html.js",
     "preview": "npm run build && sirv dist --port 3000 --cors --single --host",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

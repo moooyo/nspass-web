@@ -36,11 +36,22 @@ function processHtml() {
   // Read HTML content
   let htmlContent = fs.readFileSync(htmlFile, 'utf-8')
   
-  // Replace script src
-  htmlContent = htmlContent.replace(
-    /<script type="module" src="\/src\/main\.tsx"><\/script>/,
-    `<script type="module" src="${mainJs}"></script>`
-  )
+  // Inject main script before closing body tag
+  const scriptTag = `<script type="module" src="${mainJs}"></script>`
+  
+  if (htmlContent.includes('<!-- Main script will be injected by fix-html.sh -->')) {
+    // Replace placeholder comment
+    htmlContent = htmlContent.replace(
+      '<!-- Main script will be injected by fix-html.sh -->',
+      scriptTag
+    )
+  } else {
+    // Fallback: inject before closing body tag
+    htmlContent = htmlContent.replace(
+      '</body>',
+      `  ${scriptTag}\n</body>`
+    )
+  }
   
   // Add CSS links if needed
   const cssLinks = cssFiles.map(cssFile => 
