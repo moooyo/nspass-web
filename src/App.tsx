@@ -9,6 +9,7 @@ import MainLayoutFixed from './components/MainLayoutFixed';
 // import SimpleLoginPage from './login/SimpleLoginPage';
 import LoginPageFixed from './login/LoginPageFixed';
 import CallbackPage from './login/CallbackPage';
+import { logger } from './utils/logger';
 
 // 注入环境变量 - 在构建时确定
 if (typeof window !== 'undefined') {
@@ -17,19 +18,19 @@ if (typeof window !== 'undefined') {
     NODE_ENV: import.meta.env.MODE || 'production'
   };
   (window as any).__ENV__ = env;
-  console.log('🌍 运行时环境变量已注入:', env);
+  logger.info('🌍 运行时环境变量已注入:', env);
   
   // 调试信息脚本
-  console.log('🚀 NSPass Web 应用启动');
-  console.log('🔍 环境信息:');
-  console.log('  NODE_ENV:', import.meta.env.MODE);
-  console.log('  VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL || 'undefined');
-  console.log('  Build time:', new Date().toISOString());
-  console.log('  Platform: Vite + Cloudflare Workers');
+  logger.info('🚀 NSPass Web 应用启动');
+  logger.info('🔍 环境信息:');
+  logger.info('  NODE_ENV:', import.meta.env.MODE);
+  logger.info('  VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL || 'undefined');
+  logger.info('  Build time:', new Date().toISOString());
+  logger.info('  Platform: Vite + Cloudflare Workers');
 }
 
 function App() {
-  console.log('App component rendering...');
+  logger.debug('App component rendering...');
   
   return (
     <ThemeProvider>

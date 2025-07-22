@@ -297,4 +297,4 @@ const HomeContent: React.FC = () => {
   );
 };
 
-export default HomeContent;
+export default React.memo(HomeContent);

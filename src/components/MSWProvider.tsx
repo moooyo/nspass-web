@@ -7,6 +7,7 @@ import { useTheme } from './hooks/useTheme';
 import { httpClient } from '@/utils/http-client';
 import { apiRefreshEventBus } from '@/utils/api-refresh-bus';
 import { getRuntimeApiBaseUrl } from '@/utils/runtime-env';
+import { logger } from '@/utils/logger';
 
 const { Text } = Typography;
 
@@ -89,9 +90,9 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         const config = JSON.parse(savedBackendConfig);
         setBackendConfig(config);
-        console.log('🔄 从 localStorage 恢复后端配置:', config);
+        logger.debug('🔄 从 localStorage 恢复后端配置:', config);
       } catch {
-        console.warn('解析后端配置失败，使用默认配置');
+        logger.warn('解析后端配置失败，使用默认配置');
         const defaultConfig = getDefaultBackendConfig();
         setBackendConfig(defaultConfig);
       }

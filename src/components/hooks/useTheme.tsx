@@ -9,6 +9,9 @@ import {
   SYSTEM_DETECTION,
   DEFAULT_THEME_CONFIG,
 } from '@/config/theme.config';
+import { createLogger } from '@/utils/logger';
+
+const logger = createLogger('Theme');
 
 interface ThemeContextType {
   // 当前主题偏好（可能是'system'）
@@ -38,9 +41,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const cleanupMediaQueryRef = useRef<(() => void) | null>(null);
   
   // 调试日志
-  const debugLog = useCallback((message: string, ...args: any[]) => {
+  const debugLog = useCallback((message: string, ...args: unknown[]) => {
     if (DEFAULT_THEME_CONFIG.debugMode) {
-      console.log(`[ThemeProvider] ${message}`, ...args);
+      logger.debug(message, ...args);
     }
   }, []);
 
@@ -77,10 +80,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // 使用配置的延迟时间
     ThemeUtils.scheduleUpdate(() => {
       try {
-        ThemeUtils.setStoredTheme(newTheme);
-        debugLog('Theme saved to storage:', newTheme);
+        localStorage.setItem(THEME_DETECTION_CONFIG.STORAGE_KEY, theme);
       } catch (error) {
-        console.error('Failed to save theme:', error);
+        logger.error('Failed to save theme:', error);
       }
     });
   }, [debugLog]);
@@ -214,7 +216,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // 开发环境下暴露调试信息
   useEffect(() => {
     if (DEFAULT_THEME_CONFIG.debugMode && typeof window !== 'undefined') {
-      (window as any).__themeDebug = {
+      (window as unknown as Record<string, unknown>).__themeDebug = {
         theme,
         resolvedTheme,
         systemInfo,

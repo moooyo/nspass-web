@@ -1,7 +1,8 @@
 import React from 'react';
+import { logger } from './utils/logger'
 
 function SimpleApp() {
-  console.log('SimpleApp is rendering...');
+  logger.debug('SimpleApp is rendering...')
   
   return (
     <div style={{ padding: '20px', fontSize: '18px', color: '#333' }}>

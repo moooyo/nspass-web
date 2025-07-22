@@ -18,6 +18,10 @@ export default defineConfig({
     sourcemap: false,
     minify: 'esbuild',
     target: 'esnext',
+    // 启用 CSS 代码分割
+    cssCodeSplit: true,
+    // 优化 chunk 大小警告限制
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -93,11 +97,16 @@ export default defineConfig({
       'antd',
       '@ant-design/pro-components',
       'leaflet',
+      'react-leaflet',
     ],
+    // 排除不需要预构建的依赖
+    exclude: ['@vite/client', '@vite/env'],
   },
   // 性能相关配置
   esbuild: {
     // 生产环境移除 console.log
     drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
+    // 优化构建性能
+    target: 'es2020',
   },
 })

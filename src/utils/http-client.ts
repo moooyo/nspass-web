@@ -1,5 +1,6 @@
 // HTTP客户端配置
 import { getRuntimeApiBaseUrl } from './runtime-env';
+import { logger } from './logger';
 
 // 使用统一的运行时配置方案
 const getApiBaseUrl = (): string => {
@@ -7,18 +8,18 @@ const getApiBaseUrl = (): string => {
   if (typeof window === 'undefined') {
     // 1. 优先使用构建时环境变量
     if (import.meta.env.VITE_API_BASE_URL) {
-      console.log('🔧 (SSR) 使用构建时环境变量:', import.meta.env.VITE_API_BASE_URL);
+      logger.debug('🔧 (SSR) 使用构建时环境变量:', import.meta.env.VITE_API_BASE_URL);
       return import.meta.env.VITE_API_BASE_URL;
     }
     
     // 2. 开发环境默认值
     if (import.meta.env.DEV) {
-      console.log('🔧 (SSR) 开发环境，使用默认 localhost:8080');
+      logger.debug('🔧 (SSR) 开发环境，使用默认 localhost:8080');
       return 'http://localhost:8080';
     }
     
     // 3. 生产环境回退值
-    console.warn('⚠️ (SSR) 未找到环境变量，使用默认API地址');
+    logger.warn('⚠️ (SSR) 未找到环境变量，使用默认API地址');
     return 'https://api.nspass.com';
   }
 
@@ -153,7 +154,7 @@ class HttpClient {
   // 动态更新 baseURL
   updateBaseURL(newBaseURL: string) {
     this.baseURL = newBaseURL;
-    console.log(`HTTP客户端 baseURL 已更新为: ${newBaseURL}`);
+    logger.info(`HTTP客户端 baseURL 已更新为: ${newBaseURL}`);
   }
 
   // 获取当前 baseURL
@@ -206,7 +207,7 @@ class HttpClient {
         
         return url.toString();
       } catch (error) {
-        console.warn('URL construction failed for absolute URL, using string concatenation', error);
+        logger.warn('URL construction failed for absolute URL, using string concatenation', error);
         fullUrl = `${this.baseURL}${normalizedEndpoint}`;
       }
     } else {
@@ -247,7 +248,7 @@ class HttpClient {
       
       const cachedItem = this.requestCache.get(cacheKey);
       if (cachedItem && (Date.now() - cachedItem.timestamp) < this.CACHE_DURATION) {
-        console.log(`🚀 使用缓存的请求: ${method} ${endpoint}`);
+        logger.debug(`🚀 使用缓存的请求: ${method} ${endpoint}`);
         return cachedItem.promise;
       }
     }
@@ -344,7 +345,7 @@ class HttpClient {
       // 使用统一的响应处理器
       return ResponseHandler.normalizeProtoResponse<T>(data);
     } catch (error) {
-      console.error('API request failed:', error);
+      logger.error('API request failed:', error);
       
       // 处理网络错误或其他错误
       if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
@@ -381,7 +382,7 @@ class HttpClient {
   // 清理缓存的方法
   clearCache() {
     this.requestCache.clear();
-    console.log('HTTP客户端缓存已清理');
+    logger.info('HTTP客户端缓存已清理');
   }
 
   // 处理未授权错误
@@ -391,7 +392,7 @@ class HttpClient {
       return;
     }
 
-    console.warn('检测到未授权访问，正在注销登录...');
+    logger.warn('检测到未授权访问，正在注销登录...');
     
     // 清理认证信息
     localStorage.removeItem('user');
@@ -429,7 +430,7 @@ export const httpClient = new HttpClient();
 // 在开发环境下将httpClient暴露到window对象，便于调试
 if (typeof window !== 'undefined' && import.meta.env.DEV) {
   (window as any).httpClient = httpClient;
-  console.log('🔧 httpClient已暴露到window.httpClient，当前baseURL:', httpClient.getCurrentBaseURL());
+  logger.debug('🔧 httpClient已暴露到window.httpClient，当前baseURL:', httpClient.getCurrentBaseURL());
 }
 
 // 导出类型和工具
