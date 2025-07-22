@@ -47,3 +47,7 @@ wrangler.toml.backup
 *.log
 dev-output.log
 startup.log
+
+# Development server PID files
+.rolldown.pid
+.serve.pid

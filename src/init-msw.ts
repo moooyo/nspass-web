@@ -17,14 +17,14 @@ declare global {
 }
 
 // 明确初始化 MSW - 增强版本，支持强制重启
-export async function initMSW(forceRestart = false, retries = 0): Promise<void> {
+export async function initMSW(forceRestart = false, retries = 0): Promise<boolean> {
   logger.debug('🔍 initMSW函数开始执行...')
   logger.debug(`手动初始化 MSW 中${forceRestart ? '（强制重启模式）' : ''}...`)
   logger.debug(`当前重试次数: ${retries}/${MAX_RETRIES}`)
   
   if (typeof window === 'undefined') {
     logger.debug('在服务器环境中，跳过 MSW 初始化')
-    return;
+    return false;
   }
   
   logger.debug('✅ 浏览器环境检查通过')
@@ -64,7 +64,7 @@ export async function initMSW(forceRestart = false, retries = 0): Promise<void> 
     });
     
     // 处理程序集合完成，开始启动MSW
-    if (forceRestart || !worker.listHandlers().length) {
+    if (forceRestart || !worker?.listHandlers().length) {
       logger.info('🔄 使用强制重启模式启动 MSW...')
       try {
         await forceRestartMSW();
@@ -73,7 +73,7 @@ export async function initMSW(forceRestart = false, retries = 0): Promise<void> 
         await new Promise(resolve => setTimeout(resolve, 200));
         
         // 验证handler是否正确安装
-        const installedHandlers = worker.listHandlers();
+        const installedHandlers = worker?.listHandlers() || [];
         if (installedHandlers.length === 0) {
           throw new Error('强制重启后仍未找到任何处理程序');
         }
@@ -87,7 +87,7 @@ export async function initMSW(forceRestart = false, retries = 0): Promise<void> 
       logger.info('🚀 正常启动模式...')
       
       // 检查是否有正在运行的worker
-      if (worker.listHandlers().length > 0) {
+      if (worker?.listHandlers().length && worker.listHandlers().length > 0) {
         logger.debug('停止先前的worker...')
         worker.stop();
         logger.debug('已停止先前的 worker')

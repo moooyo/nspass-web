@@ -37,12 +37,12 @@ const MainLayoutFixed: React.FC = () => {
 
   // 检查登录状态 - 优化日志输出
   useEffect(() => {
-    // console.log('MainLayoutFixed - Auth状态检查:', { isLoading, isAuthenticated, user: user?.name });
+    console.log('MainLayoutFixed - Auth状态检查:', { isLoading, isAuthenticated, user: user?.name, pathname: location.pathname });
     if (!isLoading && !isAuthenticated) {
       console.log('用户未登录，重定向到登录页');
       navigate('/login');
     }
-  }, [isLoading, isAuthenticated, navigate, user]);
+  }, [isLoading, isAuthenticated, navigate, user, location.pathname]);
 
   // 从路径获取当前选中的菜单项
   const getCurrentMenuKey = () => {
@@ -200,10 +200,12 @@ const MainLayoutFixed: React.FC = () => {
         
         <Layout.Content
           style={{
-            margin: 0,
+            margin: '24px',
+            padding: '24px',
             minHeight: 280,
             background: colorBgContainer,
             borderRadius: borderRadiusLG,
+            overflow: 'auto'
           }}
         >
           <Suspense fallback={

@@ -102,8 +102,6 @@ export const useAuth = (): UseAuthReturn => {
     }
   }, []); // 空依赖数组，避免无限重新创建
 
-  console.log('useAuth 状态:', { isLoading: state.isLoading, isAuthenticated: state.isAuthenticated, user: state.user?.name });
-
   // 登录 - 优化存储操作
   const login = useCallback((user: User, method: string) => {
     console.log('useAuth.login 被调用:', { user: user.name, method });
@@ -152,7 +150,7 @@ export const useAuth = (): UseAuthReturn => {
   // 组件挂载时加载用户信息 - 只执行一次
   useEffect(() => {
     loadUserFromStorage();
-  }, []); // 空依赖数组，只在组件挂载时执行一次
+  }, [loadUserFromStorage]); // 添加loadUserFromStorage依赖
 
   // 监听localStorage变化（多标签页同步） - 优化为throttled
   useEffect(() => {

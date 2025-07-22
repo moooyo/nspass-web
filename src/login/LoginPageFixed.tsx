@@ -30,6 +30,24 @@ const LoginPageFixed = () => {
   const { isAuthenticated, isLoading, login: authLogin } = useAuth();
   const [loginType, setLoginType] = useState<LoginType>('account');
 
+  // 测试登录功能 - 仅用于开发调试
+  const handleTestLogin = () => {
+    if (import.meta.env.DEV) {
+      console.log('执行测试登录');
+      const testUser = {
+        id: 'test-user-1',
+        name: 'Test User',
+        email: 'test@example.com',
+        role: 'admin',
+        provider: 'local'
+      };
+      
+      authLogin(testUser, 'account');
+      message.success('测试登录成功！');
+      navigate('/');
+    }
+  };
+
   // 如果已登录，重定向到主页
   useEffect(() => {
     console.log('LoginPageFixed - Auth状态检查:', { isLoading, isAuthenticated });
@@ -362,6 +380,27 @@ const LoginPageFixed = () => {
               </a>
             </div>
           </LoginForm>
+          
+          {/* 开发模式下的测试登录按钮 */}
+          {import.meta.env.DEV && (
+            <div style={{ 
+              padding: '16px 32px', 
+              borderTop: '1px solid #f0f0f0',
+              backgroundColor: '#fafafa'
+            }}>
+              <Button 
+                block 
+                type="dashed" 
+                onClick={handleTestLogin}
+                style={{ 
+                  borderColor: '#52c41a',
+                  color: '#52c41a'
+                }}
+              >
+                🧪 测试登录（开发模式）
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </ProConfigProvider>

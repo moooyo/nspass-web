@@ -24,17 +24,17 @@ const getRuntimeEnv = (): RuntimeEnv => {
     return (window as any).__ENV__;
   }
   
-  // Vite环境变量作为fallback
+  // Rolldown环境变量作为fallback - 使用MODE而不是NODE_ENV避免undefined错误
   return {
     VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
-    NODE_ENV: import.meta.env.NODE_ENV
+    NODE_ENV: import.meta.env.MODE || 'production' // 使用MODE，确保不为undefined
   };
 };
 
 export const runtimeEnv = getRuntimeEnv();
 
-// 辅助函数
-export const isDevelopment = () => runtimeEnv.NODE_ENV === 'development';
-export const isProduction = () => runtimeEnv.NODE_ENV === 'production';
+// 辅助函数 - 添加安全检查
+export const isDevelopment = () => (runtimeEnv.NODE_ENV || 'production') === 'development';
+export const isProduction = () => (runtimeEnv.NODE_ENV || 'production') === 'production';
 export const getApiBaseUrl = () => runtimeEnv.VITE_API_BASE_URL || 'https://api.nspass.xforward.de';
 export const getRuntimeApiBaseUrl = getApiBaseUrl; // 为向后兼容添加别名

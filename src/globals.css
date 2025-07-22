@@ -198,6 +198,16 @@ body::before {
   backdrop-filter: blur(20px);
   border-right: 1px solid var(--glass-border) !important;
   box-shadow: 4px 0 20px var(--shadow-color) !important;
+  height: 100vh !important;
+  overflow: visible !important;
+}
+
+/* 确保菜单容器可以完整显示所有菜单项 */
+.ant-layout-sider .ant-menu {
+  height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: visible !important;
+  max-height: none !important;
 }
 
 .ant-layout-header {
@@ -214,9 +224,14 @@ body::before {
   background: var(--glass-bg) !important;
   backdrop-filter: blur(20px) !important;
   border-radius: 20px !important;
-  margin: 48px !important;
   box-shadow: var(--shadow-soft) !important;
   border: 1px solid var(--glass-border) !important;
+  /* 根据具体布局调整边距 */
+}
+
+/* 针对MainLayoutFixed的内容区域特殊处理 */
+.ant-layout .ant-layout .ant-layout-content {
+  margin: 24px !important;
   /* 确保四周边距一致，形成真正的卡片效果 */
 }
 
@@ -254,7 +269,9 @@ body::before {
   color: var(--text-secondary) !important;
   width: calc(100% - 24px) !important;
   max-width: calc(100% - 24px) !important;
-  overflow: hidden !important;
+  overflow: visible !important;
+  height: auto !important;
+  min-height: 40px !important;
 }
 
 .ant-menu-dark .ant-menu-item-selected {
@@ -266,7 +283,9 @@ body::before {
   margin: 4px 12px !important;
   width: calc(100% - 24px) !important;
   max-width: calc(100% - 24px) !important;
-  overflow: hidden !important;
+  overflow: visible !important;
+  height: auto !important;
+  min-height: 40px !important;
 }
 
 .ant-menu-dark .ant-menu-item:hover {
@@ -275,7 +294,9 @@ body::before {
   color: var(--primary-blue) !important;
   width: calc(100% - 24px) !important;
   max-width: calc(100% - 24px) !important;
-  overflow: hidden !important;
+  overflow: visible !important;
+  height: auto !important;
+  min-height: 40px !important;
 }
 
 .ant-menu-dark .ant-menu-submenu-title {
@@ -320,12 +341,13 @@ html:not([data-theme="dark"]) .ant-menu-dark .ant-menu-item-divider {
   margin: 2px 12px !important;
   padding: 8px 16px !important;
   height: auto !important;
+  min-height: 40px !important;
   line-height: 1.5 !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   color: var(--text-primary) !important;
   width: calc(100% - 24px) !important;
   max-width: calc(100% - 24px) !important;
-  overflow: hidden !important;
+  overflow: visible !important;
 }
 
 .ant-menu-light .ant-menu-item-selected {
@@ -337,10 +359,11 @@ html:not([data-theme="dark"]) .ant-menu-dark .ant-menu-item-divider {
   margin: 2px 12px !important;
   padding: 8px 16px !important;
   height: auto !important;
+  min-height: 40px !important;
   line-height: 1.5 !important;
   width: calc(100% - 24px) !important;
   max-width: calc(100% - 24px) !important;
-  overflow: hidden !important;
+  overflow: visible !important;
 }
 
 .ant-menu-light .ant-menu-item:hover {
@@ -349,7 +372,9 @@ html:not([data-theme="dark"]) .ant-menu-dark .ant-menu-item-divider {
   color: var(--primary-blue) !important;
   width: calc(100% - 24px) !important;
   max-width: calc(100% - 24px) !important;
-  overflow: hidden !important;
+  overflow: visible !important;
+  height: auto !important;
+  min-height: 40px !important;
 }
 
 .ant-menu-light .ant-menu-item-divider {

@@ -315,6 +315,8 @@ export default function MainLayout() {
         trigger={null} 
         collapsible 
         collapsed={collapsed}
+        width={220} // 增加宽度以适应中文菜单
+        collapsedWidth={80}
         style={{
           position: 'fixed',
           left: 0,
@@ -322,6 +324,9 @@ export default function MainLayout() {
           bottom: 0,
           zIndex: 100,
           boxShadow: '2px 0 8px 0 rgba(29, 35, 41, 0.05)',
+          height: '100vh',
+          overflowY: 'auto',
+          overflowX: 'visible',
         }}
       >
         <div style={{ 
@@ -344,6 +349,13 @@ export default function MainLayout() {
           selectedKeys={[selectedKey]}
           items={items}
           onSelect={handleMenuSelect}
+          style={{
+            height: '100%',
+            overflowY: 'auto',
+            overflowX: 'visible',
+            maxHeight: 'none',
+            border: 'none',
+          }}
         />
       </Sider>
       

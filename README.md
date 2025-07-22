@@ -3,7 +3,7 @@
 > 一个基于 React 和 Ant Design 的现代化网络管理平台，部署在 Cloudflare Workers 上
 
 [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/moooyo/nspass-web)
-[![Vite](https://img.shields.io/badge/Vite-5.1.0-646CFF)](https://vitejs.dev/)
+[![Rolldown](https://img.shields.io/badge/Rolldown-1.0.0--beta.29-rust)](https://rolldown.rs/)
 [![React](https://img.shields.io/badge/React-19.0.0-blue)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://typescriptlang.org/)
 [![Ant Design](https://img.shields.io/badge/Ant%20Design-5.26.3-red)](https://ant.design/)
@@ -30,7 +30,7 @@ NSPass Web 是一个功能完善的网络管理平台，提供用户管理、路
 ## 🛠️ 技术栈
 
 ### 前端框架
-- **Vite 5** - 现代化前端构建工具
+- **Rolldown 1.0** - 基于 Rust 的高性能构建工具
 - **React 19** - 用户界面库
 - **TypeScript** - 类型安全的 JavaScript
 
@@ -64,12 +64,32 @@ npm install
 
 ## 🚀 开发
 
+### 启动开发服务器
+
 ```bash
-# 启动 Vite 开发服务器
+# 安全的开发模式 (推荐)
 npm run dev
+
+# 仅启动 Rolldown watch 模式 (不启动服务器)
+npm run dev:watch
 
 # 启动 Cloudflare Workers 本地开发环境
 npm run worker:dev
+```
+
+### 开发服务器特性
+
+- **安全进程管理**: 使用PID文件跟踪进程，避免杀死VS Code remote server等重要进程
+- **自动端口检测**: 智能检测端口占用并安全清理冲突进程
+- **优雅退出**: Ctrl+C时自动清理所有相关进程
+- **实时重建**: 文件变化时自动重新构建
+
+### 清理开发进程
+
+如果开发服务器异常退出，可以使用以下命令清理遗留进程：
+
+```bash
+npm run cleanup-dev
 ```
 
 ## 🏗️ 构建和部署
@@ -149,7 +169,7 @@ npm run proto:generate
 
 | 命令 | 描述 |
 |------|------|
-| `npm run dev` | 启动 Vite 开发服务器 |
+| `npm run dev` | 启动 Rolldown 开发服务器 |
 | `npm run worker:dev` | 启动 Cloudflare Workers 本地开发 |
 | `npm run worker:build` | 构建用于 Workers 部署 |
 | `npm run worker:deploy` | 部署到 Cloudflare Workers |
