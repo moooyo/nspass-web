@@ -251,7 +251,7 @@ export const startMSW = async (
           print.warning();
         } else {
           // 对其他类型的请求进行调试输出（开发环境）
-          if (process.env.NODE_ENV === 'development') {
+          if (import.meta.env.DEV) {
             console.debug(`🔍 MSW: 未知请求类型: ${request.method} ${url.href}`);
           }
         }

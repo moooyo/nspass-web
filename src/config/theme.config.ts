@@ -424,5 +424,5 @@ export const DEFAULT_THEME_CONFIG = {
   enableTransitions: true,
   enableSystemDetection: true,
   enableAutoSwitch: true,
-  debugMode: process.env.NODE_ENV === 'development',
+  debugMode: import.meta.env.DEV,
 } as const; 

@@ -75,8 +75,8 @@ export const defaultConfig: ProjectConfig = {
   },
   
   api: {
-    baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 
-             (process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : 'https://api.nspass.com'),
+    baseUrl: import.meta.env.VITE_API_BASE_URL || 
+             (import.meta.env.DEV ? 'http://localhost:8080' : 'https://api.nspass.com'),
     timeout: 10000,
     retryAttempts: 3,
     retryDelay: 1000
@@ -99,10 +99,10 @@ export const defaultConfig: ProjectConfig = {
   },
   
   features: {
-    enableMock: process.env.NODE_ENV === 'development',
-    enableDevTools: process.env.NODE_ENV === 'development',
-    enableAnalytics: process.env.NODE_ENV === 'production',
-    enableErrorReporting: process.env.NODE_ENV === 'production'
+    enableMock: import.meta.env.DEV,
+    enableDevTools: import.meta.env.DEV,
+    enableAnalytics: import.meta.env.PROD,
+    enableErrorReporting: import.meta.env.PROD
   },
   
   security: {
@@ -120,8 +120,8 @@ export const defaultConfig: ProjectConfig = {
   },
   
   logging: {
-    level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
-    enableConsoleLog: process.env.NODE_ENV === 'development',
+    level: import.meta.env.DEV ? 'debug' : 'info',
+    enableConsoleLog: import.meta.env.DEV,
     enableServerLog: true,
     maxLogSize: 10 * 1024 * 1024 // 10MB
   }
@@ -152,7 +152,7 @@ export const environmentConfigs: Record<string, Partial<ProjectConfig>> = {
   
   production: {
     api: {
-      baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.nspass.com',
+      baseUrl: import.meta.env.VITE_API_BASE_URL || 'https://api.nspass.com',
       timeout: 10000,
       retryAttempts: 3,
       retryDelay: 1000
@@ -197,7 +197,7 @@ export const environmentConfigs: Record<string, Partial<ProjectConfig>> = {
  * 获取当前环境配置
  */
 export function getConfig(): ProjectConfig {
-  const env = process.env.NODE_ENV || 'development';
+  const env = import.meta.env.MODE || 'development';
   const envConfig = environmentConfigs[env] || {};
   
   return {
@@ -373,7 +373,7 @@ export const configManager = ConfigManager.getInstance();
 export const config = configManager.getConfig();
 
 // 在开发环境下暴露配置管理器到全局
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
   (window as any).configManager = configManager;
   (window as any).config = config;
 }

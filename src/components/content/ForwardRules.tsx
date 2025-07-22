@@ -1,4 +1,4 @@
-import React, { useState, FC, useRef, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, FC, useRef, useCallback, useMemo, useEffect, lazy, Suspense } from 'react';
 import { Button, Tag, Popconfirm, Badge, Space, Tooltip, Modal, Form, Card, Row, Col, Typography, Divider } from 'antd';
 import { handleApiResponse, message } from '@/utils/message';
 import {
@@ -22,7 +22,6 @@ import {
     GlobalOutlined,
     ApiOutlined
 } from '@ant-design/icons';
-import dynamic from 'next/dynamic';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { ServerItem as BaseServerItem } from './LeafletWrapper';
@@ -42,11 +41,8 @@ interface ServerItem extends BaseServerItem {
     _apiServer?: ApiServerItem;
 }
 
-// 动态导入LeafletWrapper组件，禁用SSR
-const DynamicLeafletWrapper = dynamic(() => import('./LeafletWrapper'), {
-  ssr: false,
-  loading: () => <div style={{ height: 500, display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#f5f5f5' }}>加载地图组件...</div>
-});
+// 动态导入LeafletWrapper组件，禁用SSR - 使用React lazy
+const DynamicLeafletWrapper = lazy(() => import('./LeafletWrapper'));
 
 // 服务器类型枚举
 const serverTypeEnum = {
@@ -1333,14 +1329,22 @@ const ForwardRules: React.FC = () => {
                     >
                         {shouldRenderMap ? (
                             typeof window !== 'undefined' && (
-                                <DynamicLeafletWrapper 
-                                    key="map-instance"
-                                    selectedPath={selectedPath}
-                                    sampleServers={convertedServers as BaseServerItem[]}
-                                    exitServer={exitServer}
-                                    handleServerSelect={handleServerSelect}
-                                    serverTypeEnum={serverTypeEnum}
-                                />
+                                <Suspense fallback={<div style={{ 
+                                    height: 500, 
+                                    display: 'flex', 
+                                    justifyContent: 'center', 
+                                    alignItems: 'center', 
+                                    background: '#f5f5f5' 
+                                }}>加载地图组件...</div>}>
+                                    <DynamicLeafletWrapper 
+                                        key="map-instance"
+                                        selectedPath={selectedPath}
+                                        sampleServers={convertedServers as BaseServerItem[]}
+                                        exitServer={exitServer}
+                                        handleServerSelect={handleServerSelect}
+                                        serverTypeEnum={serverTypeEnum}
+                                    />
+                                </Suspense>
                             )
                         ) : (
                             <div style={{ 

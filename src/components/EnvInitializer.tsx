@@ -33,7 +33,7 @@ export const EnvInitializer: React.FC = () => {
     console.log('  部署平台: Cloudflare Workers');
     
     // 验证API URL
-    if (runtimeApiUrl.includes('localhost') && process.env.NODE_ENV === 'production') {
+    if (runtimeApiUrl.includes('localhost') && import.meta.env.PROD) {
       console.error('⚠️ 生产环境警告: API URL 仍指向 localhost');
       console.error('🔧 请检查环境变量配置');
     } else {
@@ -45,7 +45,7 @@ export const EnvInitializer: React.FC = () => {
   }, []);
 
   // 在开发环境中显示当前API URL
-  if (process.env.NODE_ENV === 'development' && initialized) {
+  if (import.meta.env.DEV && initialized) {
     return (
       <div style={{
         position: 'fixed',
@@ -67,7 +67,7 @@ export const EnvInitializer: React.FC = () => {
   }
 
   // 在生产环境中，如果API URL有问题，显示警告
-  if (initialized && currentApiUrl.includes('localhost') && process.env.NODE_ENV === 'production') {
+  if (initialized && currentApiUrl.includes('localhost') && import.meta.env.PROD) {
     return (
       <div style={{
         position: 'fixed',

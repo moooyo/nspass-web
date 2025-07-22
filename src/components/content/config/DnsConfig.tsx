@@ -18,7 +18,7 @@ import {
     CreateDnsConfigData, 
     DnsConfigListParams 
 } from '../../../services/dnsConfig';
-import { DnsProvider } from '@/types/generated/model/dnsConfig';
+import { DnsProvider } from '../../../../types/generated/model/dnsConfig';
 
 const DnsConfig: React.FC = () => {
     const [editableKeys, setEditableKeys] = useState<React.Key[]>([]);

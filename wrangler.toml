@@ -3,11 +3,11 @@ name = "nspass-web"
 main = "src/index.js"
 compatibility_date = "2024-01-01"
 
-# 新的资产配置 - 更简单直接
+# Vite构建输出配置
 [assets]
 directory = "./out"
 
 # 环境变量
 [vars]
 NODE_ENV = "production"
-API_BASE_URL = "https://api.nspass.xforward.de"
+VITE_API_BASE_URL = "https://api.nspass.xforward.de"

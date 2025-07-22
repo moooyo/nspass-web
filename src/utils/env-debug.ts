@@ -16,8 +16,8 @@ export function getEnvDebugInfo(): EnvDebugInfo {
   const isClient = typeof window !== 'undefined';
   
   return {
-    NODE_ENV: process.env.NODE_ENV || 'unknown',
-    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+    NODE_ENV: import.meta.env.MODE || 'unknown',
+    NEXT_PUBLIC_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
     isClient,
     userAgent: isClient ? window.navigator.userAgent : undefined,
     location: isClient ? window.location.href : undefined,
@@ -48,7 +48,7 @@ export function validateApiBaseUrl(): {
   source: string;
   issues: string[];
 } {
-  const value = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const value = import.meta.env.VITE_API_BASE_URL;
   const issues: string[] = [];
   let source = 'environment variable';
   
@@ -61,7 +61,7 @@ export function validateApiBaseUrl(): {
       if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
         issues.push('API Base URL is pointing to localhost - this may cause issues in production');
       }
-      if (url.protocol !== 'https:' && process.env.NODE_ENV === 'production') {
+      if (url.protocol !== 'https:' && import.meta.env.PROD) {
         issues.push('API Base URL should use HTTPS in production');
       }
     } catch (error) {
@@ -78,7 +78,7 @@ export function validateApiBaseUrl(): {
 }
 
 // 自动在开发环境中输出调试信息
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
   console.log('🚀 Environment Debug Tool Loaded');
   logEnvDebugInfo();
   

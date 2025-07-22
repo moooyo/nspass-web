@@ -3,9 +3,9 @@ export async function initMockServiceWorker() {
   // 根据环境使用不同的MSW配置
   if (typeof window === 'undefined') {
     // 服务器端环境
-    if (process.env.NODE_ENV === 'development') {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { server } = require('./server');
+    if (import.meta.env.DEV) {
+      // 动态导入服务器端 MSW
+      const { server } = await import('./server');
       server.listen();
     }
   }

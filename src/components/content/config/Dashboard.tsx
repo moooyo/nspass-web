@@ -109,7 +109,7 @@ const Dashboard: React.FC = () => {
   // 组件挂载时加载数据 - 等待MSW准备就绪
   useEffect(() => {
     // 如果MSW启用，等待它准备就绪后再发送请求
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       if (mswEnabled && mswStatus === 'running') {
         console.log('✅ MSW已准备就绪，延迟加载仪表盘数据以确保httpClient完全更新');
         // 延迟500ms确保httpClient的baseURL完全更新并缓存清理完成

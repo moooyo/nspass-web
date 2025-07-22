@@ -1,16 +1,18 @@
 // HTTP客户端配置
+import { getRuntimeApiBaseUrl } from './runtime-env';
+
 // 使用统一的运行时配置方案
 const getApiBaseUrl = (): string => {
   // 在服务端或构建时使用环境变量（SSR/构建时）
   if (typeof window === 'undefined') {
     // 1. 优先使用构建时环境变量
-    if (process.env.NEXT_PUBLIC_API_BASE_URL) {
-      console.log('🔧 (SSR) 使用构建时环境变量:', process.env.NEXT_PUBLIC_API_BASE_URL);
-      return process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (import.meta.env.VITE_API_BASE_URL) {
+      console.log('🔧 (SSR) 使用构建时环境变量:', import.meta.env.VITE_API_BASE_URL);
+      return import.meta.env.VITE_API_BASE_URL;
     }
     
     // 2. 开发环境默认值
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.log('🔧 (SSR) 开发环境，使用默认 localhost:8080');
       return 'http://localhost:8080';
     }
@@ -21,7 +23,6 @@ const getApiBaseUrl = (): string => {
   }
 
   // 在客户端使用运行时配置
-  const { getRuntimeApiBaseUrl } = require('./runtime-env');
   return getRuntimeApiBaseUrl();
 };
 
@@ -426,7 +427,7 @@ class HttpClient {
 export const httpClient = new HttpClient();
 
 // 在开发环境下将httpClient暴露到window对象，便于调试
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
   (window as any).httpClient = httpClient;
   console.log('🔧 httpClient已暴露到window.httpClient，当前baseURL:', httpClient.getCurrentBaseURL());
 }

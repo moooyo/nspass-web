@@ -124,7 +124,7 @@ if (typeof window !== 'undefined') {
   registerServices();
   
   // 在开发环境下暴露服务管理器到全局
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     (window as unknown as Record<string, unknown>).serviceManager = serviceManager;
   }
 }

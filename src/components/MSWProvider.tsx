@@ -206,7 +206,7 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // 根据 localStorage 状态决定是否启动（只在客户端初始化时执行一次）
   useEffect(() => {
     if (isClient && 
-        process.env.NODE_ENV === 'development' && 
+        import.meta.env.DEV && 
         !loading && 
         status === 'idle') {
       

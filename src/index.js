@@ -1,6 +1,6 @@
 /**
  * 极简静态文件托管 Workers
- * 使用新的 Assets 功能，更简单直观
+ * 使用新的 Assets 功能，支持Vite构建的SPA应用
  */
 export default {
   async fetch(request, env, ctx) {
@@ -8,7 +8,7 @@ export default {
     
     // API 代理（如果需要）
     if (url.pathname.startsWith('/api/')) {
-      const apiBaseUrl = env.API_BASE_URL || 'https://api.nspass.xforward.de'
+      const apiBaseUrl = env.VITE_API_BASE_URL || 'https://api.nspass.xforward.de'
       const apiUrl = url.pathname.replace('/api', apiBaseUrl)
       const response = await fetch(new Request(apiUrl + url.search, request))
       
