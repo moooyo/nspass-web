@@ -1,52 +1,72 @@
 #!/bin/bash
 
-# 主开发服务器 - 使用sirv-cli (超快速)
-# 优化后的开发环境启动脚本
+# Optimized development server using Rolldown + sirv
+# Clean and efficient development environment
 
 set -e
 
-echo "🚀 启动开发环境 (sirv)..."
+echo "🚀 Starting Rolldown development environment..."
 
-# 检查端口占用（简化版）
+# Check port availability
 if lsof -Pi :3000 -sTCP:LISTEN -t >/dev/null 2>&1; then
-    echo "⚠️ 端口3000被占用，尝试终止..."
+    echo "⚠️  Port 3000 is in use, attempting to terminate existing processes..."
     pkill -f "sirv.*3000" 2>/dev/null || true
     sleep 0.5
 fi
 
-# 清理旧PID文件
+# Clean up old PID files
 [ -f .rolldown.pid ] && rm -f .rolldown.pid
 [ -f .serve.pid ] && rm -f .serve.pid
 
-# 创建输出目录
-mkdir -p out
+# Create output directory
+mkdir -p dist
 
-# 启动Rolldown watch（后台）
-echo "🔨 启动 Rolldown..."
+# Start Rolldown in watch mode
+echo "🔨 Starting Rolldown in watch mode..."
 npx rolldown -c rolldown.config.ts -w &
 ROLLDOWN_PID=$!
 
-# 等待初始构建（最多3秒）
-echo "⏳ 等待构建..."
+# Wait for initial build (max 3 seconds)
+echo "⏳ Waiting for initial build..."
 for i in {1..6}; do
-    if [ -f "out/js/main-"*.js ] 2>/dev/null; then
+    if [ -f "dist/assets/main-"*.js ] 2>/dev/null; then
         break
     fi
     sleep 0.5
 done
 
-# 复制文件
-echo "📄 准备文件..."
-cp index.html out/
-cp -r public/* out/ 2>/dev/null || true
+# Copy files
+echo "📄 Preparing files..."
+cp index.html dist/
+cp -r public/* dist/ 2>/dev/null || true
 
-# 修复HTML
-./scripts/fix-html.sh > /dev/null 2>&1
+# Fix HTML references
+node scripts/process-html.js > /dev/null 2>&1
 
-# 启动sirv服务器
-echo "⚡ 启动sirv服务器..."
-npx sirv out --port 3000 --cors --single --dev --quiet &
+# Start sirv server
+echo "⚡ Starting sirv server..."
+npx sirv dist --port 3000 --cors --single --dev --quiet &
 SIRV_PID=$!
+
+# Save PIDs for cleanup
+echo $ROLLDOWN_PID > .rolldown.pid
+echo $SIRV_PID > .serve.pid
+
+echo ""
+echo "🎉 Development server ready!"
+echo "📱 Local: http://localhost:3000"
+echo "🌍 Network: http://$(ip route get 1.1.1.1 | grep -oP 'src \K\S+' 2>/dev/null || echo 'localhost'):3000"
+echo ""
+echo "💡 Tips:"
+echo "   - Use Ctrl+C to stop"
+echo "   - Rolldown will automatically rebuild on file changes"
+echo "   - Check the terminal for any errors"
+echo ""
+
+# Wait for user interrupt
+trap 'echo "🛑 Stopping servers..."; kill $ROLLDOWN_PID $SIRV_PID 2>/dev/null; rm -f .rolldown.pid .serve.pid; echo "✅ Development server stopped"; exit' INT
+
+wait
 
 # 保存PID
 echo $ROLLDOWN_PID > .rolldown.pid

@@ -10,44 +10,56 @@
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-orange)](https://workers.cloudflare.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-## 🚀 项目简介
+# NSPass Web
 
-NSPass Web 是一个功能完善的网络管理平台，提供用户管理、路由配置、DNS 设置、服务器监控等核心功能。项目采用现代化的技术栈，部署在 Cloudflare Workers 上，享受全球边缘计算的极致性能。
+> A modern network management platform built with React and Ant Design, deployed on Cloudflare Workers
 
-## ✨ 主要特性
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/moooyo/nspass-web)
+[![Rolldown](https://img.shields.io/badge/Rolldown-1.0.0--beta.29-rust)](https://rolldown.rs/)
+[![React](https://img.shields.io/badge/React-19.0.0-blue)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://typescriptlang.org/)
+[![Ant Design](https://img.shields.io/badge/Ant%20Design-5.26.3-red)](https://ant.design/)
+[![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-orange)](https://workers.cloudflare.com/)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-- 🎨 **现代化 UI** - 基于 Ant Design 5.x 的精美界面
-- 🌙 **主题切换** - 支持亮色/暗色主题切换
-- 📱 **响应式设计** - 适配各种设备屏幕
-- 🔐 **身份验证** - 完整的用户认证系统
-- 🌍 **国际化** - 多语言支持
-- 🛡️ **类型安全** - 完整的 TypeScript 支持
-- 🔧 **Protocol Buffers** - 基于 protobuf 的类型生成
-- 🎭 **Mock 服务** - 集成 MSW 进行 API 模拟
-- 📊 **数据可视化** - 丰富的图表和统计功能
-- ⚡ **边缘计算** - 基于 Cloudflare Workers 的全球分发
+## 🚀 Project Overview
 
-## 🛠️ 技术栈
+NSPass Web is a comprehensive network management platform providing user management, routing configuration, DNS settings, server monitoring, and other core functionalities. Built with modern technology stack and deployed on Cloudflare Workers for global edge computing performance.
 
-### 前端框架
-- **Rolldown 1.0** - 基于 Rust 的高性能构建工具
-- **React 19** - 用户界面库
-- **TypeScript** - 类型安全的 JavaScript
+## ✨ Key Features
 
-### 部署平台
-- **Cloudflare Workers** - 边缘计算平台
-- **Cloudflare KV** - 键值对存储
-- **Wrangler** - Cloudflare 开发工具
+- 🎨 **Modern UI** - Beautiful interface built with Ant Design 5.x
+- 🌙 **Theme Toggle** - Support for light/dark theme switching
+- 📱 **Responsive Design** - Adapts to various device screen sizes
+- 🔐 **Authentication** - Complete user authentication system
+- 🌍 **Internationalization** - Multi-language support
+- 🛡️ **Type Safety** - Full TypeScript support
+- 🔧 **Protocol Buffers** - Type generation based on protobuf
+- 🎭 **Mock Services** - Integrated MSW for API mocking
+- 📊 **Data Visualization** - Rich charts and statistics
+- ⚡ **Edge Computing** - Global distribution via Cloudflare Workers
 
-### UI 组件
-- **Ant Design 5** - 企业级 UI 组件库
-- **Ant Design Pro Components** - 高级业务组件
-- **Ant Design Charts** - 数据可视化组件
-- **Tailwind CSS 4** - 原子化 CSS 框架
+## 🛠️ Tech Stack
 
-### 状态管理与工具
-- **MSW** - API 模拟服务
-- **React DnD** - 拖拽功能
+### Frontend Framework
+- **Rolldown 1.0** - High-performance Rust-based build tool
+- **React 19** - User interface library
+- **TypeScript** - Type-safe JavaScript
+
+### Deployment Platform
+- **Cloudflare Workers** - Edge computing platform
+- **Cloudflare KV** - Key-value storage
+- **Wrangler** - Cloudflare development tools
+
+### UI Components
+- **Ant Design 5** - Enterprise UI component library
+- **Ant Design Pro Components** - Advanced business components
+- **Ant Design Charts** - Data visualization components
+- **Tailwind CSS 4** - Atomic CSS framework
+
+### State Management & Tools
+- **MSW** - API mocking service
+- **React DnD** - Drag and drop functionality
 - **Leaflet** - 地图组件
 - **bcryptjs** - 密码加密
 
@@ -165,76 +177,74 @@ npm run proto:generate
 - 支持实时切换 Mock/真实API
 - 完整的数据模拟和响应处理
 
-## 📋 可用脚本
+## 📋 Available Scripts
 
-| 命令 | 描述 |
-|------|------|
-| `npm run dev` | 启动 Rolldown 开发服务器 |
-| `npm run worker:dev` | 启动 Cloudflare Workers 本地开发 |
-| `npm run worker:build` | 构建用于 Workers 部署 |
-| `npm run worker:deploy` | 部署到 Cloudflare Workers |
-| `npm run build` | 构建静态站点 |
-| `npm run preview` | 预览构建结果 |
-| `npm run lint` | 代码检查 |
-| `npm run lint:fix` | 修复代码问题 |
-| `npm run type-check` | 类型检查 |
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start Rolldown development server |
+| `npm run build` | Build for production |
+| `npm run preview` | Preview production build |
+| `npm run worker:dev` | Start Cloudflare Workers local development |
+| `npm run worker:deploy` | Deploy to Cloudflare Workers |
+| `npm run lint` | Run ESLint |
+| `npm run lint:fix` | Fix ESLint issues |
+| `npm run type-check` | Run TypeScript type checking |
+| `npm run proto:generate` | Generate types from protobuf |
+| `npm run clean` | Clean build artifacts |
 
-## 🏗️ 项目结构
+## 🏗️ Project Structure
 
 ```
 nspass-web/
-├── src/                      # Cloudflare Workers 源码
-│   └── index.js             # Workers 入口文件
-├── src/                      # React 应用源码
-│   ├── components/           # 组件目录
-│   │   ├── common/          # 通用组件
-│   │   ├── content/         # 页面内容组件
-│   │   └── hooks/           # 自定义钩子
-│   ├── config/              # 配置文件
-│   ├── mocks/               # Mock 数据和处理器
-│   ├── services/            # API 服务
-│   ├── types/               # 类型定义
-│   │   └── generated/       # 自动生成的类型
-│   └── utils/               # 工具函数
-├── proto/                   # Protocol Buffers 定义
-│   ├── api/                 # API 定义
-│   └── model/               # 数据模型
-├── public/                  # 静态资源
-├── out/                     # 构建输出（静态站点）
-├── scripts/                 # 构建脚本
-└── wrangler.toml            # Cloudflare Workers 配置
+├── functions/               # Cloudflare Workers functions
+│   └── index.js            # Main worker entry point
+├── src/                    # React application source
+│   ├── components/         # Component directory
+│   │   ├── common/        # Common components
+│   │   ├── content/       # Page content components
+│   │   └── hooks/         # Custom hooks
+│   ├── config/            # Configuration files
+│   ├── mocks/             # MSW mock data and handlers
+│   ├── services/          # API services
+│   ├── types/             # Type definitions
+│   │   └── generated/     # Auto-generated types
+│   └── utils/             # Utility functions
+├── proto/                 # Protocol Buffers definitions
+│   ├── api/              # API definitions
+│   └── model/            # Data models
+├── public/               # Static assets
+├── dist/                 # Build output directory
+├── scripts/              # Build scripts
+└── wrangler.toml         # Cloudflare Workers configuration
 ```
 
-## ⚡ Cloudflare Workers 架构
+## ⚡ Cloudflare Workers Architecture
 
-### 请求处理流程
+### Request Processing Flow
 
-1. **静态资源** (`/assets/*`, `*.css`, `*.js`) → 直接从边缘缓存提供
-2. **API 请求** (`/api/*`) → 代理到后端 API 服务器
-3. **SPA 路由** (`/dashboard`, `/login`, etc.) → 返回 `index.html`
+1. **Static Assets** (`/assets/*`, `*.css`, `*.js`) → Served directly from edge cache
+2. **API Requests** (`/api/*`) → Proxied to backend API server
+3. **SPA Routes** (`/dashboard`, `/login`, etc.) → Return `index.html`
 
-### API 代理配置
+### API Proxy Configuration
 
-Workers 自动代理所有 `/api/*` 请求到后端 API。API 地址解析顺序：
+Workers automatically proxy all `/api/*` requests to the backend API. API address resolution order:
 
-1. **环境变量**: `API_BASE_URL`
-2. **域名映射**:
-   - `nspass.com` → `https://api.nspass.com`
-   - `localhost` → `http://localhost:8080`
-3. **默认**: `https://api.nspass.com`
+1. **Environment Variable**: `VITE_API_BASE_URL`
+2. **Default**: `https://api.nspass.xforward.de`
 
-### 缓存策略
+### Caching Strategy
 
-- **静态资源**: 1天边缘缓存 + 1天浏览器缓存
-- **HTML文件**: 不缓存，确保 SPA 路由正常
-- **API请求**: 不缓存，实时代理
+- **Static Assets**: 1 day edge cache + 1 day browser cache
+- **HTML Files**: No cache to ensure SPA routing works
+- **API Requests**: No cache, real-time proxy
 
-## 🌟 主要功能
+## 🌟 Key Features
 
-### 🏠 首页仪表板
-- 系统概览
-- 实时监控数据
-- 快速操作入口
+### 🏠 Dashboard
+- System overview
+- Real-time monitoring data
+- Quick action shortcuts
 
 ### 👤 用户管理
 - 用户信息管理

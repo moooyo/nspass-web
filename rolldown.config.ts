@@ -1,9 +1,11 @@
 import { defineConfig } from 'rolldown'
 import path from 'path'
 
-// https://rolldown.rs/config/
+// Rolldown configuration following native best practices
 export default defineConfig({
-  input: './src/main.tsx',
+  input: {
+    main: './src/main.tsx'
+  },
   resolve: {
     alias: {
       '@/types/generated': path.resolve(__dirname, './types/generated'),
@@ -12,21 +14,23 @@ export default defineConfig({
     },
   },
   output: {
-    dir: 'out',
+    dir: 'dist',
     format: 'es',
-    entryFileNames: 'js/[name]-[hash].js',
+    entryFileNames: 'assets/[name]-[hash].js',
+    chunkFileNames: 'assets/[name]-[hash].js',
+    assetFileNames: 'assets/[name]-[hash][extname]',
+    minify: process.env.NODE_ENV === 'production',
   },
   define: {
-    global: 'globalThis',
-    // 定义Vite风格的环境变量
+    // Environment variables
     'import.meta.env.MODE': JSON.stringify(process.env.NODE_ENV || 'development'),
     'import.meta.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
     'import.meta.env.DEV': JSON.stringify(process.env.NODE_ENV === 'development'),
     'import.meta.env.PROD': JSON.stringify(process.env.NODE_ENV === 'production'),
     'import.meta.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL || ''),
   },
-  // 模块类型配置，处理各种资源文件
   moduleTypes: {
+    // Asset types
     '.png': 'asset',
     '.jpg': 'asset',
     '.jpeg': 'asset',
@@ -39,5 +43,9 @@ export default defineConfig({
     '.ttf': 'asset',
     '.eot': 'asset',
     '.css': 'css',
+  },
+  external: (id) => {
+    // Don't bundle Node.js built-ins
+    return /^node:/.test(id)
   },
 })
