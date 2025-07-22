@@ -25,8 +25,8 @@ export default defineConfig({
     // Environment variables
     'import.meta.env.MODE': JSON.stringify(process.env.NODE_ENV || 'development'),
     'import.meta.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
-    'import.meta.env.DEV': JSON.stringify(process.env.NODE_ENV === 'development'),
-    'import.meta.env.PROD': JSON.stringify(process.env.NODE_ENV === 'production'),
+    'import.meta.env.DEV': JSON.stringify((process.env.NODE_ENV || 'development') === 'development'),
+    'import.meta.env.PROD': JSON.stringify((process.env.NODE_ENV || 'development') === 'production'),
     'import.meta.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL || ''),
   },
   moduleTypes: {

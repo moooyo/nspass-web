@@ -84,23 +84,31 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     setIsClient(true);
     
-    // 从 localStorage 读取后端配置
+    // 优先级：1. localStorage用户设置（最高优先级）2. 环境变量 3. 硬编码默认值
     const savedBackendConfig = localStorage.getItem('nspass-backend-config');
     if (savedBackendConfig) {
       try {
         const config = JSON.parse(savedBackendConfig);
         setBackendConfig(config);
-        logger.debug('🔄 从 localStorage 恢复后端配置:', config);
+        logger.debug('🔄 从 localStorage 恢复用户设置的后端配置（优先级最高）:', config);
+        
+        // 立即应用用户配置到httpClient（如果MSW未启用）
+        if (!enabled) {
+          const url = `${config.port === '443' ? 'https' : 'http'}://${config.url}${config.port === '443' || config.port === '80' ? '' : ':' + config.port}`;
+          httpClient.clearCache();
+          httpClient.updateBaseURL(url);
+          console.log('🎯 立即应用用户配置到HTTP客户端（优先级最高）:', url);
+        }
       } catch {
-        logger.warn('解析后端配置失败，使用默认配置');
+        logger.warn('解析用户设置的后端配置失败，使用环境变量默认配置');
         const defaultConfig = getDefaultBackendConfig();
         setBackendConfig(defaultConfig);
       }
     } else {
-      // 使用环境变量作为初始值
+      // 首次使用，从环境变量获取初始配置
       const defaultConfig = getDefaultBackendConfig();
       setBackendConfig(defaultConfig);
-      console.log('🔄 使用环境变量作为初始后端配置:', defaultConfig);
+      console.log('🔄 首次使用，从环境变量获取初始后端配置:', defaultConfig);
     }
   }, [getDefaultBackendConfig]);
 
@@ -114,11 +122,11 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     httpClient.updateBaseURL(url);
   }, [backendConfig]);
 
-  // 更新后端配置
+  // 更新后端配置 - 用户设置具有最高优先级
   const updateBackendConfig = useCallback((config: BackendConfig) => {
     setBackendConfig(config);
     localStorage.setItem('nspass-backend-config', JSON.stringify(config));
-    console.log('💾 后端配置已保存:', config);
+    console.log('💾 用户后端配置已保存（优先级最高）:', config);
     
     // 立即应用新配置到httpClient（无论MSW是否启用）
     const url = enabled 
@@ -127,15 +135,16 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     
     httpClient.clearCache();
     httpClient.updateBaseURL(url);
-    console.log('🎯 HTTP客户端已更新为新的后端配置:', url);
+    console.log('🎯 HTTP客户端已更新为用户设置的后端配置（优先级最高）:', url);
   }, [enabled]);
 
-  // 同步httpClient配置
+  // 同步httpClient配置 - 确保用户配置优先级最高
   useEffect(() => {
     if (isClient) {
       updateBaseURL(enabled);
+      console.log('🔄 应用用户配置到HTTP客户端（优先级最高）');
     }
-  }, [isClient, enabled, updateBaseURL]);
+  }, [isClient, enabled, updateBaseURL, backendConfig]); // 添加backendConfig依赖确保配置变更时立即应用
 
   // MSW操作函数
   const toggle = useCallback(async () => {
@@ -301,14 +310,14 @@ const ConfigForm: React.FC<{
     form.setFieldsValue(backendConfig);
   }, [backendConfig, form]);
 
-  // 后端配置表单提交
+  // 后端配置表单提交 - 用户设置优先级最高
   const handleConfigSubmit = (values: BackendConfig) => {
     updateBackendConfig(values);
     const newUrl = enabled 
       ? window.location.origin 
       : `${values.port === '443' ? 'https' : 'http'}://${values.url}${values.port === '443' || values.port === '80' ? '' : ':' + values.port}`;
     
-    message.success(`后端配置已保存，当前API地址：${newUrl}`);
+    message.success(`用户配置已保存（优先级最高），当前API地址：${newUrl}`);
   };
 
   return (
@@ -406,20 +415,12 @@ const ConfigForm: React.FC<{
 export const MSWToggle: React.FC = () => {
   const { enabled, loading, error, toggle, forceRestart, status, backendConfig, updateBackendConfig } = useMSW();
   const { theme } = useTheme();
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   // 所有hooks必须在早期返回之前调用
   const apiInfo = useMemo(() => {
-    if (!isClient) {
-      return { url: '', type: '' };
-    }
     if (enabled) {
       return { 
-        url: window.location.origin,
+        url: typeof window !== 'undefined' ? window.location.origin : '',
         type: 'Mock数据'
       };
     }
@@ -427,9 +428,7 @@ export const MSWToggle: React.FC = () => {
       url: `${backendConfig.port === '443' ? 'https' : 'http'}://${backendConfig.url}${backendConfig.port === '443' || backendConfig.port === '80' ? '' : ':' + backendConfig.port}`,
       type: '真实API'
     };
-  }, [enabled, isClient, backendConfig]);
-
-  if (!isClient) return null;
+  }, [enabled, backendConfig]);
 
   const config = STATUS_CONFIG[status];
   const IconComponent = config.icon;
