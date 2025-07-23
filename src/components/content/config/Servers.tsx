@@ -255,7 +255,7 @@ const Servers: React.FC = () => {
             }
 
             // 生成安装命令 - 使用新的格式
-            const command = `curl -sSL https://raw.githubusercontent.com/moooyo/nspass-agent/main/scripts/install.sh | sudo bash -s -- -sid ${record.id} -token ${record.token} -endpoint ${agentResponse.data.baseUrl}`;
+            const command = `curl -sSL https://raw.githubusercontent.com/moooyo/nspass-agent/main/scripts/install.sh -o install.sh && chmod +x install.sh && sudo DEBUG_MODE=1 ./install.sh -sid ${record.id} -token ${record.token} -endpoint ${agentResponse.data.baseUrl}`;
             
             setInstallCommand(command);
             setInstallServerInfo(record);
