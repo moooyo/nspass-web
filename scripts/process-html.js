@@ -36,6 +36,12 @@ function processHtml() {
   // Read HTML content
   let htmlContent = fs.readFileSync(htmlFile, 'utf-8')
   
+  // Remove development script reference
+  htmlContent = htmlContent.replace(
+    /<script type="module" src="\/src\/main\.tsx"><\/script>\s*/g,
+    ''
+  )
+  
   // Inject main script before closing body tag
   const scriptTag = `<script type="module" src="${mainJs}"></script>`
   
@@ -45,8 +51,8 @@ function processHtml() {
       '<!-- Main script will be injected by fix-html.sh -->',
       scriptTag
     )
-  } else {
-    // Fallback: inject before closing body tag
+  } else if (!htmlContent.includes(mainJs)) {
+    // Only inject if not already present
     htmlContent = htmlContent.replace(
       '</body>',
       `  ${scriptTag}\n</body>`
