@@ -38,14 +38,11 @@ function App() {
         <AntdProvider>
           <EnvInitializer />
           <Routes>
-            {/* 根路径重定向 - 必须放在最前面 */}
-            <Route path="/" element={<Navigate to="/home" replace />} />
-            
             {/* 登录相关路由 */}
             <Route path="/login" element={<LoginPageFixed />} />
             <Route path="/login/callback" element={<CallbackPage />} />
             
-            {/* 主应用路由 - 使用嵌套路由 */}
+            {/* 主应用路由 - 使用嵌套路由，包含认证检查 */}
             <Route path="/*" element={<MainLayoutFixed />} />
           </Routes>
         </AntdProvider>

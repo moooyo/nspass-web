@@ -8,7 +8,6 @@ import {
     ProFormText,
     ProFormDigit,
     ProFormDependency,
-    ProFormGroup,
     ProFormCheckbox,
     ModalForm,
     QueryFilter,
@@ -34,6 +33,17 @@ const egressModeOptions = [
     { label: '直出', value: EgressMode.EGRESS_MODE_DIRECT },
     { label: 'iptables', value: EgressMode.EGRESS_MODE_IPTABLES },
     { label: 'shadowsocks-2022', value: EgressMode.EGRESS_MODE_SS2022 },
+    { label: 'Trojan', value: EgressMode.EGRESS_MODE_TROJAN },
+    { label: 'Snell', value: EgressMode.EGRESS_MODE_SNELL },
+];
+
+// SS2022加密方式选项
+const ss2022CipherOptions = [
+    { label: '2022-blake3-aes-128-gcm', value: '2022-blake3-aes-128-gcm' },
+    { label: '2022-blake3-aes-256-gcm', value: '2022-blake3-aes-256-gcm' },
+    { label: 'aes-128-gcm', value: 'aes-128-gcm' },
+    { label: 'aes-192-gcm', value: 'aes-192-gcm' },
+    { label: 'aes-256-gcm', value: 'aes-256-gcm' },
 ];
 
 // 转发类型选项 - 使用新的枚举
@@ -62,6 +72,12 @@ const convertEgressToLocalItem = (egress: EgressItem): LocalEgressItem => {
             break;
         case EgressMode.EGRESS_MODE_SS2022:
             displayConfig = `SS2022:${egress.port || 'N/A'}, UDP: ${egress.supportUdp ? '是' : '否'}`;
+            break;
+        case EgressMode.EGRESS_MODE_TROJAN:
+            displayConfig = `Trojan:${egress.port || 'N/A'} -> ${egress.destAddress || 'N/A'}:${egress.destPort || 'N/A'}`;
+            break;
+        case EgressMode.EGRESS_MODE_SNELL:
+            displayConfig = `Snell:${egress.port || 'N/A'}, UDP: ${egress.supportUdp ? '是' : '否'}`;
             break;
         default:
             displayConfig = '未配置';
@@ -92,6 +108,17 @@ const convertFormToCreateData = (values: any): CreateEgressData => {
         data.password = values.password;
         data.supportUdp = values.supportUdp;
         data.port = values.port;
+        // TODO: 等待后端添加cipher字段支持
+        // data.cipher = values.cipher;
+    } else if (values.egressMode === EgressMode.EGRESS_MODE_TROJAN) {
+        data.password = values.password;
+        data.port = values.port;
+        data.destAddress = values.remoteAddr; // trojan使用remoteAddr字段
+        data.destPort = values.remotePort; // trojan使用remotePort字段
+    } else if (values.egressMode === EgressMode.EGRESS_MODE_SNELL) {
+        data.password = values.password;
+        data.port = values.port;
+        data.supportUdp = values.supportUdp;
     }
 
     return data;
@@ -116,6 +143,17 @@ const convertFormToUpdateData = (values: any): UpdateEgressData => {
         data.password = values.password;
         data.supportUdp = values.supportUdp;
         data.port = values.port;
+        // TODO: 等待后端添加cipher字段支持
+        // data.cipher = values.cipher;
+    } else if (values.egressMode === EgressMode.EGRESS_MODE_TROJAN) {
+        data.password = values.password;
+        data.port = values.port;
+        data.destAddress = values.remoteAddr; // trojan使用remoteAddr字段
+        data.destPort = values.remotePort; // trojan使用remotePort字段
+    } else if (values.egressMode === EgressMode.EGRESS_MODE_SNELL) {
+        data.password = values.password;
+        data.port = values.port;
+        data.supportUdp = values.supportUdp;
     }
 
     return data;
@@ -145,13 +183,55 @@ const Egress: React.FC = () => {
 
     // 监听表单字段变化，当选择shadowsocks-2022时自动生成端口
     const handleEgressModeChange = useCallback((egressMode: EgressMode, formInstance: any) => {
+        // 为需要密码的出口类型自动生成密码和端口
         if (egressMode === EgressMode.EGRESS_MODE_SS2022) {
-            // 检查是否已有端口值
+            // 自动生成端口
             const currentPort = formInstance.getFieldValue('port');
             if (!currentPort) {
                 const randomPort = generateRandomPort(20000, 50000);
                 formInstance.setFieldValue('port', randomPort);
-                // handleDataResponse.userAction(`已自动生成Shadowsocks端口: ${randomPort}`, true);
+            }
+            // 自动生成密码
+            const currentPassword = formInstance.getFieldValue('password');
+            if (!currentPassword) {
+                const randomPassword = securityUtils.generateRandomPassword(100, 128);
+                formInstance.setFieldValue('password', randomPassword);
+            }
+            // 默认启用UDP支持
+            const currentUdpSupport = formInstance.getFieldValue('supportUdp');
+            if (currentUdpSupport === undefined || currentUdpSupport === null) {
+                formInstance.setFieldValue('supportUdp', true);
+            }
+        } else if (egressMode === EgressMode.EGRESS_MODE_TROJAN) {
+            // 自动生成端口
+            const currentPort = formInstance.getFieldValue('port');
+            if (!currentPort) {
+                const randomPort = generateRandomPort(20000, 50000);
+                formInstance.setFieldValue('port', randomPort);
+            }
+            // 自动生成密码
+            const currentPassword = formInstance.getFieldValue('password');
+            if (!currentPassword) {
+                const randomPassword = securityUtils.generateRandomPassword(32, 64);
+                formInstance.setFieldValue('password', randomPassword);
+            }
+        } else if (egressMode === EgressMode.EGRESS_MODE_SNELL) {
+            // 自动生成端口
+            const currentPort = formInstance.getFieldValue('port');
+            if (!currentPort) {
+                const randomPort = generateRandomPort(20000, 50000);
+                formInstance.setFieldValue('port', randomPort);
+            }
+            // 自动生成密码
+            const currentPassword = formInstance.getFieldValue('password');
+            if (!currentPassword) {
+                const randomPassword = securityUtils.generateRandomPassword(16, 32);
+                formInstance.setFieldValue('password', randomPassword);
+            }
+            // 默认启用UDP支持
+            const currentUdpSupport = formInstance.getFieldValue('supportUdp');
+            if (currentUdpSupport === undefined || currentUdpSupport === null) {
+                formInstance.setFieldValue('supportUdp', true);
             }
         }
     }, []);
@@ -593,7 +673,7 @@ const Egress: React.FC = () => {
                         // iptables模式
                         if (egressMode === EgressMode.EGRESS_MODE_IPTABLES) {
                             return (
-                                <ProFormGroup>
+                                <>
                                     <ProFormSelect
                                         name="forwardType"
                                         label="转发类型"
@@ -612,14 +692,21 @@ const Egress: React.FC = () => {
                                         placeholder="请输入目的端口"
                                         rules={[{ required: true, message: '请输入目的端口' }]}
                                     />
-                                </ProFormGroup>
+                                </>
                             );
                         }
                         
                         // shadowsocks-2022模式
                         if (egressMode === EgressMode.EGRESS_MODE_SS2022) {
                             return (
-                                <ProFormGroup>
+                                <>
+                                    <ProFormSelect
+                                        name="cipher"
+                                        label="加密方式"
+                                        options={ss2022CipherOptions}
+                                        rules={[{ required: true, message: '请选择加密方式' }]}
+                                        initialValue="2022-blake3-aes-128-gcm"
+                                    />
                                     <ProFormText.Password
                                         name="password"
                                         label="密码"
@@ -667,11 +754,123 @@ const Egress: React.FC = () => {
                                     <ProFormCheckbox name="supportUdp" label="支持UDP">
                                         启用UDP支持
                                     </ProFormCheckbox>
-                                </ProFormGroup>
+                                </>
                             );
                         }
-                        
-                        return null;
+
+                        // Trojan模式
+                        if (egressMode === EgressMode.EGRESS_MODE_TROJAN) {
+                            return (
+                                <>
+                                    <ProFormText.Password
+                                        name="password"
+                                        label="密码"
+                                        placeholder="请输入Trojan密码"
+                                        rules={[{ required: true, message: '请输入密码' }]}
+                                        fieldProps={{
+                                            addonAfter: (
+                                                <Tooltip title="生成32-64位随机密码">
+                                                    <Button 
+                                                        type="text" 
+                                                        icon={<ThunderboltOutlined />}
+                                                        onClick={() => generateAndSetPassword('password', 32, 64, '已生成Trojan随机密码')}
+                                                        size="small"
+                                                    />
+                                                </Tooltip>
+                                            )
+                                        }}
+                                    />
+                                    <ProFormDigit
+                                        name="port"
+                                        label="本地端口"
+                                        placeholder="请输入本地端口"
+                                        rules={[{ required: true, message: '请输入本地端口' }]}
+                                        min={1}
+                                        max={65535}
+                                        fieldProps={{
+                                            addonAfter: (
+                                                <Tooltip title="生成20000-50000范围内的随机端口">
+                                                    <Button 
+                                                        type="text" 
+                                                        icon={<ThunderboltOutlined />}
+                                                        onClick={() => {
+                                                            const randomPort = generateRandomPort(20000, 50000);
+                                                            form.setFieldValue('port', randomPort);
+                                                        }}
+                                                        size="small"
+                                                    />
+                                                </Tooltip>
+                                            )
+                                        }}
+                                    />
+                                    <ProFormText
+                                        name="remoteAddr"
+                                        label="远程地址"
+                                        placeholder="请输入远程服务器地址"
+                                        rules={[{ required: true, message: '请输入远程地址' }]}
+                                    />
+                                    <ProFormText
+                                        name="remotePort"
+                                        label="远程端口"
+                                        placeholder="请输入远程端口"
+                                        rules={[{ required: true, message: '请输入远程端口' }]}
+                                    />
+                                </>
+                            );
+                        }
+
+                        // Snell模式
+                        if (egressMode === EgressMode.EGRESS_MODE_SNELL) {
+                            return (
+                                <>
+                                    <ProFormText.Password
+                                        name="password"
+                                        label="密码"
+                                        placeholder="请输入Snell密码"
+                                        rules={[{ required: true, message: '请输入密码' }]}
+                                        fieldProps={{
+                                            addonAfter: (
+                                                <Tooltip title="生成16-32位随机密码">
+                                                    <Button 
+                                                        type="text" 
+                                                        icon={<ThunderboltOutlined />}
+                                                        onClick={() => generateAndSetPassword('password', 16, 32, '已生成Snell随机密码')}
+                                                        size="small"
+                                                    />
+                                                </Tooltip>
+                                            )
+                                        }}
+                                    />
+                                    <ProFormDigit
+                                        name="port"
+                                        label="端口"
+                                        placeholder="请输入端口"
+                                        rules={[{ required: true, message: '请输入端口' }]}
+                                        min={1}
+                                        max={65535}
+                                        fieldProps={{
+                                            addonAfter: (
+                                                <Tooltip title="生成20000-50000范围内的随机端口">
+                                                    <Button 
+                                                        type="text" 
+                                                        icon={<ThunderboltOutlined />}
+                                        onClick={() => {
+                                            const randomPort = generateRandomPort(20000, 50000);
+                                            form.setFieldValue('port', randomPort);
+                                        }}
+                                        size="small"
+                                    />
+                                </Tooltip>
+                            )
+                        }}
+                        extra="端口范围: 1-65535，建议使用20000-50000范围"
+                    />
+                    <ProFormCheckbox name="supportUdp" label="支持UDP">
+                        启用UDP支持
+                    </ProFormCheckbox>
+                </>
+            );
+        }                        return null;
                     }}
                 </ProFormDependency>
             </ModalForm>
@@ -737,7 +936,7 @@ const Egress: React.FC = () => {
                         // iptables模式
                         if (egressMode === EgressMode.EGRESS_MODE_IPTABLES) {
                             return (
-                                <ProFormGroup>
+                                <>
                                     <ProFormSelect
                                         name="forwardType"
                                         label="转发类型"
@@ -756,14 +955,21 @@ const Egress: React.FC = () => {
                                         placeholder="请输入目的端口"
                                         rules={[{ required: true, message: '请输入目的端口' }]}
                                     />
-                                </ProFormGroup>
+                                </>
                             );
                         }
                         
                         // shadowsocks-2022模式
                         if (egressMode === EgressMode.EGRESS_MODE_SS2022) {
                             return (
-                                <ProFormGroup>
+                                <>
+                                    <ProFormSelect
+                                        name="cipher"
+                                        label="加密方式"
+                                        options={ss2022CipherOptions}
+                                        rules={[{ required: true, message: '请选择加密方式' }]}
+                                        initialValue="2022-blake3-aes-128-gcm"
+                                    />
                                     <ProFormText.Password
                                         name="password"
                                         label="密码"
@@ -811,11 +1017,123 @@ const Egress: React.FC = () => {
                                     <ProFormCheckbox name="supportUdp" label="支持UDP">
                                         启用UDP支持
                                     </ProFormCheckbox>
-                                </ProFormGroup>
+                                </>
                             );
                         }
-                        
-                        return null;
+
+                        // Trojan模式
+                        if (egressMode === EgressMode.EGRESS_MODE_TROJAN) {
+                            return (
+                                <>
+                                    <ProFormText.Password
+                                        name="password"
+                                        label="密码"
+                                        placeholder="请输入Trojan密码"
+                                        rules={[{ required: true, message: '请输入密码' }]}
+                                        fieldProps={{
+                                            addonAfter: (
+                                                <Tooltip title="生成32-64位随机密码">
+                                                    <Button 
+                                                        type="text" 
+                                                        icon={<ThunderboltOutlined />}
+                                                        onClick={() => generateAndSetPassword('password', 32, 64, '已生成Trojan随机密码', editForm)}
+                                                        size="small"
+                                                    />
+                                                </Tooltip>
+                                            )
+                                        }}
+                                    />
+                                    <ProFormDigit
+                                        name="port"
+                                        label="本地端口"
+                                        placeholder="请输入本地端口"
+                                        rules={[{ required: true, message: '请输入本地端口' }]}
+                                        min={1}
+                                        max={65535}
+                                        fieldProps={{
+                                            addonAfter: (
+                                                <Tooltip title="生成20000-50000范围内的随机端口">
+                                                    <Button 
+                                                        type="text" 
+                                                        icon={<ThunderboltOutlined />}
+                                                        onClick={() => {
+                                                            const randomPort = generateRandomPort(20000, 50000);
+                                                            editForm.setFieldValue('port', randomPort);
+                                                        }}
+                                                        size="small"
+                                                    />
+                                                </Tooltip>
+                                            )
+                                        }}
+                                    />
+                                    <ProFormText
+                                        name="remoteAddr"
+                                        label="远程地址"
+                                        placeholder="请输入远程服务器地址"
+                                        rules={[{ required: true, message: '请输入远程地址' }]}
+                                    />
+                                    <ProFormText
+                                        name="remotePort"
+                                        label="远程端口"
+                                        placeholder="请输入远程端口"
+                                        rules={[{ required: true, message: '请输入远程端口' }]}
+                                    />
+                                </>
+                            );
+                        }
+
+                        // Snell模式
+                        if (egressMode === EgressMode.EGRESS_MODE_SNELL) {
+                            return (
+                                <>
+                                    <ProFormText.Password
+                                        name="password"
+                                        label="密码"
+                                        placeholder="请输入Snell密码"
+                                        rules={[{ required: true, message: '请输入密码' }]}
+                                        fieldProps={{
+                                            addonAfter: (
+                                                <Tooltip title="生成16-32位随机密码">
+                                                    <Button 
+                                                        type="text" 
+                                                        icon={<ThunderboltOutlined />}
+                                                        onClick={() => generateAndSetPassword('password', 16, 32, '已生成Snell随机密码', editForm)}
+                                                        size="small"
+                                                    />
+                                                </Tooltip>
+                                            )
+                                        }}
+                                    />
+                                    <ProFormDigit
+                                        name="port"
+                                        label="端口"
+                                        placeholder="请输入端口"
+                                        rules={[{ required: true, message: '请输入端口' }]}
+                                        min={1}
+                                        max={65535}
+                                        fieldProps={{
+                                            addonAfter: (
+                                                <Tooltip title="生成20000-50000范围内的随机端口">
+                                                    <Button 
+                                                        type="text" 
+                                                        icon={<ThunderboltOutlined />}
+                                        onClick={() => {
+                                            const randomPort = generateRandomPort(20000, 50000);
+                                            editForm.setFieldValue('port', randomPort);
+                                        }}
+                                        size="small"
+                                    />
+                                </Tooltip>
+                            )
+                        }}
+                        extra="端口范围: 1-65535，建议使用20000-50000范围"
+                    />
+                    <ProFormCheckbox name="supportUdp" label="支持UDP">
+                        启用UDP支持
+                    </ProFormCheckbox>
+                </>
+            );
+        }                        return null;
                     }}
                 </ProFormDependency>
             </ModalForm>

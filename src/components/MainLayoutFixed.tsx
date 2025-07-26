@@ -44,6 +44,14 @@ const MainLayoutFixed: React.FC = () => {
     }
   }, [isLoading, isAuthenticated, navigate, user, location.pathname]);
 
+  // 处理根路径重定向
+  useEffect(() => {
+    if (location.pathname === '/' && isAuthenticated && !isLoading) {
+      console.log('根路径重定向到首页');
+      navigate('/home', { replace: true });
+    }
+  }, [location.pathname, isAuthenticated, isLoading, navigate]);
+
   // 从路径获取当前选中的菜单项
   const getCurrentMenuKey = () => {
     const path = location.pathname;

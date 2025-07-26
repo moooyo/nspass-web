@@ -9,6 +9,9 @@ interface AppRoutesProps {
 export const AppRoutes: React.FC<AppRoutesProps> = ({ redirectTo = '/home' }) => {
   return (
     <RouterRoutes>
+      {/* 根路径重定向 */}
+      <Route path="/" element={<Navigate to="/home" replace />} />
+      
       {/* 主要路由 */}
       {routeConfigs.map(route => {
         const Component = route.component;
