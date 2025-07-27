@@ -5,10 +5,7 @@ import ReactCountryFlag from 'react-country-flag';
 import { useTheme } from '../hooks/useTheme';
 import { routeService, RouteItem } from '@/services/routes';
 import { egressService, EgressItem } from '@/services/egress';
-
-// 导入国家数据
-// @ts-ignore
-import countryFlagEmoji from 'country-flag-emoji';
+import { getCountryCodeByName, standardizeCountryName } from '@/shared/utils/flag-utils';
 
 const { Title, Text } = Typography;
 
@@ -22,48 +19,6 @@ export interface CountryRouteStats {
   onlineRoutes: number;
   offlineRoutes: number;
 }
-
-// 从第三方库获取所有国家数据
-const allCountries = countryFlagEmoji.list;
-
-// 根据国家名称获取国家代码
-const getCountryCodeByName = (countryName: string): string | null => {
-  const country = allCountries.find((c: any) => c.name === countryName);
-  return country ? country.code : null;
-};
-
-// 国家名称标准化映射
-const COUNTRY_NAME_MAPPING: Record<string, string> = {
-  // 中文到英文映射
-  '中国': 'China',
-  '美国': 'United States',
-  '日本': 'Japan',
-  '德国': 'Germany',
-  '新加坡': 'Singapore',
-  '中国香港': 'Hong Kong',
-  '香港': 'Hong Kong',
-  '英国': 'United Kingdom',
-  '法国': 'France',
-  '加拿大': 'Canada',
-  '澳大利亚': 'Australia',
-  // 常见别名映射
-  'USA': 'United States',
-  'US': 'United States',
-  'UK': 'United Kingdom',
-  'JP': 'Japan',
-  'DE': 'Germany',
-  'SG': 'Singapore',
-  'HK': 'Hong Kong',
-  'CN': 'China',
-  'AU': 'Australia',
-  'CA': 'Canada',
-  'FR': 'France'
-};
-
-// 标准化国家名称
-const standardizeCountryName = (countryName: string): string => {
-  return COUNTRY_NAME_MAPPING[countryName] || countryName;
-};
 
 interface RoutesSummaryProps {
   style?: React.CSSProperties;

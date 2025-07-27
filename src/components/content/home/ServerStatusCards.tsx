@@ -3,6 +3,7 @@ import { Row, Col, Typography, Badge, Tag, Progress, Spin } from 'antd';
 import { CloudServerOutlined } from '@ant-design/icons';
 import { useTheme } from '../../hooks/useTheme';
 import { ServerStatus } from '@/types/generated/api/servers/server_management';
+import { getCountryFlag } from '@/shared/utils/flag-utils';
 
 const { Title, Text } = Typography;
 
@@ -27,14 +28,12 @@ interface ServerStatusCardsProps {
   servers: ServerStatusData[];
   loading: boolean;
   refreshing: boolean;
-  getCountryFlag: (country?: string) => string;
 }
 
 const ServerStatusCards: React.FC<ServerStatusCardsProps> = ({ 
   servers, 
   loading, 
-  refreshing, 
-  getCountryFlag 
+  refreshing
 }) => {
   const { theme: currentTheme } = useTheme();
 

@@ -13,6 +13,7 @@ import {
 import { PlusOutlined, EditOutlined, CopyOutlined, DeleteOutlined, CheckOutlined, SyncOutlined, ReloadOutlined } from '@ant-design/icons';
 import ReactCountryFlag from 'react-country-flag';
 import { message } from '@/utils/message';
+import { getCountryFlag, getCountryCodeByName, getCountryOptions } from '@/shared/utils/flag-utils';
 import { 
   serverService, 
   statusToString,
@@ -26,72 +27,6 @@ import { ServerStatus } from '@/types/generated/api/servers/server_management';
 
 const { TextArea } = Input;
 const { Title, Text } = Typography;
-
-// 导入国家数据
-// @ts-ignore
-import countryFlagEmoji from 'country-flag-emoji';
-
-// 从第三方库获取所有国家数据
-const allCountries = countryFlagEmoji.list;
-
-// 常用国家代码
-const popularCountryCodes = [
-    'CN', 'US', 'JP', 'DE', 'GB', 'FR', 'CA', 'AU', 'KR', 'SG', 
-    'HK', 'TW', 'RU', 'IN', 'BR', 'NL', 'CH', 'SE', 'NO', 'IT'
-];
-
-// 生成完整的国家选项列表
-const getCountryOptions = () => {
-    // 获取常用国家
-    const popularCountries = popularCountryCodes
-        .map(code => countryFlagEmoji.get(code))
-        .filter(Boolean);
-    
-    // 获取其他国家（排除常用国家）
-    const otherCountries = allCountries.filter((country: any) => 
-        !popularCountryCodes.includes(country.code)
-    );
-    
-    const createCountryOption = (country: any) => ({
-        label: (
-            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <ReactCountryFlag 
-                    countryCode={country.code}
-                    svg
-                    style={{
-                        width: '16px',
-                        height: '12px'
-                    }}
-                />
-                {country.name}
-            </span>
-        ),
-        value: country.name
-    });
-    
-    return [
-        // 常用国家分组
-        {
-            label: '── 常用国家 ──',
-            value: 'divider-popular',
-            disabled: true
-        },
-        ...popularCountries.map(createCountryOption),
-        // 其他国家分组
-        {
-            label: '── 其他国家 ──',
-            value: 'divider-others', 
-            disabled: true
-        },
-        ...otherCountries.map(createCountryOption)
-    ];
-};
-
-// 根据国家名称获取国家代码
-const getCountryCodeByName = (countryName: string): string | null => {
-    const country = allCountries.find((c: any) => c.name === countryName);
-    return country ? country.code : null;
-};
 
 // 根据国家名称获取国旗组件
 const getFlagByCountryName = (countryName?: string) => {

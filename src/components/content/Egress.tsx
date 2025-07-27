@@ -60,6 +60,19 @@ interface LocalEgressItem extends EgressItem {
 
 // 将API数据转换为显示数据格式
 const convertEgressToLocalItem = (egress: EgressItem): LocalEgressItem => {
+    // 解析 extraConfig 获取额外配置（如果存在）
+    let supportUdp = egress.supportUdp; // 先使用直接字段
+    
+    // 如果直接字段不存在，尝试从 extraConfig 解析
+    if (supportUdp === undefined && egress.egressConfig) {
+        try {
+            const extraConfig = JSON.parse(egress.egressConfig);
+            supportUdp = extraConfig.supportUdp;
+        } catch (error) {
+            console.warn('Failed to parse egressConfig:', egress.egressConfig, error);
+        }
+    }
+    
     // 根据出口模式生成显示配置字符串
     let displayConfig = '';
     
@@ -71,13 +84,13 @@ const convertEgressToLocalItem = (egress: EgressItem): LocalEgressItem => {
             displayConfig = `${egress.forwardType || 'N/A'} -> ${egress.destAddress || 'N/A'}:${egress.destPort || 'N/A'}`;
             break;
         case EgressMode.EGRESS_MODE_SS2022:
-            displayConfig = `SS2022:${egress.port || 'N/A'}, UDP: ${egress.supportUdp ? '是' : '否'}`;
+            displayConfig = `SS2022:${egress.port || 'N/A'}, UDP: ${supportUdp ? '是' : '否'}`;
             break;
         case EgressMode.EGRESS_MODE_TROJAN:
             displayConfig = `Trojan:${egress.port || 'N/A'} -> ${egress.destAddress || 'N/A'}:${egress.destPort || 'N/A'}`;
             break;
         case EgressMode.EGRESS_MODE_SNELL:
-            displayConfig = `Snell:${egress.port || 'N/A'}, UDP: ${egress.supportUdp ? '是' : '否'}`;
+            displayConfig = `Snell:${egress.port || 'N/A'}, UDP: ${supportUdp ? '是' : '否'}`;
             break;
         default:
             displayConfig = '未配置';
@@ -85,6 +98,7 @@ const convertEgressToLocalItem = (egress: EgressItem): LocalEgressItem => {
 
     return {
         ...egress,
+        supportUdp, // 确保 supportUdp 在本地项目中可用
         displayConfig,
     };
 };
@@ -106,8 +120,11 @@ const convertFormToCreateData = (values: any): CreateEgressData => {
         data.destPort = values.destPort;
     } else if (values.egressMode === EgressMode.EGRESS_MODE_SS2022) {
         data.password = values.password;
-        data.supportUdp = values.supportUdp;
         data.port = values.port;
+        // 将 supportUdp 存储在 extraConfig 中
+        if (values.supportUdp !== undefined) {
+            data.extraConfig = JSON.stringify({ supportUdp: values.supportUdp });
+        }
         // TODO: 等待后端添加cipher字段支持
         // data.cipher = values.cipher;
     } else if (values.egressMode === EgressMode.EGRESS_MODE_TROJAN) {
@@ -118,7 +135,10 @@ const convertFormToCreateData = (values: any): CreateEgressData => {
     } else if (values.egressMode === EgressMode.EGRESS_MODE_SNELL) {
         data.password = values.password;
         data.port = values.port;
-        data.supportUdp = values.supportUdp;
+        // 将 supportUdp 存储在 extraConfig 中
+        if (values.supportUdp !== undefined) {
+            data.extraConfig = JSON.stringify({ supportUdp: values.supportUdp });
+        }
     }
 
     return data;
@@ -141,8 +161,11 @@ const convertFormToUpdateData = (values: any): UpdateEgressData => {
         data.destPort = values.destPort;
     } else if (values.egressMode === EgressMode.EGRESS_MODE_SS2022) {
         data.password = values.password;
-        data.supportUdp = values.supportUdp;
         data.port = values.port;
+        // 将 supportUdp 存储在 extraConfig 中
+        if (values.supportUdp !== undefined) {
+            data.extraConfig = JSON.stringify({ supportUdp: values.supportUdp });
+        }
         // TODO: 等待后端添加cipher字段支持
         // data.cipher = values.cipher;
     } else if (values.egressMode === EgressMode.EGRESS_MODE_TROJAN) {
@@ -153,7 +176,10 @@ const convertFormToUpdateData = (values: any): UpdateEgressData => {
     } else if (values.egressMode === EgressMode.EGRESS_MODE_SNELL) {
         data.password = values.password;
         data.port = values.port;
-        data.supportUdp = values.supportUdp;
+        // 将 supportUdp 存储在 extraConfig 中
+        if (values.supportUdp !== undefined) {
+            data.extraConfig = JSON.stringify({ supportUdp: values.supportUdp });
+        }
     }
 
     return data;

@@ -380,123 +380,102 @@ export const arrayUtils = {
 };
 
 /**
- * 对象工具
- */
-export const objectUtils = {
-  // 深度克隆
-  deepClone: <T>(obj: T): T => {
-    if (obj === null || typeof obj !== 'object') return obj;
-    if (obj instanceof Date) return new Date(obj.getTime()) as any;
-    if (obj instanceof Array) return obj.map(item => objectUtils.deepClone(item)) as any;
-    if (typeof obj === 'object') {
-      const clonedObj = {} as any;
-      for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
-          clonedObj[key] = objectUtils.deepClone(obj[key]);
-        }
-      }
-      return clonedObj;
-    }
-    return obj;
-  },
-
-  // 对象合并
-  merge: <T>(...objects: Partial<T>[]): T => {
-    return Object.assign({}, ...objects) as T;
-  },
-
-  // 选择对象属性
-  pick: <T extends object, K extends keyof T>(obj: T, keys: K[]): Pick<T, K> => {
-    const result = {} as Pick<T, K>;
-    keys.forEach(key => {
-      if (key in obj) {
-        result[key] = obj[key];
-      }
-    });
-    return result;
-  },
-
-  // 排除对象属性
-  omit: <T, K extends keyof T>(obj: T, keys: K[]): Omit<T, K> => {
-    const result = { ...obj };
-    keys.forEach(key => {
-      delete result[key];
-    });
-    return result;
-  },
-
-  // 检查对象是否为空
-  isEmpty: (obj: any): boolean => {
-    if (obj == null) return true;
-    if (Array.isArray(obj) || typeof obj === 'string') return obj.length === 0;
-    if (typeof obj === 'object') return Object.keys(obj).length === 0;
-    return false;
-  },
-};
-
-/**
- * API响应处理工具
+ * API工具
  */
 export const apiUtils = {
-  // 处理API响应
-  handleResponse: <T>(response: StandardApiResponse<T>): T => {
-    if (response.success) {
-      return response.data;
-    } else {
-      throw new Error(response.message || API_CONFIG.DEFAULT_ERROR_MESSAGE);
+  // 标准化API响应
+  normalizeResponse: <T>(response: StandardApiResponse<T>): T => {
+    if (!response.success) {
+      throw new Error(response.message || '请求失败');
     }
+    return response.data;
   },
 
-  // 显示API错误消息
-  showError: (error: any): void => {
-    const errorMessage = error?.message || error?.toString() || API_CONFIG.DEFAULT_ERROR_MESSAGE;
+  // 处理API错误
+  handleError: (error: any): void => {
+    const errorMessage = error?.response?.data?.message || 
+                        error?.message || 
+                        '网络错误，请稍后重试';
+    
     message.error(errorMessage);
+    console.error('API错误:', error);
   },
 
-  // 显示API成功消息
-  showSuccess: (message_text: string): void => {
-    message.success(message_text);
-  },
-
-  // 创建标准响应
-  createResponse: <T>(data: T, success = true, message_text?: string): StandardApiResponse<T> => {
-    return {
-      success,
-      data,
-      message: message_text,
-      timestamp: new Date().toISOString(),
-    };
+  // 构建查询参数
+  buildQueryParams: (params: Record<string, any>): string => {
+    const searchParams = new URLSearchParams();
+    
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        searchParams.append(key, String(value));
+      }
+    });
+    
+    return searchParams.toString();
   },
 };
 
 /**
- * 密码和安全工具
+ * 颜色工具
+ */
+export const colorUtils = {
+  // 随机生成颜色
+  randomColor: (): string => {
+    return `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+  },
+
+  // 获取对比色
+  getContrastColor: (backgroundColor: string): string => {
+    // 简单的对比色算法
+    const color = backgroundColor.replace('#', '');
+    const r = parseInt(color.substr(0, 2), 16);
+    const g = parseInt(color.substr(2, 2), 16);
+    const b = parseInt(color.substr(4, 2), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    
+    return luminance > 0.5 ? '#000000' : '#ffffff';
+  },
+};
+
+/**
+ * 安全工具
  */
 export const securityUtils = {
   // 生成随机密码
-  generateRandomPassword: (minLength: number = 64, maxLength: number = 128): string => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  generateRandomPassword: (minLength: number = 16, maxLength: number = 32): string => {
     const length = Math.floor(Math.random() * (maxLength - minLength + 1)) + minLength;
-    let result = '';
+    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
+    let password = '';
+    
     for (let i = 0; i < length; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
+      password += charset.charAt(Math.floor(Math.random() * charset.length));
     }
-    return result;
+    
+    return password;
   },
 
-  // 生成并设置表单密码字段
+  // 为表单字段生成并设置随机密码
   generateAndSetFormPassword: (
     form: any, 
     fieldName: string, 
-    minLength: number = 64, 
-    maxLength: number = 128, 
-    successMessage: string = '已生成随机密码'
-  ) => {
-    const randomPassword = securityUtils.generateRandomPassword(minLength, maxLength);
-    if (form) {
-      form.setFieldsValue({ [fieldName]: randomPassword });
-      message.success(`${successMessage} (${randomPassword.length}位)`);
+    minLength: number, 
+    maxLength: number, 
+    successMessage: string
+  ): void => {
+    const password = securityUtils.generateRandomPassword(minLength, maxLength);
+    form.setFieldValue(fieldName, password);
+    
+    // 显示成功消息
+    if (typeof message !== 'undefined') {
+      message.success(successMessage);
     }
-    return randomPassword;
-  }
+  },
+
+  // 生成随机端口（兼容性）
+  generateRandomPort: (min: number = 20000, max: number = 50000): number => {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  },
 };
+
+// 导出国旗工具函数
+export { flagUtils, getCountryFlag, getCountryCodeByName, standardizeCountryName, getCountryOptions } from './flag-utils';
