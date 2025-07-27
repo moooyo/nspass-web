@@ -24,8 +24,9 @@ interface UpdateUserInfoRequest {
 }
 
 interface ChangePasswordRequest {
-  currentPassword: string;
+  oldPassword: string;
   newPassword: string;
+  confirmPassword?: string;
 }
 
 interface DeleteAccountRequest {
@@ -173,7 +174,7 @@ export const userInfoHandlers = [
     const body = await request.json() as ChangePasswordRequest;
 
     // 模拟密码验证
-    if (body.currentPassword !== 'oldpassword') {
+    if (body.oldPassword !== 'oldpassword') {
       return HttpResponse.json({
         success: false, 
         message: '当前密码错误'

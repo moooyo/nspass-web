@@ -2,9 +2,10 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
     ProForm,
     ProFormText,
+    ModalForm,
   } from '@ant-design/pro-components';
   import { handleApiResponse, OperationType } from '@/utils/message';
-  import { Card, Row, Col, Avatar, Typography, Space, Tag, Divider, Progress, Statistic, Button } from 'antd';
+  import { Card, Row, Col, Avatar, Typography, Space, Tag, Divider, Progress, Statistic, Button, message } from 'antd';
   import { 
     UserOutlined, 
     CrownOutlined, 
@@ -14,7 +15,9 @@ import {
     SettingOutlined,
     SafetyCertificateOutlined,
     LineChartOutlined,
-    ReloadOutlined
+    ReloadOutlined,
+    LockOutlined,
+    KeyOutlined
   } from '@ant-design/icons';
   import { useTheme } from '../hooks/useTheme';
   import { userInfoService } from '@/services/userInfo';
@@ -35,6 +38,7 @@ const UserInfo: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [_hasLoadedData, setHasLoadedData] = useState<boolean>(false);
+  const [changePasswordModalVisible, setChangePasswordModalVisible] = useState<boolean>(false);
   
   // 加载用户信息
   const loadUserInfo = useCallback(async () => {
@@ -72,6 +76,34 @@ const UserInfo: React.FC = () => {
   useEffect(() => {
     loadUserInfo();
   }, [loadUserInfo]);
+
+  // 修改密码处理函数
+  const handleChangePassword = async (values: Record<string, unknown>) => {
+    try {
+      const response = await userInfoService.changePassword({
+        oldPassword: values.currentPassword as string,
+        newPassword: values.newPassword as string,
+      });
+      
+      const handledResponse = handleApiResponse.userAction(response, '修改密码', OperationType.SAVE);
+      
+      if (handledResponse.success) {
+        setChangePasswordModalVisible(false);
+        message.success('密码修改成功！');
+      }
+      
+      return handledResponse.success;
+    } catch (error) {
+      handleApiResponse.handle({
+        success: false,
+        message: error instanceof Error ? error.message : '密码修改失败'
+      }, {
+        operation: '修改密码',
+        operationType: OperationType.SAVE
+      });
+      return false;
+    }
+  };
 
   // 模拟用户数据
   const userStats = [
@@ -327,6 +359,24 @@ const UserInfo: React.FC = () => {
                     height: 40,
                     fontSize: 14
                   }
+                },
+                render: (props, doms) => {
+                  return [
+                    ...doms,
+                    <Button
+                      key="changePassword"
+                      icon={<KeyOutlined />}
+                      onClick={() => setChangePasswordModalVisible(true)}
+                      style={{
+                        borderRadius: 12,
+                        height: 40,
+                        fontSize: 14,
+                        marginLeft: 8
+                      }}
+                    >
+                      修改密码
+                    </Button>
+                  ];
                 }
               }}
               layout="horizontal"
@@ -411,6 +461,93 @@ const UserInfo: React.FC = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* 修改密码Modal */}
+      <ModalForm
+        title="修改密码"
+        width={500}
+        open={changePasswordModalVisible}
+        onOpenChange={setChangePasswordModalVisible}
+        onFinish={handleChangePassword}
+        modalProps={{
+          destroyOnHidden: true,
+        }}
+        submitter={{
+          searchConfig: {
+            submitText: '确认修改',
+            resetText: '取消',
+          },
+          submitButtonProps: {
+            style: {
+              background: 'linear-gradient(135deg, #1890ff 0%, #69c0ff 100%)',
+              border: 'none',
+              borderRadius: 8,
+              height: 36,
+              fontSize: 14,
+              fontWeight: 500
+            }
+          },
+          resetButtonProps: {
+            style: {
+              borderRadius: 8,
+              height: 36,
+              fontSize: 14
+            }
+          }
+        }}
+      >
+        <ProFormText.Password
+          name="currentPassword"
+          label="当前密码"
+          placeholder="请输入当前密码"
+          rules={[
+            { required: true, message: '请输入当前密码' },
+            { min: 6, message: '密码至少6位' }
+          ]}
+          fieldProps={{
+            prefix: <LockOutlined style={{ color: '#ccc' }} />,
+            style: { borderRadius: 8 }
+          }}
+        />
+        <ProFormText.Password
+          name="newPassword"
+          label="新密码"
+          placeholder="请输入新密码"
+          rules={[
+            { required: true, message: '请输入新密码' },
+            { min: 6, message: '密码至少6位' },
+            { 
+              pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{6,}$/,
+              message: '密码必须包含大小写字母和数字'
+            }
+          ]}
+          fieldProps={{
+            prefix: <KeyOutlined style={{ color: '#ccc' }} />,
+            style: { borderRadius: 8 }
+          }}
+        />
+        <ProFormText.Password
+          name="confirmPassword"
+          label="确认新密码"
+          placeholder="请再次输入新密码"
+          dependencies={['newPassword']}
+          rules={[
+            { required: true, message: '请确认新密码' },
+            ({ getFieldValue }) => ({
+              validator(_, value) {
+                if (!value || getFieldValue('newPassword') === value) {
+                  return Promise.resolve();
+                }
+                return Promise.reject(new Error('两次输入的密码不一致'));
+              },
+            }),
+          ]}
+          fieldProps={{
+            prefix: <KeyOutlined style={{ color: '#ccc' }} />,
+            style: { borderRadius: 8 }
+          }}
+        />
+      </ModalForm>
     </div>
   );
 };
