@@ -11,21 +11,9 @@ if (import.meta.env.DEV) {
   logger.info('API Base URL:', import.meta.env.VITE_API_BASE_URL)
 }
 
-// Initialize MSW in development only
+// Initialize MSW in development only - 由MSWProvider管理，不在这里自动启动
 if (typeof window !== 'undefined' && import.meta.env.DEV && import.meta.env.VITE_ENABLE_MSW === 'true') {
-  logger.info('Initializing MSW...')
-  
-  // Only import MSW in development
-  const initMSW = async () => {
-    const { initMSW } = await import('./init-msw')
-    return initMSW()
-  }
-  
-  initMSW().then(() => {
-    logger.info('MSW initialized in development mode')
-  }).catch((error) => {
-    logger.warn('MSW initialization failed:', error)
-  })
+  logger.info('MSW功能已启用，将由MSWProvider管理启动状态')
 } else if (typeof window !== 'undefined' && import.meta.env.PROD) {
   logger.info('MSW disabled in production mode')
 }

@@ -199,14 +199,32 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           throw new Error('MSW 启动失败');
         }
       } else {
-        const { worker } = await import('@/mocks/browser');
-        if (worker) await worker.stop();
-        setEnabled(false);
-        setStatus('stopped');
-        localStorage.setItem('nspass-mock-enabled', 'false');
-        setTimeout(() => updateBaseURL(false), 100);
-        // 通知页面刷新
-        setTimeout(() => apiRefreshEventBus.emit('msw-toggled'), 200);
+        const { stopMSW } = await import('@/mocks/browser');
+        const success = await stopMSW();
+        if (success) {
+          setEnabled(false);
+          setStatus('stopped');
+          localStorage.setItem('nspass-mock-enabled', 'false');
+          
+          // 彻底清理缓存和配置
+          httpClient.clearCache();
+          
+          // 延迟更新baseURL以确保清理完成
+          setTimeout(() => {
+            updateBaseURL(false);
+            console.log('🎯 MSW已停止，已切换到真实API模式');
+          }, 100);
+          
+          // 通知页面刷新
+          setTimeout(() => apiRefreshEventBus.emit('msw-toggled'), 200);
+          
+          // 可选：给用户一个提示而不是强制刷新
+          setTimeout(() => {
+            console.log('� 提示：如果遇到API请求问题，建议刷新页面以完全清除MSW缓存');
+          }, 500);
+        } else {
+          throw new Error('MSW 停止失败');
+        }
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'MSW 操作失败';

@@ -302,9 +302,27 @@ export const stopMSW = async () => {
   }
   
   try {
+    console.log('🛑 开始停止 MSW...');
+    
+    // 停止worker
     await worker.stop();
-    console.log('⏹️ MSW 已停止');
+    console.log('⏹️ MSW worker 已停止');
+    
+    // 清理Service Worker注册
+    await clearAllServiceWorkers();
+    
+    // 重置处理程序（确保彻底清理）
+    if (worker && worker.resetHandlers) {
+      worker.resetHandlers();
+      console.log('🧹 MSW 处理程序已重置');
+    }
+    
+    // 更新状态
     workerStarted = false;
+    workerStarting = false;
+    _lastStartTime = 0;
+    
+    console.log('✅ MSW 完全停止，所有拦截器已清理');
     return true;
   } catch (error) {
     console.error('停止 MSW 失败:', error);
