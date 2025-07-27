@@ -11,15 +11,23 @@ if (import.meta.env.DEV) {
   logger.info('API Base URL:', import.meta.env.VITE_API_BASE_URL)
 }
 
-// Initialize MSW in development
-if (typeof window !== 'undefined' && import.meta.env.DEV) {
+// Initialize MSW in development only
+if (typeof window !== 'undefined' && import.meta.env.DEV && import.meta.env.VITE_ENABLE_MSW === 'true') {
   logger.info('Initializing MSW...')
   
-  import('./init-msw').then(() => {
+  // Only import MSW in development
+  const initMSW = async () => {
+    const { initMSW } = await import('./init-msw')
+    return initMSW()
+  }
+  
+  initMSW().then(() => {
     logger.info('MSW initialized in development mode')
   }).catch((error) => {
     logger.warn('MSW initialization failed:', error)
   })
+} else if (typeof window !== 'undefined' && import.meta.env.PROD) {
+  logger.info('MSW disabled in production mode')
 }
 
 // Render React application

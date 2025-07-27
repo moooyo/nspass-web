@@ -52,6 +52,9 @@ const STATUS_CONFIG = {
 } as const;
 
 export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // 检查是否为生产环境或MSW被明确禁用
+  const isMSWDisabled = import.meta.env.PROD || import.meta.env.VITE_ENABLE_MSW !== 'true';
+  
   const [isClient, setIsClient] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -61,6 +64,35 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     url: 'localhost',
     port: '8080'
   });
+
+  // 如果MSW被禁用，提供一个简化的context值
+  if (isMSWDisabled) {
+    const contextValue = useMemo<MSWContextType>(() => ({
+      enabled: false,
+      loading: false,
+      error: null,
+      status: 'stopped',
+      backendConfig: {
+        url: 'localhost',
+        port: '8080'
+      },
+      toggle: async () => {
+        logger.info('MSW is disabled in production mode');
+      },
+      forceRestart: async () => {
+        logger.info('MSW is disabled in production mode');
+      },
+      updateBackendConfig: () => {
+        logger.info('MSW is disabled in production mode');
+      }
+    }), []);
+
+    return (
+      <MSWContext.Provider value={contextValue}>
+        {children}
+      </MSWContext.Provider>
+    );
+  }
 
   // 获取环境变量作为默认值
   const getDefaultBackendConfig = useCallback((): BackendConfig => {

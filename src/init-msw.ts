@@ -18,6 +18,12 @@ declare global {
 
 // 明确初始化 MSW - 增强版本，支持强制重启
 export async function initMSW(forceRestart = false, retries = 0): Promise<boolean> {
+  // 在生产环境或MSW被明确禁用时，直接返回false
+  if (import.meta.env.PROD || import.meta.env.VITE_ENABLE_MSW !== 'true') {
+    logger.debug('MSW is disabled in production mode or explicitly disabled');
+    return false;
+  }
+
   logger.debug('🔍 initMSW函数开始执行...')
   logger.debug(`手动初始化 MSW 中${forceRestart ? '（强制重启模式）' : ''}...`)
   logger.debug(`当前重试次数: ${retries}/${MAX_RETRIES}`)
@@ -128,7 +134,7 @@ export async function initMSW(forceRestart = false, retries = 0): Promise<boolea
       return new Promise((resolve) => {
         setTimeout(async () => {
           console.log(`⏰ 等待1秒后重试...`);
-          const result = await initMSW(retries + 1, shouldForceRestart);
+          const result = await initMSW(shouldForceRestart, retries + 1);
           resolve(result);
         }, 1000);
       });

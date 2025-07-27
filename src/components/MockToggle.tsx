@@ -6,6 +6,11 @@ import { useMSW } from './MSWProvider';
 import { handleApiResponse, OperationType } from '@/utils/message';
 
 export const MockToggle: React.FC = () => {
+  // 在生产环境下不显示Mock切换器
+  if (import.meta.env.PROD || import.meta.env.VITE_ENABLE_MSW !== 'true') {
+    return null;
+  }
+
   // 使用新的MSWProvider中的useMSW hook
   const { enabled: mockEnabled, toggle, status, loading } = useMSW();
   

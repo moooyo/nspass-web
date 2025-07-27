@@ -32,23 +32,34 @@ if (typeof window !== 'undefined') {
 function App() {
   console.log('App component rendering...');
   
-  return (
+  // 检查是否启用MSW
+  const isMSWEnabled = import.meta.env.DEV && import.meta.env.VITE_ENABLE_MSW === 'true';
+  
+  const AppContent = () => (
     <ThemeProvider>
-      <MSWProvider>
-        <AntdProvider>
-          <EnvInitializer />
-          <Routes>
-            {/* 登录相关路由 */}
-            <Route path="/login" element={<LoginPageFixed />} />
-            <Route path="/login/callback" element={<CallbackPage />} />
-            
-            {/* 主应用路由 - 使用嵌套路由，包含认证检查 */}
-            <Route path="/*" element={<MainLayoutFixed />} />
-          </Routes>
-        </AntdProvider>
-      </MSWProvider>
+      <AntdProvider>
+        <EnvInitializer />
+        <Routes>
+          {/* 登录相关路由 */}
+          <Route path="/login" element={<LoginPageFixed />} />
+          <Route path="/login/callback" element={<CallbackPage />} />
+          
+          {/* 主应用路由 - 使用嵌套路由，包含认证检查 */}
+          <Route path="/*" element={<MainLayoutFixed />} />
+        </Routes>
+      </AntdProvider>
     </ThemeProvider>
   );
+
+  if (isMSWEnabled) {
+    return (
+      <MSWProvider>
+        <AppContent />
+      </MSWProvider>
+    );
+  }
+
+  return <AppContent />;
 }
 
 export default App;

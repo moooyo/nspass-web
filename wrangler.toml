@@ -11,3 +11,4 @@ directory = "./dist"
 [vars]
 NODE_ENV = "production"
 VITE_API_BASE_URL = "https://api.nspass.xforward.de"
+VITE_ENABLE_MSW = "false"

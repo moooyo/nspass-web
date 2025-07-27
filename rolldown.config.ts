@@ -28,6 +28,7 @@ export default defineConfig({
     'import.meta.env.DEV': JSON.stringify((process.env.NODE_ENV || 'development') === 'development'),
     'import.meta.env.PROD': JSON.stringify((process.env.NODE_ENV || 'development') === 'production'),
     'import.meta.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL || ''),
+    'import.meta.env.VITE_ENABLE_MSW': JSON.stringify(process.env.VITE_ENABLE_MSW || (process.env.NODE_ENV === 'development' ? 'true' : 'false')),
   },
   moduleTypes: {
     // Asset types
@@ -46,6 +47,36 @@ export default defineConfig({
   },
   external: (id) => {
     // Don't bundle Node.js built-ins
-    return /^node:/.test(id)
+    if (/^node:/.test(id)) {
+      return true;
+    }
+    
+    // In production, externalize MSW to reduce bundle size
+    if (process.env.NODE_ENV === 'production' && process.env.VITE_ENABLE_MSW === 'false') {
+      // MSW related modules
+      if (id.includes('msw') || 
+          id.includes('/mocks/') || 
+          id.includes('\\mocks\\') ||
+          id.endsWith('/init-msw') ||
+          id.endsWith('\\init-msw') ||
+          id.endsWith('/init-msw.ts') ||
+          id.endsWith('\\init-msw.ts') ||
+          id.includes('@/mocks') ||
+          id.includes('./mocks') ||
+          id.includes('../mocks') ||
+          id.includes('/src/mocks/') ||
+          id.includes('\\src\\mocks\\') ||
+          id.endsWith('mockServiceWorker.js') ||
+          id.includes('/handlers/') ||
+          id.includes('\\handlers\\') ||
+          id.includes('@mock/handlers') ||
+          id.includes('./handlers') ||
+          id.includes('../handlers')) {
+        console.log(`🚫 Externalizing MSW module in production: ${id}`);
+        return true;
+      }
+    }
+    
+    return false;
   },
 })

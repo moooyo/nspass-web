@@ -1,17 +1,21 @@
 import { setupWorker } from 'msw/browser';
 import { handlers } from '@mock/handlers';
 
+// 检查是否在生产环境或MSW被禁用
+const isMSWDisabled = import.meta.env.PROD || import.meta.env.VITE_ENABLE_MSW !== 'true';
+
 // 基础环境检查
 console.log('🔍 MSW browser.ts模块开始加载...');
 console.log(`浏览器环境: ${typeof window !== 'undefined'}`);
 console.log(`ServiceWorker支持: ${typeof window !== 'undefined' && 'serviceWorker' in navigator}`);
+console.log(`MSW是否被禁用: ${isMSWDisabled}`);
 console.log(`处理程序数量: ${handlers.length}`);
 
-// 创建service worker，确保仅在浏览器环境中执行
+// 创建service worker，确保仅在浏览器环境中执行且MSW未被禁用
 // 检查window对象是否存在，确保只在客户端执行
-export const worker = typeof window !== 'undefined' ? setupWorker(...handlers) : null;
+export const worker = (typeof window !== 'undefined' && !isMSWDisabled) ? setupWorker(...handlers) : null;
 
-console.log(`Worker创建结果: ${worker ? '成功' : '失败（可能在服务器端）'}`);
+console.log(`Worker创建结果: ${worker ? '成功' : '失败（可能在服务器端或MSW被禁用）'}`);
 
 // worker的状态
 let workerStarted = false;
@@ -140,6 +144,12 @@ export const startMSW = async (
     forceRestart?: boolean;
   } = {}
 ) => {
+  // 检查是否在生产环境或MSW被禁用
+  if (isMSWDisabled) {
+    console.log('MSW: 在生产环境下被禁用，跳过启动');
+    return false;
+  }
+
   if (typeof window === 'undefined') {
     console.warn('MSW: 服务器端环境，跳过初始化');
     return false;
@@ -304,6 +314,12 @@ export const stopMSW = async () => {
 
 // 强制重启MSW的函数
 export const forceRestartMSW = async () => {
+  // 检查是否在生产环境或MSW被禁用
+  if (isMSWDisabled) {
+    console.log('MSW: 在生产环境下被禁用，跳过强制重启');
+    return false;
+  }
+
   console.log('🔄 强制重启 MSW...');
   
   try {
