@@ -2,7 +2,8 @@ import { http, HttpResponse } from 'msw';
 import type {
   ServerItem,
   CreateServerRequest,
-  UpdateServerRequest
+  UpdateServerRequest,
+  IngressIpv4Entry
 } from '@/types/generated/api/servers/server_management';
 import {
   ServerStatus
@@ -22,7 +23,11 @@ const mockServers: ServerItem[] = [
     downloadTraffic: 2467.3,
     status: ServerStatus.SERVER_STATUS_ONLINE,
     token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiIxIiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wMSIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.abc123',
-    availablePorts: '10000-20000;30001;30002'
+    availablePorts: '10000-20000;30001;30002',
+    ingressIpv4: [
+      { ip: '192.168.1.100', comment: '内网入口' },
+      { ip: '10.0.0.100', comment: '办公网络' }
+    ],
   },
   {
     id: '2',
@@ -36,7 +41,10 @@ const mockServers: ServerItem[] = [
     downloadTraffic: 1923.7,
     status: ServerStatus.SERVER_STATUS_ONLINE,
     token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiIyIiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wMiIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.def456',
-    availablePorts: '8000-9000;40001'
+    availablePorts: '8000-9000;40001',
+    ingressIpv4: [
+      { ip: '172.16.0.1', comment: '电信线路' }
+    ],
   },
   {
     id: '3',
@@ -50,7 +58,12 @@ const mockServers: ServerItem[] = [
     downloadTraffic: 789.2,
     status: ServerStatus.SERVER_STATUS_OFFLINE,
     token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2ZXJfaWQiOiIzIiwibmFtZSI6IuS4nOS6rOacjeWKoeWZqC0wMyIsImlhdCI6MTcwNDUxMjAwMCwiZXhwIjoxNzM2MDQ4MDAwfQ.ghi789',
-    availablePorts: '15000-25000;35001;35002;35003'
+    availablePorts: '15000-25000;35001;35002;35003',
+    ingressIpv4: [
+      { ip: '192.168.100.1', comment: '联通线路' },
+      { ip: '10.1.1.1', comment: '移动线路' },
+      { ip: '172.20.0.1', comment: '' }
+    ],
   },
   {
     id: '4',
@@ -233,7 +246,8 @@ export const serverHandlers = [
       downloadTraffic: body.downloadTraffic || 0,
       status: body.status || ServerStatus.SERVER_STATUS_PENDING_INSTALL, // 使用传入的状态，默认为等待安装
       token: generateToken((nextId - 1).toString()),
-      availablePorts: body.availablePorts || undefined // 空值保持为undefined，表示全部可用
+      availablePorts: body.availablePorts || undefined, // 空值保持为undefined，表示全部可用
+      ingressIpv4: body.ingressIpv4 || undefined, // 入口IPv4地址数组
     };
 
     mockServers.push(newServer);

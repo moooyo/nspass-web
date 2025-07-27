@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { ApiOutlined } from '@ant-design/icons';
-import { useMSW } from './MSWProvider';
+import { MSWContext } from './MSWProvider';
 import { handleApiResponse, OperationType } from '@/utils/message';
 
 export const MockToggle: React.FC = () => {
@@ -11,8 +11,15 @@ export const MockToggle: React.FC = () => {
     return null;
   }
 
-  // 使用新的MSWProvider中的useMSW hook
-  const { enabled: mockEnabled, toggle, status, loading } = useMSW();
+  // 使用MSWContext而不是useMSW hook来避免provider错误
+  const mswContext = useContext(MSWContext);
+  
+  // 如果MSW上下文不可用，返回null
+  if (!mswContext) {
+    return null;
+  }
+  
+  const { enabled: mockEnabled, toggle, status, loading } = mswContext;
   
   // 本地loading状态（用于按钮动画）
   const [isLoading, setIsLoading] = useState(false);

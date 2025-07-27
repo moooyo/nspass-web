@@ -13,6 +13,10 @@ export const mockServers = [
     downloadTraffic: 2048,
     status: 'online',
     availablePorts: '10000-20000;30001;30002',
+    ingressIpv4: [
+      { ip: '192.168.1.100', comment: '内网入口' },
+      { ip: '10.0.0.100', comment: '办公网络' }
+    ],
   },
   {
     id: 2,
@@ -26,6 +30,9 @@ export const mockServers = [
     downloadTraffic: 1024,
     status: 'offline',
     availablePorts: '8000-9000;40001',
+    ingressIpv4: [
+      { ip: '172.16.0.1', comment: '电信线路' }
+    ],
   },
   {
     id: 3,

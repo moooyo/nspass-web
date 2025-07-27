@@ -8,9 +8,10 @@ import {
     ModalForm,
     ProFormDigit,
     ProFormDatePicker,
+    ProFormList,
     ActionType
 } from '@ant-design/pro-components';
-import { PlusOutlined, EditOutlined, CopyOutlined, DeleteOutlined, CheckOutlined, SyncOutlined, ReloadOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, CopyOutlined, DeleteOutlined, CheckOutlined, SyncOutlined, ReloadOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import ReactCountryFlag from 'react-country-flag';
 import { message } from '@/utils/message';
 import { getCountryFlag, getCountryCodeByName, getCountryOptions } from '@/shared/utils/flag-utils';
@@ -22,7 +23,7 @@ import {
   type ServerUpdateData
 } from '@/services/server';
 import { websiteConfigService } from '@/services/websiteConfig';
-import type { ServerItem } from '@/types/generated/api/servers/server_management';
+import type { ServerItem, IngressIpv4Entry } from '@/types/generated/api/servers/server_management';
 import { ServerStatus } from '@/types/generated/api/servers/server_management';
 
 const { TextArea } = Input;
@@ -124,6 +125,22 @@ const Servers: React.FC = () => {
     // 统一处理表单提交
     const handleModalSubmit = async (values: any) => {
         try {
+            // 处理 ingress IPv4 地址 - 过滤掉空的条目
+            const processIngressIpv4 = (ingressValue: any[] | undefined): IngressIpv4Entry[] | undefined => {
+                if (!ingressValue || !Array.isArray(ingressValue) || ingressValue.length === 0) {
+                    return undefined;
+                }
+                // 过滤掉ip为空的条目，并确保格式正确
+                const validEntries = ingressValue
+                    .filter((entry: any) => entry && entry.ip && entry.ip.trim())
+                    .map((entry: any) => ({
+                        ip: entry.ip.trim(),
+                        comment: entry.comment?.trim() || ''
+                    }));
+                
+                return validEntries.length > 0 ? validEntries : undefined;
+            };
+
             if (modalMode === 'create') {
                 const createData: ServerCreateData = {
                     name: values.name,
@@ -134,6 +151,7 @@ const Servers: React.FC = () => {
                     downloadTraffic: values.downloadTraffic || 0,
                     status: ServerStatus.SERVER_STATUS_PENDING_INSTALL, // 新建服务器默认状态为等待安装
                     availablePorts: values.availablePorts?.trim() || undefined, // 空值转为undefined
+                    ingressIpv4: processIngressIpv4(values.ingressIpv4),
                 };
                 
                 await serverService.createServer(createData);
@@ -145,6 +163,7 @@ const Servers: React.FC = () => {
                     ...values,
                     status: values.status, // 保持字符串格式，服务层会转换
                     availablePorts: values.availablePorts?.trim() || undefined, // 空值转为undefined
+                    ingressIpv4: processIngressIpv4(values.ingressIpv4),
                 };
                 
                 await serverService.updateServer(currentRecord.id!, updateData);
@@ -277,6 +296,48 @@ const Servers: React.FC = () => {
                         <div style={{ color: '#999', fontSize: '12px' }}>
                             等待上报
                         </div>
+                    )}
+                </div>
+            ),
+        },
+        {
+            title: '入口IPv4',
+            dataIndex: 'ingressIpv4',
+            width: '20%',
+            hideInSearch: true,
+            render: (_, record) => (
+                <div style={{ fontSize: '12px' }}>
+                    {record.ingressIpv4 && record.ingressIpv4.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            {record.ingressIpv4.map((entry, index) => (
+                                <div key={index} style={{ 
+                                    padding: '2px 6px',
+                                    backgroundColor: '#f6f4ff',
+                                    borderRadius: '4px',
+                                    border: '1px solid #d3adf7'
+                                }}>
+                                    <div style={{ 
+                                        color: '#722ed1', 
+                                        fontFamily: 'monospace',
+                                        fontSize: '11px',
+                                        fontWeight: 'bold'
+                                    }}>
+                                        {entry.ip}
+                                    </div>
+                                    {entry.comment && (
+                                        <div style={{ 
+                                            color: '#666',
+                                            fontSize: '10px',
+                                            marginTop: '1px'
+                                        }}>
+                                            {entry.comment}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <span style={{ color: '#999', fontStyle: 'italic' }}>无</span>
                     )}
                 </div>
             ),
@@ -426,12 +487,14 @@ const Servers: React.FC = () => {
                 onFinish={handleModalSubmit}
                 initialValues={modalMode === 'edit' && currentRecord ? {
                     ...currentRecord,
-                    status: statusToString(currentRecord.status!)
+                    status: statusToString(currentRecord.status!),
+                    ingressIpv4: currentRecord.ingressIpv4 || [], // 直接使用数组结构
                 } : {
                     uploadTraffic: 0,
                     downloadTraffic: 0,
                     registerTime: new Date().toISOString().split('T')[0],
                     status: 'pending_install',
+                    ingressIpv4: [], // 创建时为空数组
                 }}
                 modalProps={{
                     destroyOnHidden: true,
@@ -493,6 +556,43 @@ const Servers: React.FC = () => {
                     ]}
                     help="端口格式：单个端口（如30001）或端口范围（如10000-20000），多个端口用分号分隔。留空表示全部端口可用"
                 />
+                <ProFormList
+                    name="ingressIpv4"
+                    label="入口IPv4地址"
+                    tooltip="用于生成额外的线路配置"
+                    copyIconProps={false}
+                    creatorButtonProps={{
+                        creatorButtonText: '添加入口IPv4地址',
+                        type: 'dashed',
+                        icon: <PlusOutlined />,
+                    }}
+                    deleteIconProps={{
+                        Icon: MinusCircleOutlined,
+                        tooltipText: '删除此项',
+                    }}
+                    min={0}
+                    max={10}
+                >
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                        <ProFormText
+                            name="ip"
+                            placeholder="IPv4地址 (如: 192.168.1.1)"
+                            rules={[
+                                { required: true, message: '请输入IPv4地址' },
+                                {
+                                    pattern: /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/,
+                                    message: '请输入有效的IPv4地址'
+                                }
+                            ]}
+                            style={{ flex: 1 }}
+                        />
+                        <ProFormText
+                            name="comment"
+                            placeholder="备注 (如: 电信线路)"
+                            style={{ flex: 1 }}
+                        />
+                    </div>
+                </ProFormList>
                 <ProFormDatePicker
                     name="registerTime"
                     label="注册时间"

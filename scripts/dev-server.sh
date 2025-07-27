@@ -5,7 +5,17 @@
 
 set -e
 
+# Set development environment variables
+export NODE_ENV=development
+export VITE_ENABLE_MSW=true
+
 echo "🚀 Starting Rolldown development environment..."
+
+# Clean up previous builds
+echo "🧹 Cleaning previous builds..."
+npm run clean
+
+echo "✅ Cleanup completed"
 
 # Check port availability
 if lsof -Pi :3000 -sTCP:LISTEN -t >/dev/null 2>&1; then

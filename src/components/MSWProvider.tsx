@@ -445,8 +445,16 @@ const ConfigForm: React.FC<{
 };
 
 export const MSWToggle: React.FC = () => {
-  const { enabled, loading, error, toggle, forceRestart, status, backendConfig, updateBackendConfig } = useMSW();
+  // Check if MSW context is available first
+  const context = useContext(MSWContext);
   const { theme } = useTheme();
+
+  // If MSW is not enabled or context is not available, don't render
+  if (!context || import.meta.env.PROD || import.meta.env.VITE_ENABLE_MSW !== 'true') {
+    return null;
+  }
+
+  const { enabled, loading, error, toggle, forceRestart, status, backendConfig, updateBackendConfig } = context;
 
   // 所有hooks必须在早期返回之前调用
   const apiInfo = useMemo(() => {

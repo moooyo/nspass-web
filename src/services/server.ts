@@ -1,5 +1,5 @@
 import { BaseService, QueryParams, StandardApiResponse } from './base';
-import { ServerItem, ServerStatus, CreateServerRequest, UpdateServerRequest, RegenerateServerTokenRequest, RegenerateAllServerTokensRequest, RegenerateServerTokenResponse, RegenerateAllServerTokensResponse } from '@/types/generated/api/servers/server_management';
+import { ServerItem, ServerStatus, CreateServerRequest, UpdateServerRequest, RegenerateServerTokenRequest, RegenerateAllServerTokensRequest, RegenerateServerTokenResponse, RegenerateAllServerTokensResponse, IngressIpv4Entry } from '@/types/generated/api/servers/server_management';
 
 // 服务器查询参数
 export interface ServerQueryParams extends QueryParams {
@@ -16,6 +16,7 @@ export interface ServerCreateData extends Omit<CreateServerRequest, 'id'> {
   group?: string;
   status?: ServerStatus;
   availablePorts?: string;
+  ingressIpv4?: IngressIpv4Entry[];
 }
 
 // 服务器更新参数
@@ -29,6 +30,7 @@ export interface ServerUpdateData extends Partial<Omit<UpdateServerRequest, 'id'
   uploadTraffic?: number;
   downloadTraffic?: number;
   availablePorts?: string;
+  ingressIpv4?: IngressIpv4Entry[];
 }
 
 // 服务器组信息

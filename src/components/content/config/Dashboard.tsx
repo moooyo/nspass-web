@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useContext } from 'react';
 import { ProCard, StatisticCard } from '@ant-design/pro-components';
 import { Space, Typography, Progress, Spin, Alert, Button } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import { dashboardService } from '@/services/dashboard';
-import { useMSW } from '@/components/MSWProvider';
+import { MSWContext } from '@/components/MSWProvider';
 import { httpClient } from '@/utils/http-client';
 import type { 
   SystemOverview, 
@@ -20,7 +20,10 @@ const DynamicColumn = React.lazy(() =>
 );
 
 const Dashboard: React.FC = () => {
-  const { enabled: mswEnabled, status: mswStatus } = useMSW();
+  // Check if MSW context is available, use fallback if not
+  const mswContext = useContext(MSWContext);
+  const mswEnabled = mswContext?.enabled ?? false;
+  const mswStatus = mswContext?.status ?? 'stopped';
   
   // 状态管理
   const [loading, setLoading] = useState(true);
