@@ -444,7 +444,7 @@ export const securityUtils = {
   // 生成随机密码
   generateRandomPassword: (minLength: number = 16, maxLength: number = 32): string => {
     const length = Math.floor(Math.random() * (maxLength - minLength + 1)) + minLength;
-    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
+    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let password = '';
     
     for (let i = 0; i < length; i++) {
