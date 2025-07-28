@@ -3,8 +3,8 @@
  * 集成了原版本的完整功能和优化版本的最佳实践
  */
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Button, Tag, Popconfirm, Tooltip, Space, Card, Typography, Input, Modal } from 'antd';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { Button, Tag, Popconfirm, Tooltip, Space, Card, Typography, Input, Modal, Form, Select, Switch, Alert, Row, Col } from 'antd';
 import { message } from '@/utils/message';
 import { routeService, RouteItem, CreateRouteData, UpdateRouteData } from '@/services/routes';
 import { 
@@ -26,7 +26,6 @@ import {
     ModalForm,
     ProFormDigit,
 } from '@ant-design/pro-components';
-import { Form } from 'antd';
 import { 
     PlusOutlined, 
     EditOutlined,
@@ -37,6 +36,11 @@ import {
     EyeTwoTone,
     EyeOutlined,
     ReloadOutlined,
+    WarningOutlined,
+    RocketOutlined,
+    AppstoreOutlined,
+    CloudOutlined,
+    NodeIndexOutlined
 } from '@ant-design/icons';
 import { securityUtils } from '@/shared/utils';
 
@@ -178,11 +182,191 @@ const Routes: React.FC = () => {
         return securityUtils.generateAndSetFormPassword(currentForm, fieldName, minLength, maxLength, successMessage);
     };
 
-    // 复制整行数据
-    const copyRouteData = (record: RouteItem) => {
-        const textToCopy = `${record.id} - ${record.routeName} (${record.entryPoint}:${record.port})`;
-        navigator.clipboard.writeText(textToCopy);
-        message.success('线路信息已复制到剪贴板');
+    // 代理格式选择弹窗状态
+    const [proxyFormatModalVisible, setProxyFormatModalVisible] = useState(false);
+    const [currentProxyRoute, setCurrentProxyRoute] = useState<RouteItem | null>(null);
+
+    // 生成不同格式的代理配置
+    const generateProxyConfig = (record: RouteItem, format: 'shadowrocket' | 'clash' | 'surge' | 'loon') => {
+        if (!record || !record.protocolParams) {
+            message.error('线路数据不完整');
+            return '';
+        }
+
+        const { routeName, entryPoint, port, protocol, protocolParams } = record;
+        
+        switch (format) {
+            case 'shadowrocket':
+                return generateShadowrocketConfig(record);
+            case 'clash':
+                return generateClashConfig(record);
+            case 'surge':
+                return generateSurgeConfig(record);
+            case 'loon':
+                return generateLoonConfig(record);
+            default:
+                return '';
+        }
+    };
+
+    // Shadowrocket 格式
+    const generateShadowrocketConfig = (record: RouteItem) => {
+        const { routeName, entryPoint, port, protocol, protocolParams } = record;
+        
+        if (protocol === 'PROTOCOL_SHADOWSOCKS' && protocolParams?.shadowsocks) {
+            const { method, password } = protocolParams.shadowsocks;
+            if (!method || !password) {
+                return '# Shadowsocks 配置不完整';
+            }
+            const methodMap: { [key: string]: string } = {
+                'SHADOWSOCKS_METHOD_AES_128_GCM': 'aes-128-gcm',
+                'SHADOWSOCKS_METHOD_AES_256_GCM': 'aes-256-gcm',
+                'SHADOWSOCKS_METHOD_CHACHA20_IETF_POLY1305': 'chacha20-ietf-poly1305'
+            };
+            const encryptMethod = methodMap[method] || 'aes-128-gcm';
+            return `ss://${btoa(`${encryptMethod}:${password}`)}@${entryPoint}:${port}#${encodeURIComponent(routeName || 'unknown')}`;
+        }
+        return `# 不支持的协议类型: ${protocol}`;
+    };
+
+    // Clash 格式
+    const generateClashConfig = (record: RouteItem) => {
+        const { routeName, entryPoint, port, protocol, protocolParams } = record;
+        
+        if (protocol === 'PROTOCOL_SHADOWSOCKS' && protocolParams?.shadowsocks) {
+            const { method, password } = protocolParams.shadowsocks;
+            if (!method || !password) {
+                return '# Shadowsocks 配置不完整';
+            }
+            const methodMap: { [key: string]: string } = {
+                'SHADOWSOCKS_METHOD_AES_128_GCM': 'aes-128-gcm',
+                'SHADOWSOCKS_METHOD_AES_256_GCM': 'aes-256-gcm',
+                'SHADOWSOCKS_METHOD_CHACHA20_IETF_POLY1305': 'chacha20-ietf-poly1305'
+            };
+            const encryptMethod = methodMap[method] || 'aes-128-gcm';
+            return `- name: "${routeName || 'unknown'}"
+  type: ss
+  server: ${entryPoint}
+  port: ${port}
+  cipher: ${encryptMethod}
+  password: "${password}"`;
+        }
+        
+        if (protocol === 'PROTOCOL_SNELL' && protocolParams?.snell) {
+            const { psk, version } = protocolParams.snell;
+            if (!psk || !version) {
+                return '# Snell 配置不完整';
+            }
+            const versionMap: { [key: string]: string } = {
+                'SNELL_VERSION_V4': '4',
+                'SNELL_VERSION_V5': '5'
+            };
+            const snellVersion = versionMap[version] || '4';
+            return `- name: "${routeName || 'unknown'}"
+  type: snell
+  server: ${entryPoint}
+  port: ${port}
+  psk: "${psk}"
+  version: ${snellVersion}`;
+        }
+        
+        return `# 不支持的协议类型: ${protocol}`;
+    };
+
+    // Surge 格式
+    const generateSurgeConfig = (record: RouteItem) => {
+        const { routeName, entryPoint, port, protocol, protocolParams } = record;
+        
+        if (protocol === 'PROTOCOL_SHADOWSOCKS' && protocolParams?.shadowsocks) {
+            const { method, password } = protocolParams.shadowsocks;
+            if (!method || !password) {
+                return '# Shadowsocks 配置不完整';
+            }
+            const methodMap: { [key: string]: string } = {
+                'SHADOWSOCKS_METHOD_AES_128_GCM': 'aes-128-gcm',
+                'SHADOWSOCKS_METHOD_AES_256_GCM': 'aes-256-gcm',
+                'SHADOWSOCKS_METHOD_CHACHA20_IETF_POLY1305': 'chacha20-ietf-poly1305'
+            };
+            const encryptMethod = methodMap[method] || 'aes-128-gcm';
+            return `${routeName || 'unknown'} = ss, ${entryPoint}, ${port}, encrypt-method=${encryptMethod}, password=${password}`;
+        }
+        
+        if (protocol === 'PROTOCOL_SNELL' && protocolParams?.snell) {
+            const { psk, version } = protocolParams.snell;
+            if (!psk || !version) {
+                return '# Snell 配置不完整';
+            }
+            const versionMap: { [key: string]: string } = {
+                'SNELL_VERSION_V4': '4',
+                'SNELL_VERSION_V5': '5'
+            };
+            const snellVersion = versionMap[version] || '4';
+            return `${routeName || 'unknown'} = snell, ${entryPoint}, ${port}, psk=${psk}, version=${snellVersion}`;
+        }
+        
+        return `# 不支持的协议类型: ${protocol}`;
+    };
+
+    // Loon 格式
+    const generateLoonConfig = (record: RouteItem) => {
+        const { routeName, entryPoint, port, protocol, protocolParams } = record;
+        
+        if (protocol === 'PROTOCOL_SHADOWSOCKS' && protocolParams?.shadowsocks) {
+            const { method, password, udpSupport, tcpFastOpen } = protocolParams.shadowsocks;
+            if (!method || !password) {
+                return '# Shadowsocks 配置不完整';
+            }
+            const methodMap: { [key: string]: string } = {
+                'SHADOWSOCKS_METHOD_AES_128_GCM': 'aes-128-gcm',
+                'SHADOWSOCKS_METHOD_AES_256_GCM': 'aes-256-gcm',
+                'SHADOWSOCKS_METHOD_CHACHA20_IETF_POLY1305': 'chacha20-ietf-poly1305'
+            };
+            const encryptMethod = methodMap[method] || 'aes-128-gcm';
+            const udpFlag = udpSupport ? 'true' : 'false';
+            const fastOpenFlag = tcpFastOpen ? 'true' : 'false';
+            return `${routeName || 'unknown'} = Shadowsocks,${entryPoint},${port},${encryptMethod},"${password}",fast-open=${fastOpenFlag},udp=${udpFlag}`;
+        }
+        
+        if (protocol === 'PROTOCOL_SNELL' && protocolParams?.snell) {
+            const { psk, version, udpSupport, tcpFastOpen } = protocolParams.snell;
+            if (!psk || !version) {
+                return '# Snell 配置不完整';
+            }
+            const versionMap: { [key: string]: string } = {
+                'SNELL_VERSION_V4': '4',
+                'SNELL_VERSION_V5': '5'
+            };
+            const snellVersion = versionMap[version] || '4';
+            const udpFlag = udpSupport ? 'true' : 'false';
+            const fastOpenFlag = tcpFastOpen ? 'true' : 'false';
+            return `${routeName || 'unknown'} = Snell,${entryPoint},${port},psk="${psk}",version=${snellVersion},fast-open=${fastOpenFlag},udp=${udpFlag}`;
+        }
+        
+        return `# 不支持的协议类型: ${protocol}`;
+    };
+
+    // 复制代理配置到剪贴板
+    const copyProxyConfig = async (format: 'shadowrocket' | 'clash' | 'surge' | 'loon') => {
+        if (!currentProxyRoute) return;
+        
+        const config = generateProxyConfig(currentProxyRoute, format);
+        if (config && !config.startsWith('# 不支持')) {
+            try {
+                await navigator.clipboard.writeText(config);
+                message.success(`${format.charAt(0).toUpperCase() + format.slice(1)} 配置已复制到剪贴板`);
+                setProxyFormatModalVisible(false);
+            } catch (error) {
+                message.error('复制失败，请手动复制');
+            }
+        } else {
+            message.error('不支持的协议类型或配置生成失败');
+        }
+    };
+
+    // 打开代理格式选择弹窗
+    const openProxyFormatModal = (record: RouteItem) => {
+        setCurrentProxyRoute(record);
+        setProxyFormatModalVisible(true);
     };
 
     // 查看JSON数据
@@ -444,7 +628,7 @@ const Routes: React.FC = () => {
                         type="text" 
                         size="small" 
                         icon={<CopyOutlined />}
-                        onClick={() => copyRouteData(record)}
+                        onClick={() => openProxyFormatModal(record)}
                     >
                         复制
                     </Button>
@@ -904,6 +1088,262 @@ const Routes: React.FC = () => {
                             }
                         })()}
                     </pre>
+                </div>
+            </Modal>
+
+            {/* 代理格式选择弹窗 */}
+            <Modal
+                title={
+                    <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '12px',
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        fontSize: '18px',
+                        fontWeight: 600
+                    }}>
+                        <CopyOutlined style={{ color: '#667eea', fontSize: '20px' }} />
+                        <span>选择代理客户端</span>
+                    </div>
+                }
+                open={proxyFormatModalVisible}
+                onCancel={() => setProxyFormatModalVisible(false)}
+                footer={null}
+                width={660}
+                style={{
+                    top: 50,
+                }}
+                bodyStyle={{
+                    padding: '24px',
+                    background: 'linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%)',
+                    borderRadius: '12px'
+                }}
+            >
+                <div style={{ 
+                    marginBottom: '24px',
+                    padding: '16px',
+                    background: 'rgba(255, 255, 255, 0.9)',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(99, 102, 241, 0.1)',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)'
+                }}>
+                    <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '8px',
+                        marginBottom: '8px',
+                        color: '#1e293b',
+                        fontSize: '14px',
+                        fontWeight: 500
+                    }}>
+                        <div style={{
+                            width: '4px',
+                            height: '16px',
+                            background: 'linear-gradient(to bottom, #667eea, #764ba2)',
+                            borderRadius: '2px'
+                        }} />
+                        选择要复制的代理配置格式
+                    </div>
+                    <div style={{ 
+                        color: '#64748b',
+                        fontSize: '13px',
+                        marginLeft: '12px'
+                    }}>
+                        线路: <span style={{ fontWeight: 500, color: '#334155' }}>{currentProxyRoute?.routeName || '未知'}</span> 
+                        <span style={{ margin: '0 8px', color: '#cbd5e1' }}>•</span>
+                        服务器: <span style={{ fontWeight: 500, color: '#334155' }}>{currentProxyRoute?.entryPoint}:{currentProxyRoute?.port}</span>
+                    </div>
+                </div>
+                
+                <Row gutter={[20, 20]}>
+                    <Col span={12}>
+                        <div 
+                            onClick={() => copyProxyConfig('shadowrocket')}
+                            style={{ 
+                                height: '100px',
+                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                borderRadius: '16px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                border: 'none',
+                                boxShadow: '0 4px 16px rgba(102, 126, 234, 0.4)',
+                                position: 'relative',
+                                overflow: 'hidden'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.5)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 4px 16px rgba(102, 126, 234, 0.4)';
+                            }}
+                        >
+                            <div style={{
+                                position: 'absolute',
+                                top: '-50%',
+                                right: '-50%',
+                                width: '100%',
+                                height: '100%',
+                                background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
+                                borderRadius: '50%'
+                            }} />
+                            <RocketOutlined style={{ fontSize: '28px', color: 'white', marginBottom: '8px' }} />
+                            <div style={{ color: 'white', fontSize: '16px', fontWeight: 600, marginBottom: '2px' }}>Shadowrocket</div>
+                            <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)' }}>iOS 代理客户端</div>
+                        </div>
+                    </Col>
+                    <Col span={12}>
+                        <div 
+                            onClick={() => copyProxyConfig('clash')}
+                            style={{ 
+                                height: '100px',
+                                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                borderRadius: '16px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                border: 'none',
+                                boxShadow: '0 4px 16px rgba(16, 185, 129, 0.4)',
+                                position: 'relative',
+                                overflow: 'hidden'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 8px 25px rgba(16, 185, 129, 0.5)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 4px 16px rgba(16, 185, 129, 0.4)';
+                            }}
+                        >
+                            <div style={{
+                                position: 'absolute',
+                                top: '-50%',
+                                right: '-50%',
+                                width: '100%',
+                                height: '100%',
+                                background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
+                                borderRadius: '50%'
+                            }} />
+                            <AppstoreOutlined style={{ fontSize: '28px', color: 'white', marginBottom: '8px' }} />
+                            <div style={{ color: 'white', fontSize: '16px', fontWeight: 600, marginBottom: '2px' }}>Clash</div>
+                            <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)' }}>跨平台代理客户端</div>
+                        </div>
+                    </Col>
+                    <Col span={12}>
+                        <div 
+                            onClick={() => copyProxyConfig('surge')}
+                            style={{ 
+                                height: '100px',
+                                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                                borderRadius: '16px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                border: 'none',
+                                boxShadow: '0 4px 16px rgba(245, 158, 11, 0.4)',
+                                position: 'relative',
+                                overflow: 'hidden'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 8px 25px rgba(245, 158, 11, 0.5)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 4px 16px rgba(245, 158, 11, 0.4)';
+                            }}
+                        >
+                            <div style={{
+                                position: 'absolute',
+                                top: '-50%',
+                                right: '-50%',
+                                width: '100%',
+                                height: '100%',
+                                background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
+                                borderRadius: '50%'
+                            }} />
+                            <CloudOutlined style={{ fontSize: '28px', color: 'white', marginBottom: '8px' }} />
+                            <div style={{ color: 'white', fontSize: '16px', fontWeight: 600, marginBottom: '2px' }}>Surge</div>
+                            <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)' }}>macOS/iOS 网络工具</div>
+                        </div>
+                    </Col>
+                    <Col span={12}>
+                        <div 
+                            onClick={() => copyProxyConfig('loon')}
+                            style={{ 
+                                height: '100px',
+                                background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                                borderRadius: '16px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                border: 'none',
+                                boxShadow: '0 4px 16px rgba(139, 92, 246, 0.4)',
+                                position: 'relative',
+                                overflow: 'hidden'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 8px 25px rgba(139, 92, 246, 0.5)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 4px 16px rgba(139, 92, 246, 0.4)';
+                            }}
+                        >
+                            <div style={{
+                                position: 'absolute',
+                                top: '-50%',
+                                right: '-50%',
+                                width: '100%',
+                                height: '100%',
+                                background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
+                                borderRadius: '50%'
+                            }} />
+                            <NodeIndexOutlined style={{ fontSize: '28px', color: 'white', marginBottom: '8px' }} />
+                            <div style={{ color: 'white', fontSize: '16px', fontWeight: 600, marginBottom: '2px' }}>Loon</div>
+                            <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)' }}>iOS 网络调试工具</div>
+                        </div>
+                    </Col>
+                </Row>
+                
+                <div style={{ 
+                    marginTop: '32px', 
+                    textAlign: 'center',
+                    paddingTop: '20px',
+                    borderTop: '1px solid rgba(148, 163, 184, 0.1)'
+                }}>
+                    <Button 
+                        onClick={() => setProxyFormatModalVisible(false)}
+                        size="large"
+                        style={{
+                            borderRadius: '8px',
+                            fontWeight: 500,
+                            color: '#64748b',
+                            borderColor: '#e2e8f0',
+                            backgroundColor: 'white',
+                            minWidth: '120px'
+                        }}
+                    >
+                        取消
+                    </Button>
                 </div>
             </Modal>
         </div>
