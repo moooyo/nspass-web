@@ -1,31 +1,27 @@
 import { http, HttpResponse } from 'msw';
-import { RouteItem, CreateRouteData, UpdateRouteData } from '@/services/routes';
+import { RouteItem } from '@/services/routes';
 import { RouteType, Protocol } from '@/types/generated/model/route';
-import { mockCustomRoutes, mockSystemRoutes, mockConfigs } from '@/mocks/data/routes';
+import { mockSystemRoutes, mockConfigs } from '@/mocks/data/routes';
 
-// 创建可变的mock数据副本
-let customRoutes = [...mockCustomRoutes];
+// 只保留系统线路数据
 let systemRoutes = [...mockSystemRoutes];
-let nextId = 200;
 
-// 获取指定类型的线路
+// 获取指定类型的线路（仅系统线路）
 function getRoutesByType(type?: string): RouteItem[] {
-  if (type === RouteType.ROUTE_TYPE_CUSTOM) {
-    return customRoutes;
-  } else if (type === RouteType.ROUTE_TYPE_SYSTEM) {
+  if (type === RouteType.ROUTE_TYPE_SYSTEM || !type) {
     return systemRoutes;
   }
-  return [...customRoutes, ...systemRoutes];
+  return []; // 不再支持自定义线路
 }
 
-// 查找线路（从所有线路中查找）
+// 查找线路（仅从系统线路中查找）
 function findRoute(id: string | number): RouteItem | undefined {
   const numId = typeof id === 'string' ? parseInt(id) : id;
-  return [...customRoutes, ...systemRoutes].find(r => r.id === numId);
+  return systemRoutes.find(r => r.id === numId);
 }
 
 export const routeHandlers = [
-  // 获取线路列表 - 匹配swagger接口 GET /v1/routes
+  // 获取线路列表 - 只返回系统线路
   http.get('/v1/routes', ({ request }) => {
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('pagination.page') || '1');
@@ -65,58 +61,7 @@ export const routeHandlers = [
     });
   }),
 
-  // 创建线路 - 匹配swagger接口 POST /v1/routes
-  http.post('/v1/routes', async ({ request }) => {
-    const body = await request.json() as CreateRouteData;
-
-    // 验证必填字段
-    if (!body.routeName || !body.entryPoint || !body.protocol || !body.protocolParams) {
-      return HttpResponse.json({
-        success: false,
-        message: '缺少必填字段：线路名称、入口地址、协议、协议参数为必填项',
-        errorCode: 'INVALID_INPUT'
-      }, { status: 400 });
-    }
-
-    // 验证协议参数
-    if (body.protocol === Protocol.PROTOCOL_SHADOWSOCKS && !body.protocolParams.shadowsocks?.password) {
-      return HttpResponse.json({
-        success: false,
-        message: 'Shadowsocks协议需要密码参数',
-        errorCode: 'INVALID_INPUT'
-      }, { status: 400 });
-    }
-
-    if (body.protocol === Protocol.PROTOCOL_SNELL && !body.protocolParams.snell?.psk) {
-      return HttpResponse.json({
-        success: false,
-        message: 'Snell协议需要PSK参数',
-        errorCode: 'INVALID_INPUT'
-      }, { status: 400 });
-    }
-
-    const newRoute: RouteItem = {
-      id: nextId,
-      routeName: body.routeName,
-      entryPoint: body.entryPoint,
-      port: body.port || (body.protocol === Protocol.PROTOCOL_SHADOWSOCKS ? 8388 : 6333),
-      protocol: body.protocol,
-      protocolParams: body.protocolParams,
-      description: body.description,
-      metadata: body.metadata,
-    };
-
-    customRoutes.push(newRoute);
-    nextId++;
-
-    return HttpResponse.json({
-      success: true,
-      message: '线路创建成功',
-      data: newRoute
-    });
-  }),
-
-  // 获取单个线路 - 匹配swagger接口 GET /v1/routes/{id}
+  // 获取单个线路 - 只支持系统线路
   http.get('/v1/routes/:id', ({ params }) => {
     const id = params.id as string;
     const route = findRoute(id);
@@ -136,99 +81,7 @@ export const routeHandlers = [
     });
   }),
 
-  // 更新线路 - 匹配swagger接口 PUT /v1/routes/{id}
-  http.put('/v1/routes/:id', async ({ params, request }) => {
-    const id = params.id as string;
-    const body = await request.json() as UpdateRouteData;
-    
-    // 只能更新自定义线路
-    const routeIndex = customRoutes.findIndex(r => r.id === parseInt(id));
-
-    if (routeIndex === -1) {
-      return HttpResponse.json({
-        success: false,
-        message: '线路不存在或不允许编辑',
-        errorCode: 'ROUTE_NOT_FOUND'
-      }, { status: 404 });
-    }
-
-    // 更新线路
-    const route = customRoutes[routeIndex];
-    Object.assign(route, body);
-
-    return HttpResponse.json({
-      success: true,
-      message: '线路更新成功',
-      data: route
-    });
-  }),
-
-  // 删除线路 - 匹配swagger接口 DELETE /v1/routes/{id}
-  http.delete('/v1/routes/:id', ({ params }) => {
-    const id = params.id as string;
-    
-    // 只能删除自定义线路
-    const routeIndex = customRoutes.findIndex(r => r.id === parseInt(id));
-
-    if (routeIndex === -1) {
-      return HttpResponse.json({
-        success: false,
-        message: '线路不存在或不允许删除',
-        errorCode: 'ROUTE_NOT_FOUND'
-      }, { status: 404 });
-    }
-
-    const deletedRoute = customRoutes.splice(routeIndex, 1)[0];
-
-    return HttpResponse.json({
-      success: true,
-      message: `线路 ${deletedRoute.routeName} 删除成功`
-    });
-  }),
-
-  // 批量删除线路 - 匹配swagger接口 POST /v1/routes/batch/delete
-  http.post('/v1/routes/batch/delete', async ({ request }) => {
-    const body = await request.json() as { ids: number[] };
-    let deletedCount = 0;
-    const deletedRoutes: string[] = [];
-
-    body.ids.forEach(id => {
-      const index = customRoutes.findIndex(r => r.id === id);
-      if (index !== -1) {
-        const deletedRoute = customRoutes.splice(index, 1)[0];
-        deletedRoutes.push(deletedRoute.routeName ?? 'Unknown Route');
-        deletedCount++;
-      }
-    });
-
-    return HttpResponse.json({
-      success: true,
-      message: `成功删除 ${deletedCount} 个线路: ${deletedRoutes.join(', ')}`
-    });
-  }),
-
-  // 批量更新线路状态 - 匹配swagger接口 POST /v1/routes/batch/status
-  http.post('/v1/routes/batch/status', async ({ request }) => {
-    const body = await request.json() as { ids: number[]; status: string };
-    const updatedRoutes: RouteItem[] = [];
-
-    body.ids.forEach(id => {
-      const index = customRoutes.findIndex(r => r.id === id);
-      if (index !== -1) {
-        // 这里可以添加状态更新逻辑
-        // customRoutes[index].status = body.status;
-        updatedRoutes.push(customRoutes[index]);
-      }
-    });
-
-    return HttpResponse.json({
-      success: true,
-      message: `成功更新 ${updatedRoutes.length} 个线路状态`,
-      data: updatedRoutes
-    });
-  }),
-
-  // 搜索线路 - 匹配swagger接口 GET /v1/routes/search
+  // 搜索线路 - 只搜索系统线路
   http.get('/v1/routes/search', ({ request }) => {
     const url = new URL(request.url);
     const query = url.searchParams.get('query');
@@ -269,7 +122,7 @@ export const routeHandlers = [
     });
   }),
 
-  // 生成线路配置 - 匹配swagger接口 GET /v1/routes/{id}/config
+  // 生成线路配置 - 支持系统线路
   http.get('/v1/routes/:id/config', ({ params, request }) => {
     const id = params.id as string;
     const url = new URL(request.url);
@@ -312,8 +165,9 @@ export const routeHandlers = [
           config,
           format
         }
-      });      } catch {
-        return HttpResponse.json({
+      });
+    } catch {
+      return HttpResponse.json({
         success: false,
         message: '配置生成失败',
         errorCode: 'CONFIG_GENERATION_ERROR'
@@ -321,32 +175,7 @@ export const routeHandlers = [
     }
   }),
 
-  // 更新线路状态 - 匹配swagger接口 PUT /v1/routes/{id}/status
-  http.put('/v1/routes/:id/status', async ({ params, request }) => {
-    const id = params.id as string;
-    const _body = await request.json() as { status: string };
-    
-    const routeIndex = customRoutes.findIndex(r => r.id === parseInt(id));
-
-    if (routeIndex === -1) {
-      return HttpResponse.json({
-        success: false,
-        message: '线路不存在',
-        errorCode: 'ROUTE_NOT_FOUND'
-      }, { status: 404 });
-    }
-
-    // 这里可以添加状态更新逻辑
-    // customRoutes[routeIndex].status = body.status;
-
-    return HttpResponse.json({
-      success: true,
-      message: '线路状态更新成功',
-      data: customRoutes[routeIndex]
-    });
-  }),
-
-  // 验证线路连通性 - 匹配swagger接口 POST /v1/routes/{id}/validate
+  // 验证线路连通性 - 支持系统线路
   http.post('/v1/routes/:id/validate', async ({ params, request }) => {
     const id = params.id as string;
     const _body = await request.json() as { timeoutSeconds?: number };
@@ -379,15 +208,57 @@ export const routeHandlers = [
     });
   }),
 
-  // 重置mock数据（开发用）
-  http.post('/v1/routes/reset-mock', () => {
-    customRoutes = [...mockCustomRoutes];
-    systemRoutes = [...mockSystemRoutes];
-    nextId = 200;
-
+  // 不支持的操作 - 创建线路
+  http.post('/v1/routes', () => {
     return HttpResponse.json({
-      success: true,
-      message: 'Mock数据已重置'
-    });
+      success: false,
+      message: '不支持创建自定义线路，系统仅支持系统生成的线路',
+      errorCode: 'OPERATION_NOT_SUPPORTED'
+    }, { status: 403 });
+  }),
+
+  // 不支持的操作 - 更新线路
+  http.put('/v1/routes/:id', () => {
+    return HttpResponse.json({
+      success: false,
+      message: '不支持编辑线路，系统线路为只读',
+      errorCode: 'OPERATION_NOT_SUPPORTED'
+    }, { status: 403 });
+  }),
+
+  // 不支持的操作 - 删除线路
+  http.delete('/v1/routes/:id', () => {
+    return HttpResponse.json({
+      success: false,
+      message: '不支持删除线路，系统线路为只读',
+      errorCode: 'OPERATION_NOT_SUPPORTED'
+    }, { status: 403 });
+  }),
+
+  // 不支持的操作 - 批量删除线路
+  http.post('/v1/routes/batch/delete', () => {
+    return HttpResponse.json({
+      success: false,
+      message: '不支持批量删除线路，系统线路为只读',
+      errorCode: 'OPERATION_NOT_SUPPORTED'
+    }, { status: 403 });
+  }),
+
+  // 不支持的操作 - 批量更新线路状态
+  http.post('/v1/routes/batch/status', () => {
+    return HttpResponse.json({
+      success: false,
+      message: '不支持批量更新线路状态，系统线路为只读',
+      errorCode: 'OPERATION_NOT_SUPPORTED'
+    }, { status: 403 });
+  }),
+
+  // 不支持的操作 - 更新线路状态
+  http.put('/v1/routes/:id/status', () => {
+    return HttpResponse.json({
+      success: false,
+      message: '不支持更新线路状态，系统线路为只读',
+      errorCode: 'OPERATION_NOT_SUPPORTED'
+    }, { status: 403 });
   })
 ]; 
