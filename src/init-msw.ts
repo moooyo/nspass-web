@@ -75,10 +75,8 @@ export async function initMSW(forceRestart = false, retries = 0): Promise<boolea
       try {
         await forceRestartMSW();
         logger.info('✅ MSW 强制重启成功')
-        // 启动成功后等待一段时间确保稳定
-        await new Promise(resolve => setTimeout(resolve, 200));
         
-        // 验证handler是否正确安装
+        // 验证handler是否正确安装（移除不必要的200ms延迟）
         const installedHandlers = worker?.listHandlers() || [];
         if (installedHandlers.length === 0) {
           throw new Error('强制重启后仍未找到任何处理程序');

@@ -192,9 +192,10 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setEnabled(true);
           setStatus('running');
           localStorage.setItem('nspass-mock-enabled', 'true');
-          setTimeout(() => updateBaseURL(true), 100);
-          // 通知页面刷新
-          setTimeout(() => apiRefreshEventBus.emit('msw-toggled'), 200);
+          // 移除不必要的延迟，直接执行
+          updateBaseURL(true);
+          // 使用 Promise.resolve().then() 确保异步执行但无延迟
+          Promise.resolve().then(() => apiRefreshEventBus.emit('msw-toggled'));
         } else {
           throw new Error('MSW 启动失败');
         }
@@ -209,14 +210,12 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           // 彻底清理缓存和配置
           httpClient.clearCache();
           
-          // 延迟更新baseURL以确保清理完成
-          setTimeout(() => {
-            updateBaseURL(false);
-            console.log('🎯 MSW已停止，已切换到真实API模式');
-          }, 100);
+          // 移除延迟，直接更新baseURL
+          updateBaseURL(false);
+          console.log('🎯 MSW已停止，已切换到真实API模式');
           
-          // 通知页面刷新
-          setTimeout(() => apiRefreshEventBus.emit('msw-toggled'), 200);
+          // 使用 Promise.resolve().then() 确保异步执行但无延迟
+          Promise.resolve().then(() => apiRefreshEventBus.emit('msw-toggled'));
           
           // 可选：给用户一个提示而不是强制刷新
           setTimeout(() => {
@@ -291,13 +290,11 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               setEnabled(true);
               setStatus('running');
               localStorage.setItem('nspass-mock-enabled', 'true');
-              // 更新baseURL为Mock模式
-              setTimeout(() => {
-                const url = window.location.origin;
-                httpClient.clearCache();
-                httpClient.updateBaseURL(url);
-                console.log('🎯 MSW自动启动，baseURL设置为:', url);
-              }, 100);
+              // 更新baseURL为Mock模式（移除不必要的延迟）
+              const url = window.location.origin;
+              httpClient.clearCache();
+              httpClient.updateBaseURL(url);
+              console.log('🎯 MSW自动启动，baseURL设置为:', url);
               console.log('✅ MSW 自动启动成功');
             } else {
               throw new Error('MSW 自动启动失败');
@@ -317,13 +314,11 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // 如果不需要启动，设置为stopped状态
         setEnabled(false);
         setStatus('stopped');
-        // 更新baseURL为后端API模式
-        setTimeout(() => {
-          const url = `${backendConfig.port === '443' ? 'https' : 'http'}://${backendConfig.url}${backendConfig.port === '443' || backendConfig.port === '80' ? '' : ':' + backendConfig.port}`;
-          httpClient.clearCache();
-          httpClient.updateBaseURL(url);
-          console.log('🎯 MSW保持停止，baseURL设置为:', url);
-        }, 100);
+        // 更新baseURL为后端API模式（移除不必要的延迟）
+        const url = `${backendConfig.port === '443' ? 'https' : 'http'}://${backendConfig.url}${backendConfig.port === '443' || backendConfig.port === '80' ? '' : ':' + backendConfig.port}`;
+        httpClient.clearCache();
+        httpClient.updateBaseURL(url);
+        console.log('🎯 MSW保持停止，baseURL设置为:', url);
         console.log('⏹️ 根据保存的状态保持 MSW 停止状态');
       }
     }
