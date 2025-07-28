@@ -22,7 +22,8 @@ export const handlers: any[] = isMSWDisabled ? [] : (() => {
     dnsConfigHandlers,
     passkeyHandlers,
     egressHandlers,
-    iptablesHandlers
+    iptablesHandlers,
+    subscriptionHandlers
   } = require('@mock/handlers/index');
   
   const { forwardPathRulesHandlers } = require('@mock/handlers/forwardPathRules');
@@ -36,6 +37,7 @@ export const handlers: any[] = isMSWDisabled ? [] : (() => {
     ...routeHandlers,          // 线路管理 (/api/routes)
     ...egressHandlers,         // 出口配置管理 (/api/v1/egress)
     ...iptablesHandlers,       // iptables配置管理 (/api/v1/servers/:serverId/iptables/configs, /v1/forward-path-rules/:ruleId/iptables)
+    ...subscriptionHandlers,   // 订阅管理 (/v1/subscriptions, /s/:subscriptionId)
     ...userManagementHandlers, // 用户管理 (/api/v1/user)
     ...userConfigHandlers,     // 用户配置管理 (/api/config/users)
     ...websiteConfigHandlers,  // 网站配置 (/api/config/website)

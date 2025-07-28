@@ -16,3 +16,4 @@ export { routeHandlers } from './routes';
 export { dnsConfigHandlers } from './dnsConfig';
 export { egressHandlers } from './egress';
 export { iptablesHandlers } from './iptables';
+export { subscriptionHandlers } from './subscription';

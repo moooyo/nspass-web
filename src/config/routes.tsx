@@ -10,7 +10,8 @@ import {
   ApiOutlined,
   SafetyCertificateOutlined,
   UsergroupAddOutlined,
-  CloudOutlined
+  CloudOutlined,
+  RocketOutlined
 } from '@ant-design/icons';
 
 // 懒加载所有页面组件
@@ -20,6 +21,7 @@ const ForwardRules = React.lazy(() => import('../components/content/ForwardRules
 const Egress = React.lazy(() => import('../components/content/Egress'));
 const Iptables = React.lazy(() => import('../components/content/Iptables'));
 const Routes = React.lazy(() => import('../components/content/Routes'));
+const Subscription = React.lazy(() => import('../components/content/SubscriptionSimple'));
 const Dashboard = React.lazy(() => import('../components/content/config/Dashboard'));
 const Website = React.lazy(() => import('../components/content/config/Website'));
 const Users = React.lazy(() => import('../components/content/config/Users'));
@@ -87,6 +89,15 @@ export const routeConfigs: RouteConfig[] = [
     label: '查看线路',
     icon: <UnorderedListOutlined />,
     component: Routes,
+    group: 'basic'
+  },
+  {
+    key: 'subscription',
+    path: '/subscription',
+    label: '订阅管理',
+    icon: <RocketOutlined />,
+    component: Subscription,
+    aliases: ['/subscriptions'],
     group: 'basic'
   },
   
