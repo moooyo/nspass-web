@@ -81,8 +81,18 @@ const Subscription: React.FC = () => {
       console.log('订阅列表响应:', response);
       
       if (response.success && response.data) {
-        setSubscriptions(Array.isArray(response.data) ? response.data : []);
-        console.log('订阅列表加载成功:', response.data.length + ' 条');
+        // 确保数据格式正确，给缺失字段添加默认值
+        const normalizedData = Array.isArray(response.data) 
+          ? response.data.map((item: any) => ({
+              ...item,
+              totalRequests: item.requestCount || 0, // 将 requestCount 映射为 totalRequests
+              userId: item.userId || 0,
+              token: item.token || 'unknown'
+            }))
+          : [];
+        
+        setSubscriptions(normalizedData);
+        console.log('订阅列表加载成功:', normalizedData.length + ' 条');
       } else {
         console.error('订阅列表响应失败:', response);
         message.error('加载订阅列表失败: ' + (response.message || '未知错误'));
@@ -179,7 +189,7 @@ const Subscription: React.FC = () => {
         customTemplate: values.customTemplate || ''
       };
 
-      const response = await subscriptionService.updateSubscription(editingRecord.subscriptionId, updateData);
+      const response = await subscriptionService.updateSubscription(editingRecord.subscriptionId || '', updateData);
       if (response.success) {
         message.success('订阅更新成功');
         setEditModalVisible(false);
@@ -214,10 +224,14 @@ const Subscription: React.FC = () => {
   };
 
   // 复制订阅链接
-  const handleCopySubscriptionUrl = async (subscriptionId: string) => {
+  const handleCopySubscriptionUrl = async (record: any) => {
     try {
-      const url = await subscriptionService.copySubscriptionUrl(subscriptionId);
-      message.success('订阅链接已复制到剪贴板');
+      console.log('准备复制订阅地址，记录数据:', record);
+      console.log('userId:', record.userId, 'token:', record.token);
+      
+      const url = await subscriptionService.copySubscriptionUrl(record.userId, record.token);
+      message.success('订阅地址已复制到剪贴板！');
+      console.log('复制的订阅地址:', url);
     } catch (error) {
       console.error('复制链接出错:', error);
       message.error('复制链接失败');
@@ -250,27 +264,28 @@ const Subscription: React.FC = () => {
       [SubscriptionType.SUBSCRIPTION_TYPE_LOON]: 'orange',
       [SubscriptionType.SUBSCRIPTION_TYPE_STASH]: 'cyan',
       [SubscriptionType.SUBSCRIPTION_TYPE_V2RAY]: 'magenta',
-      [SubscriptionType.SUBSCRIPTION_TYPE_UNSPECIFIED]: 'default'
+      [SubscriptionType.SUBSCRIPTION_TYPE_UNSPECIFIED]: 'default',
+      [SubscriptionType.UNRECOGNIZED]: 'default'
     };
     return colorMap[type] || 'default';
   };
 
   // 表格列定义
   const columns: ColumnsType<SubscriptionData> = [
-    {
-      title: '订阅名称',
-      dataIndex: 'name',
-      key: 'name',
-      width: '20%',
-      render: (text: string, record: SubscriptionData) => (
-        <div>
-          <div style={{ fontWeight: 'bold' }}>{text}</div>
-          {record.description && (
-            <div style={{ fontSize: '12px', color: '#999' }}>{record.description}</div>
-          )}
-        </div>
-      ),
-    },
+         {
+       title: '订阅名称',
+       dataIndex: 'name',
+       key: 'name',
+       width: '25%',
+       render: (text: string, record: SubscriptionData) => (
+         <div>
+           <div style={{ fontWeight: 'bold' }}>{text || '未命名'}</div>
+           {record?.description && (
+             <div style={{ fontSize: '12px', color: '#999' }}>{record.description}</div>
+           )}
+         </div>
+       ),
+     },
     {
       title: '类型',
       dataIndex: 'type',
@@ -293,18 +308,23 @@ const Subscription: React.FC = () => {
         </Tag>
       ),
     },
-    {
-      title: '请求次数',
-      dataIndex: 'totalRequests',
-      key: 'totalRequests',
-      width: '10%',
-      render: (count: number) => count.toLocaleString(),
-    },
-    {
-      title: '最后访问',
-      dataIndex: 'lastAccessedAt',
-      key: 'lastAccessedAt',
-      width: '15%',
+         {
+       title: '请求次数',
+       dataIndex: 'totalRequests',
+       key: 'totalRequests',
+       width: '10%',
+       render: (count: number) => {
+         if (typeof count === 'number') {
+           return count.toLocaleString();
+         }
+         return count || 0;
+       },
+     },
+         {
+       title: '最后访问',
+       dataIndex: 'lastAccessedAt',
+       key: 'lastAccessedAt',
+       width: '18%',
                render: (date: string) => {
            if (!date) return '-';
            try {
@@ -320,11 +340,11 @@ const Subscription: React.FC = () => {
            }
          },
     },
-    {
-      title: '客户端',
-      dataIndex: 'userAgent',
-      key: 'userAgent',
-      width: '15%',
+         {
+       title: '客户端',
+       dataIndex: 'userAgent',
+       key: 'userAgent',
+       width: '18%',
       render: (userAgent: string) => {
         if (!userAgent) return '-';
         const shortUA = userAgent.length > 20 ? userAgent.substring(0, 20) + '...' : userAgent;
@@ -356,55 +376,56 @@ const Subscription: React.FC = () => {
          }
        },
     },
-    {
-      title: '操作',
-      key: 'action',
-      width: '18%',
-      render: (_, record: SubscriptionData) => (
-        <Space size="small">
-          <Tooltip title="复制订阅链接">
-            <Button
-              type="text"
-              size="small"
-              icon={<CopyOutlined />}
-              onClick={() => handleCopySubscriptionUrl(record.subscriptionId)}
-            />
-          </Tooltip>
-          <Tooltip title="在新窗口打开">
-            <Button
-              type="text"
-              size="small"
-              icon={<LinkOutlined />}
-              onClick={() => window.open(`/s/${record.subscriptionId}`, '_blank')}
-            />
-          </Tooltip>
-          <Tooltip title="编辑">
-            <Button
-              type="text"
-              size="small"
-              icon={<EditOutlined />}
-              onClick={() => handleEdit(record)}
-            />
-          </Tooltip>
-          <Popconfirm
-            title="确认删除"
-            description="确定要删除这个订阅吗？此操作不可恢复。"
-            onConfirm={() => handleDeleteSubscription(record.subscriptionId)}
-            okText="确认"
-            cancelText="取消"
-          >
-            <Tooltip title="删除">
-              <Button
-                type="text"
-                size="small"
-                danger
-                icon={<DeleteOutlined />}
-              />
-            </Tooltip>
-          </Popconfirm>
-        </Space>
-      ),
-    },
+
+            {
+         title: '操作',
+         key: 'action',
+         width: '20%',
+       render: (_, record: SubscriptionData) => (
+         <Space size="small">
+           <Tooltip title="复制订阅地址">
+             <Button
+               type="text"
+               size="small"
+               icon={<CopyOutlined />}
+               onClick={() => handleCopySubscriptionUrl(record)}
+             />
+           </Tooltip>
+           <Tooltip title="在新窗口打开">
+             <Button
+               type="text"
+               size="small"
+               icon={<LinkOutlined />}
+               onClick={() => window.open(`/s/${record.userId}/${(record as any).token}`, '_blank')}
+             />
+           </Tooltip>
+           <Tooltip title="编辑">
+             <Button
+               type="text"
+               size="small"
+               icon={<EditOutlined />}
+               onClick={() => handleEdit(record)}
+             />
+           </Tooltip>
+           <Popconfirm
+             title="确认删除"
+             description="确定要删除这个订阅吗？此操作不可恢复。"
+             onConfirm={() => handleDeleteSubscription(record.subscriptionId || '')}
+             okText="确认"
+             cancelText="取消"
+           >
+             <Tooltip title="删除">
+               <Button
+                 type="text"
+                 size="small"
+                 danger
+                 icon={<DeleteOutlined />}
+               />
+             </Tooltip>
+           </Popconfirm>
+         </Space>
+       ),
+     },
   ];
 
   // 如果有错误，显示错误信息
@@ -429,57 +450,65 @@ const Subscription: React.FC = () => {
     );
   }
 
-  console.log('订阅组件渲染中...', { subscriptions: subscriptions?.length, stats, loading, error });
+  console.log('订阅组件渲染中...', { 
+    subscriptions: subscriptions?.length, 
+    stats, 
+    loading, 
+    error,
+    sampleSubscription: subscriptions?.[0] 
+  });
 
   return (
     <div style={{ padding: '24px' }}>
       <Title level={2}>订阅管理</Title>
       
-      {/* 统计卡片 */}
-      {stats && (
-        <Row gutter={16} style={{ marginBottom: '24px' }}>
-          <Col span={6}>
-            <Card>
-              <Statistic
-                title="总订阅数"
-                value={stats.totalSubscriptions}
-                prefix={<BarChartOutlined />}
-              />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card>
-              <Statistic
-                title="活跃订阅"
-                value={stats.activeSubscriptions}
-                valueStyle={{ color: '#3f8600' }}
-              />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card>
-              <Statistic
-                title="总请求数"
-                value={stats.totalRequests}
-                precision={0}
-              />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card>
-              <Statistic
-                title="今日请求"
-                value={stats.requestsToday}
-                valueStyle={{ color: '#1890ff' }}
-              />
-            </Card>
-          </Col>
-        </Row>
-      )}
+             {/* 统计卡片 */}
+       {stats && (
+         <Row gutter={16} style={{ marginBottom: '24px' }}>
+           <Col span={6}>
+             <Card>
+               <Statistic
+                 title="总订阅数"
+                 value={stats.totalSubscriptions || 0}
+                 prefix={<BarChartOutlined />}
+               />
+             </Card>
+           </Col>
+           <Col span={6}>
+             <Card>
+               <Statistic
+                 title="活跃订阅"
+                 value={stats.activeSubscriptions || 0}
+                 valueStyle={{ color: '#3f8600' }}
+               />
+             </Card>
+           </Col>
+           <Col span={6}>
+             <Card>
+               <Statistic
+                 title="总请求数"
+                 value={stats.totalRequests || 0}
+                 precision={0}
+               />
+             </Card>
+           </Col>
+           <Col span={6}>
+             <Card>
+               <Statistic
+                 title="今日请求"
+                 value={stats.requestsToday || 0}
+                 valueStyle={{ color: '#1890ff' }}
+               />
+             </Card>
+           </Col>
+         </Row>
+       )}
 
-      <Divider />
+             <Divider />
 
-      {/* 操作栏 */}
+
+
+       {/* 操作栏 */}
       <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between' }}>
         <Space>
           <Button
@@ -503,23 +532,23 @@ const Subscription: React.FC = () => {
         </Space>
       </div>
 
-      {/* 订阅表格 */}
-      <Table
-        columns={columns}
-        dataSource={subscriptions || []}
-        rowKey={(record) => record.subscriptionId || 'unknown'}
-        loading={loading}
-        pagination={{
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
-          pageSizeOptions: ['10', '20', '50', '100']
-        }}
-        scroll={{ x: 1200 }}
-        locale={{
-          emptyText: loading ? '加载中...' : '暂无数据'
-        }}
-      />
+             {/* 订阅表格 */}
+       <Table
+         columns={columns}
+         dataSource={subscriptions || []}
+         rowKey={(record) => record?.subscriptionId || Math.random().toString()}
+         loading={loading}
+         pagination={{
+           showSizeChanger: true,
+           showQuickJumper: true,
+           showTotal: (total) => `共 ${total} 条`,
+           pageSizeOptions: ['10', '20', '50', '100']
+         }}
+         scroll={{ x: 1200 }}
+         locale={{
+           emptyText: loading ? '加载中...' : '暂无数据'
+         }}
+       />
 
       {/* 创建订阅弹窗 */}
       <Modal

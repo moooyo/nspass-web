@@ -21,7 +21,7 @@ const ForwardRules = React.lazy(() => import('../components/content/ForwardRules
 const Egress = React.lazy(() => import('../components/content/Egress'));
 const Iptables = React.lazy(() => import('../components/content/Iptables'));
 const Routes = React.lazy(() => import('../components/content/Routes'));
-const Subscription = React.lazy(() => import('../components/content/SubscriptionSimple'));
+const Subscription = React.lazy(() => import('../components/content/Subscription'));
 const Dashboard = React.lazy(() => import('../components/content/config/Dashboard'));
 const Website = React.lazy(() => import('../components/content/config/Website'));
 const Users = React.lazy(() => import('../components/content/config/Users'));

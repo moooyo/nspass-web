@@ -1,34 +1,23 @@
 import { httpClient, ApiResponse } from '@/utils/http-client';
+import type { 
+  SubscriptionData, 
+  CreateSubscriptionRequest as GeneratedCreateSubscriptionRequest,
+  UpdateSubscriptionRequest as GeneratedUpdateSubscriptionRequest,
+  GetSubscriptionsRequest,
+  GetSubscriptionStatsRequest
+} from '@/types/generated/api/subscription/subscription_management';
+import { SubscriptionType } from '@/types/generated/model/subscription';
 
-// 订阅类型枚举
-export enum SubscriptionType {
-  SUBSCRIPTION_TYPE_UNSPECIFIED = 'SUBSCRIPTION_TYPE_UNSPECIFIED',
-  SUBSCRIPTION_TYPE_SURGE = 'SUBSCRIPTION_TYPE_SURGE',
-  SUBSCRIPTION_TYPE_SHADOWSOCKS = 'SUBSCRIPTION_TYPE_SHADOWSOCKS',
-  SUBSCRIPTION_TYPE_QUANTUMULT_X = 'SUBSCRIPTION_TYPE_QUANTUMULT_X',
-  SUBSCRIPTION_TYPE_LOON = 'SUBSCRIPTION_TYPE_LOON',
-  SUBSCRIPTION_TYPE_STASH = 'SUBSCRIPTION_TYPE_STASH',
-  SUBSCRIPTION_TYPE_CLASH = 'SUBSCRIPTION_TYPE_CLASH',
-  SUBSCRIPTION_TYPE_V2RAY = 'SUBSCRIPTION_TYPE_V2RAY',
+// 重新导出生成的类型
+export type { SubscriptionData, GetSubscriptionsRequest, GetSubscriptionStatsRequest };
+export { SubscriptionType };
+
+// 扩展订阅数据接口以包含token字段（API实际返回的）
+export interface SubscriptionDataWithToken extends SubscriptionData {
+  token?: string; // API返回的token字段
 }
 
-// 订阅数据接口
-export interface SubscriptionData {
-  subscriptionId: string;
-  type: SubscriptionType;
-  name: string;
-  description?: string;
-  createdAt: string;
-  updatedAt: string;
-  expiresAt?: string;
-  isActive: boolean;
-  url: string;
-  totalRequests: number;
-  lastAccessedAt?: string;
-  userAgent?: string;
-}
-
-// 订阅统计数据接口
+// 简化的统计接口（用于mock）
 export interface SubscriptionStats {
   totalSubscriptions: number;
   activeSubscriptions: number;
@@ -40,13 +29,7 @@ export interface SubscriptionStats {
   avgRequestsPerDay: number;
 }
 
-// 分页请求参数
-export interface PaginationParams {
-  page?: number;
-  pageSize?: number;
-}
-
-// 创建订阅请求
+// 简化的请求接口（用于前端）
 export interface CreateSubscriptionRequest {
   type: SubscriptionType;
   name: string;
@@ -57,7 +40,6 @@ export interface CreateSubscriptionRequest {
   customTemplate?: string;
 }
 
-// 更新订阅请求
 export interface UpdateSubscriptionRequest {
   type?: SubscriptionType;
   name?: string;
@@ -67,18 +49,6 @@ export interface UpdateSubscriptionRequest {
   includeRules?: string[];
   excludeRules?: string[];
   customTemplate?: string;
-}
-
-// 获取订阅列表请求参数
-export interface GetSubscriptionsRequest {
-  pagination?: PaginationParams;
-}
-
-// 获取订阅统计请求参数
-export interface GetSubscriptionStatsRequest {
-  startDate?: string;
-  endDate?: string;
-  type?: SubscriptionType;
 }
 
 class SubscriptionService {
@@ -149,9 +119,10 @@ class SubscriptionService {
   /**
    * 复制订阅URL到剪贴板
    */
-  async copySubscriptionUrl(subscriptionId: string): Promise<string> {
-    const baseUrl = window.location.origin;
-    const subscriptionUrl = `${baseUrl}/s/${subscriptionId}`;
+  async copySubscriptionUrl(userId: number, token: string): Promise<string> {
+    // 使用httpClient的当前baseURL，确保与其他API调用一致
+    const backendBaseUrl = httpClient.getCurrentBaseURL();
+    const subscriptionUrl = `${backendBaseUrl}/s/${userId}/${token}`;
     
     try {
       await navigator.clipboard.writeText(subscriptionUrl);
@@ -160,6 +131,14 @@ class SubscriptionService {
       // 如果剪贴板API不可用，返回URL供手动复制
       return subscriptionUrl;
     }
+  }
+
+  /**
+   * 生成订阅URL（不复制到剪贴板）
+   */
+  generateSubscriptionUrl(userId: number, token: string): string {
+    const backendBaseUrl = httpClient.getCurrentBaseURL();
+    return `${backendBaseUrl}/s/${userId}/${token}`;
   }
 
   /**
@@ -175,6 +154,7 @@ class SubscriptionService {
       [SubscriptionType.SUBSCRIPTION_TYPE_STASH]: 'Stash',
       [SubscriptionType.SUBSCRIPTION_TYPE_CLASH]: 'Clash',
       [SubscriptionType.SUBSCRIPTION_TYPE_V2RAY]: 'V2Ray',
+      [SubscriptionType.UNRECOGNIZED]: '未识别',
     };
     return typeMap[type] || '未知';
   }

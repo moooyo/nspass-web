@@ -1,96 +1,118 @@
 import { http, HttpResponse } from 'msw';
 import { 
-  SubscriptionData, 
   SubscriptionStats, 
   SubscriptionType,
   CreateSubscriptionRequest,
   UpdateSubscriptionRequest 
 } from '@/services/subscription';
 
+// Mock专用的订阅数据接口
+interface MockSubscriptionData {
+  subscriptionId: string;
+  userId: number;
+  token: string;
+  type: SubscriptionType;
+  name: string;
+  description?: string;
+  createdAt: string;
+  expiresAt?: string;
+  isActive: boolean;
+  accessUrl?: string;
+  requestCount: number;
+  lastUsedAt?: string;
+  userAgent?: string;
+}
+
 // Mock订阅数据
-const mockSubscriptions: SubscriptionData[] = [
+const mockSubscriptions: MockSubscriptionData[] = [
   {
     subscriptionId: 'sub_7a8f6b5c4d3e2f1a9b8c7d6e5f4a3b2c',
+    userId: 123456,
+    token: 'k8mN9pQ2rS5tU8vW1xY4zA7bC0dE3fG6',
     type: SubscriptionType.SUBSCRIPTION_TYPE_SURGE,
     name: 'Surge 主配置',
     description: '包含所有线路的 Surge 配置文件',
     createdAt: '2024-01-15T10:30:00Z',
-    updatedAt: '2024-01-20T14:45:00Z',
     expiresAt: '2024-07-15T10:30:00Z',
     isActive: true,
-    url: '/s/sub_7a8f6b5c4d3e2f1a9b8c7d6e5f4a3b2c',
-    totalRequests: 1250,
-    lastAccessedAt: '2024-01-20T08:30:00Z',
+    accessUrl: '/s/123456/k8mN9pQ2rS5tU8vW1xY4zA7bC0dE3fG6',
+    requestCount: 1250,
+    lastUsedAt: '2024-01-20T08:30:00Z',
     userAgent: 'Surge iOS/5.0.0'
   },
   {
     subscriptionId: 'sub_9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e',
+    userId: 789012,
+    token: 'h7jK2mP5qR8sT1vW4xY7zA0bC3dF6gH9',
     type: SubscriptionType.SUBSCRIPTION_TYPE_CLASH,
     name: 'Clash Meta 配置',
     description: 'Clash Meta 格式的代理配置',
     createdAt: '2024-01-10T09:15:00Z',
-    updatedAt: '2024-01-19T16:20:00Z',
     expiresAt: '2024-07-10T09:15:00Z',
     isActive: true,
-    url: '/s/sub_9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e',
-    totalRequests: 890,
-    lastAccessedAt: '2024-01-19T12:15:00Z',
+    accessUrl: '/s/789012/h7jK2mP5qR8sT1vW4xY7zA0bC3dF6gH9',
+    requestCount: 890,
+    lastUsedAt: '2024-01-19T12:15:00Z',
     userAgent: 'ClashX Pro/1.9.0'
   },
   {
     subscriptionId: 'sub_3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f',
+    userId: 345678,
+    token: 'n4oP7qS0tU3vW6xY9zA2bC5dF8gH1jK4',
     type: SubscriptionType.SUBSCRIPTION_TYPE_QUANTUMULT_X,
     name: 'QuantumultX 完整版',
     description: 'QuantumultX 完整配置，包含分流规则',
     createdAt: '2024-01-08T11:00:00Z',
-    updatedAt: '2024-01-18T13:10:00Z',
     expiresAt: '2024-07-08T11:00:00Z',
     isActive: true,
-    url: '/s/sub_3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f',
-    totalRequests: 456,
-    lastAccessedAt: '2024-01-18T09:45:00Z',
+    accessUrl: '/s/345678/n4oP7qS0tU3vW6xY9zA2bC5dF8gH1jK4',
+    requestCount: 456,
+    lastUsedAt: '2024-01-18T09:45:00Z',
     userAgent: 'Quantumult%20X/1.4.1'
   },
   {
     subscriptionId: 'sub_5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a',
+    userId: 901234,
+    token: 'm1nP4qR7sT0uV3wX6yZ9aB2cE5fH8iJ1',
     type: SubscriptionType.SUBSCRIPTION_TYPE_SHADOWSOCKS,
     name: 'Shadowsocks 原生',
     description: '原生 Shadowsocks 格式配置',
     createdAt: '2024-01-05T15:45:00Z',
-    updatedAt: '2024-01-17T10:30:00Z',
     expiresAt: '2024-07-05T15:45:00Z',
     isActive: false,
-    url: '/s/sub_5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a',
-    totalRequests: 234,
-    lastAccessedAt: '2024-01-15T14:20:00Z',
+    accessUrl: '/s/901234/m1nP4qR7sT0uV3wX6yZ9aB2cE5fH8iJ1',
+    requestCount: 234,
+    lastUsedAt: '2024-01-15T14:20:00Z',
     userAgent: 'Shadowsocks/3.5.1'
   },
   {
     subscriptionId: 'sub_7f6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c',
+    userId: 567890,
+    token: 'p8qR1sT4uV7wX0yZ3aB6cE9fH2iJ5kL8',
     type: SubscriptionType.SUBSCRIPTION_TYPE_LOON,
     name: 'Loon 移动端配置',
     description: 'Loon iOS 客户端专用配置',
     createdAt: '2024-01-12T08:20:00Z',
-    updatedAt: '2024-01-16T17:40:00Z',
     expiresAt: '2024-07-12T08:20:00Z',
     isActive: true,
-    url: '/s/sub_7f6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c',
-    totalRequests: 678,
-    lastAccessedAt: '2024-01-16T15:30:00Z',
+    accessUrl: '/s/567890/p8qR1sT4uV7wX0yZ3aB6cE9fH2iJ5kL8',
+    requestCount: 678,
+    lastUsedAt: '2024-01-16T15:30:00Z',
     userAgent: 'Loon/3.2.1'
   },
   {
     subscriptionId: 'sub_1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d',
+    userId: 111222,
+    token: 'r5sT8uV1wX4yZ7aB0cE3fH6iJ9kL2mN5',
     type: SubscriptionType.SUBSCRIPTION_TYPE_V2RAY,
     name: 'V2Ray 通用配置',
     description: 'V2Ray/Xray 通用JSON配置',
     createdAt: '2024-01-03T12:10:00Z',
-    updatedAt: '2024-01-14T11:25:00Z',
     expiresAt: '2024-07-03T12:10:00Z',
     isActive: true,
-    url: '/s/sub_1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d',
-    totalRequests: 345,
-    lastAccessedAt: '2024-01-14T16:45:00Z',
+    accessUrl: '/s/111222/r5sT8uV1wX4yZ7aB0cE3fH6iJ9kL2mN5',
+    requestCount: 345,
+    lastUsedAt: '2024-01-14T16:45:00Z',
     userAgent: 'v2rayN/6.23'
   }
 ];
@@ -109,7 +131,21 @@ const mockStats: SubscriptionStats = {
 
 // 创建可变的mock数据副本
 let subscriptions = [...mockSubscriptions];
-let nextId = 1000;
+
+// 生成随机用户ID
+function generateUserId(): number {
+  return Math.floor(Math.random() * 999999) + 100000;
+}
+
+// 生成随机订阅token
+function generateSubscriptionToken(): string {
+  const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+  let result = '';
+  for (let i = 0; i < 32; i++) {
+    result += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return result;
+}
 
 // 生成随机订阅ID
 function generateSubscriptionId(): string {
@@ -122,7 +158,7 @@ function generateSubscriptionId(): string {
 }
 
 // 查找订阅
-function findSubscription(subscriptionId: string): SubscriptionData | undefined {
+function findSubscription(subscriptionId: string): MockSubscriptionData | undefined {
   return subscriptions.find(s => s.subscriptionId === subscriptionId);
 }
 
@@ -156,18 +192,21 @@ export const subscriptionHandlers = [
     const data = await request.json() as CreateSubscriptionRequest;
     
     const subscriptionId = generateSubscriptionId();
-    const newSubscription: SubscriptionData = {
+    const userId = generateUserId();
+    const token = generateSubscriptionToken();
+    const newSubscription: MockSubscriptionData = {
       subscriptionId,
+      userId,
+      token,
       type: data.type,
       name: data.name,
       description: data.description || '',
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
       expiresAt: data.expiresAt || new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000).toISOString(), // 6个月后
       isActive: true,
-      url: `/s/${subscriptionId}`,
-      totalRequests: 0,
-      lastAccessedAt: undefined,
+      accessUrl: `/s/${userId}/${token}`,
+      requestCount: 0,
+      lastUsedAt: undefined,
       userAgent: undefined
     };
 
@@ -242,7 +281,7 @@ export const subscriptionHandlers = [
       const filteredSubs = subscriptions.filter(s => s.type === type);
       stats.totalSubscriptions = filteredSubs.length;
       stats.activeSubscriptions = filteredSubs.filter(s => s.isActive).length;
-      stats.totalRequests = filteredSubs.reduce((sum, s) => sum + s.totalRequests, 0);
+      stats.totalRequests = filteredSubs.reduce((sum, s) => sum + s.requestCount, 0);
     }
 
     return HttpResponse.json({
@@ -252,15 +291,19 @@ export const subscriptionHandlers = [
     });
   }),
 
-  // 获取订阅内容 - 匹配swagger接口 GET /s/{subscriptionId}
-  http.get('/s/:subscriptionId', ({ params, request }) => {
-    const { subscriptionId } = params;
+  // 获取订阅内容 - 匹配swagger接口 GET /s/{userId}/{token}
+  http.get('/s/:userId/:token', ({ params, request }) => {
+    const { userId, token } = params;
     const url = new URL(request.url);
     const userAgent = url.searchParams.get('userAgent') || request.headers.get('user-agent') || '';
     
-    const subscription = findSubscription(subscriptionId as string);
+    // 通过userId和token查找订阅
+    const subscription = subscriptions.find(s => 
+      s.userId.toString() === userId && s.token === token
+    );
+    
     if (!subscription) {
-      return HttpResponse.text('订阅不存在', { status: 404 });
+      return HttpResponse.text('订阅不存在或已失效', { status: 404 });
     }
 
     if (!subscription.isActive) {
@@ -268,8 +311,8 @@ export const subscriptionHandlers = [
     }
 
     // 更新访问记录
-    subscription.totalRequests += 1;
-    subscription.lastAccessedAt = new Date().toISOString();
+    subscription.requestCount += 1;
+    subscription.lastUsedAt = new Date().toISOString();
     subscription.userAgent = userAgent;
 
     // 根据订阅类型返回不同格式的配置内容
@@ -277,7 +320,7 @@ export const subscriptionHandlers = [
     
     switch (subscription.type) {
       case SubscriptionType.SUBSCRIPTION_TYPE_SURGE:
-        configContent = `#!MANAGED-CONFIG ${subscription.url}
+        configContent = `#!MANAGED-CONFIG ${subscription.accessUrl}
 [General]
 loglevel = notify
 internet-test-url = http://www.baidu.com/
