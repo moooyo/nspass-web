@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Button, Dropdown, Tooltip } from 'antd';
 import { 
   SunOutlined, 
@@ -83,7 +83,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
 
   // 获取tooltip标题
   const getTooltipTitle = () => {
-    return THEME_OPTIONS.find(opt => opt.key === resolvedTheme)?.description || '';
+    return THEME_OPTIONS.find(opt => opt.key === resolvedTheme)?.description ?? '';
   };
 
   return (
@@ -118,4 +118,4 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
   );
 };
 
-export default ThemeToggle; 
+export default memo(ThemeToggle);

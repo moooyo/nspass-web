@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Layout, Button, Card, Typography } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { HomeOutlined, UserOutlined, LogoutOutlined } from '@ant-design/icons';
+import { logger } from '@/utils/logger';
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -10,7 +11,7 @@ const SimpleMainLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  console.log('SimpleMainLayout rendering...', location.pathname);
+  logger.debug('SimpleMainLayout rendering...', location.pathname);
   
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -73,4 +74,4 @@ const SimpleMainLayout = () => {
   );
 };
 
-export default SimpleMainLayout;
+export default memo(SimpleMainLayout);

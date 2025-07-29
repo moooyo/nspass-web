@@ -3,14 +3,13 @@
  * 统一管理所有服务的配置，确保配置一致性
  */
 
-import { getRuntimeApiBaseUrl } from '@/utils/runtime-env';
 import type { ServiceConfig } from './EnhancedBaseService';
 
 /**
  * 默认服务配置
  */
 export const DEFAULT_SERVICE_CONFIG: ServiceConfig = {
-  baseURL: getRuntimeApiBaseUrl(),
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
   timeout: 30000,
 };
 

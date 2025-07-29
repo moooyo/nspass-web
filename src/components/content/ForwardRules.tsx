@@ -1,4 +1,4 @@
-import React, { useState, FC, useRef, useCallback, useMemo, useEffect, lazy, Suspense } from 'react';
+import React, { useState, FC, useRef, useCallback, useMemo, useEffect, lazy, Suspense, memo } from 'react';
 import { Button, Tag, Popconfirm, Badge, Space, Tooltip, Modal, Form, Card, Row, Col, Typography, Divider } from 'antd';
 import { message, handleApiResponse } from '@/utils/message';
 import {
@@ -413,7 +413,7 @@ const ForwardRules: React.FC = () => {
     
     // 优化：使用ref来存储地图状态，避免不必要的重新渲染
     const mapRenderedRef = useRef(false);
-    const resizeTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+    const resizeTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     const windowSizeRef = useRef({ width: 0, height: 0 });
     
     // 优化：延迟加载地图，只在真正需要时渲染

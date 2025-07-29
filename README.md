@@ -169,13 +169,7 @@ npm run worker:tail
 npm run proto:generate
 ```
 
-## 🎭 Mock 服务
 
-项目集成了 MSW (Mock Service Worker) 用于API模拟：
-
-- 开发环境自动启动 MSW
-- 支持实时切换 Mock/真实API
-- 完整的数据模拟和响应处理
 
 ## 📋 Available Scripts
 
@@ -204,7 +198,6 @@ nspass-web/
 │   │   ├── content/       # Page content components
 │   │   └── hooks/         # Custom hooks
 │   ├── config/            # Configuration files
-│   ├── mocks/             # MSW mock data and handlers
 │   ├── services/          # API services
 │   ├── types/             # Type definitions
 │   │   └── generated/     # Auto-generated types

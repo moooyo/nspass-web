@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   MenuFoldOutlined, 
@@ -10,16 +10,17 @@ import type { MenuProps } from 'antd';
 import { Button, Layout, Menu, theme, Dropdown, Avatar, Space, Typography, Spin } from 'antd';
 import { message } from '@/utils/message';
 import { useAuth } from '@/components/hooks/useAuth';
+import { logger } from '@/utils/logger';
 import { useTheme } from '@/components/hooks/useTheme';
 import ThemeToggle from '@/components/ThemeToggle';
-import { MSWToggle } from '@/components/MSWProvider';
+
 import { getMenuItems, findRouteByPath, findRouteByKey } from '@/config/routes';
 import { AppRoutes } from '@/components/AppRoutes';
 
 const { Header, Sider, Footer } = Layout;
 const { Text } = Typography;
 
-type MenuItem = Required<MenuProps>['items'][number];
+// type MenuItem = Required<MenuProps>['items'][number]; // 暂时未使用
 
 // 从配置生成菜单项
 const menuItems = getMenuItems();
@@ -37,9 +38,9 @@ const MainLayoutFixed: React.FC = () => {
 
   // 检查登录状态 - 优化日志输出
   useEffect(() => {
-    console.log('MainLayoutFixed - Auth状态检查:', { isLoading, isAuthenticated, user: user?.name, pathname: location.pathname });
+    logger.info('MainLayoutFixed - Auth状态检查:', { isLoading, isAuthenticated, user: user?.name, pathname: location.pathname });
     if (!isLoading && !isAuthenticated) {
-      console.log('用户未登录，重定向到登录页');
+      logger.info('用户未登录，重定向到登录页');
       navigate('/login');
     }
   }, [isLoading, isAuthenticated, navigate, user, location.pathname]);
@@ -47,30 +48,30 @@ const MainLayoutFixed: React.FC = () => {
   // 处理根路径重定向
   useEffect(() => {
     if (location.pathname === '/' && isAuthenticated && !isLoading) {
-      console.log('根路径重定向到首页');
+      logger.info('根路径重定向到首页');
       navigate('/home', { replace: true });
     }
   }, [location.pathname, isAuthenticated, isLoading, navigate]);
 
   // 从路径获取当前选中的菜单项
-  const getCurrentMenuKey = () => {
+  const getCurrentMenuKey = useCallback(() => {
     const path = location.pathname;
-    console.log('Current path:', path);
-    
+    logger.debug('Current path:', path);
+
     const route = findRouteByPath(path);
-    return route?.key || 'home';
-  };
+    return route?.key ?? 'home';
+  }, [location.pathname]);
 
   const [selectedKeys, setSelectedKeys] = useState([getCurrentMenuKey()]);
 
   // 更新选中的菜单项当路由变化时
   useEffect(() => {
     setSelectedKeys([getCurrentMenuKey()]);
-  }, [location.pathname]);
+  }, [location.pathname, getCurrentMenuKey]);
 
   const handleMenuClick: MenuProps['onClick'] = (e) => {
     const key = e.key;
-    console.log('Menu clicked:', key);
+    logger.debug('Menu clicked:', key);
     setSelectedKeys([key]);
     
     const route = findRouteByKey(key);
@@ -87,7 +88,7 @@ const MainLayoutFixed: React.FC = () => {
       message.success('已退出登录');
       navigate('/login');
     } catch (error) {
-      console.error('登出错误:', error);
+      logger.error('登出错误:', error);
       message.error('登出失败');
     }
   };
@@ -111,7 +112,7 @@ const MainLayoutFixed: React.FC = () => {
 
   // 如果正在加载，显示加载状态
   if (isLoading) {
-    console.log('MainLayoutFixed - 显示加载状态');
+    logger.debug('MainLayoutFixed - 显示加载状态');
     return (
       <div style={{ 
         display: 'flex', 
@@ -126,11 +127,11 @@ const MainLayoutFixed: React.FC = () => {
 
   // 如果未登录，不渲染内容（useEffect会处理跳转）
   if (!isAuthenticated) {
-    console.log('MainLayoutFixed - 用户未认证，不渲染内容');
+    logger.debug('MainLayoutFixed - 用户未认证，不渲染内容');
     return null;
   }
 
-  console.log('MainLayoutFixed - 渲染主布局，用户:', user?.name);
+  logger.debug('MainLayoutFixed - 渲染主布局，用户:', user?.name);
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -190,7 +191,6 @@ const MainLayoutFixed: React.FC = () => {
           />
           
           <Space size="middle" style={{ marginRight: 24 }}>
-            {import.meta.env.DEV && <MSWToggle />}
             <ThemeToggle />
             <Dropdown 
               menu={{ 
@@ -200,7 +200,7 @@ const MainLayoutFixed: React.FC = () => {
             >
               <Space style={{ cursor: 'pointer' }}>
                 <Avatar size="small" icon={<UserOutlined />} />
-                <Text>{user?.name || 'Unknown User'}</Text>
+                <Text>{user?.name ?? 'Unknown User'}</Text>
               </Space>
             </Dropdown>
           </Space>

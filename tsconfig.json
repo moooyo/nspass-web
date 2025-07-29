@@ -23,7 +23,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@mock/*": ["./src/mocks/*"],
+
       "@/types/generated/*": ["./types/generated/*"]
     }
   },

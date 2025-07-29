@@ -5,9 +5,10 @@ import type { MenuProps } from 'antd';
 import { Button, Layout, Menu, theme, Dropdown, Avatar, Space, Typography, Spin } from 'antd';
 import { message } from '@/utils/message';
 import { useAuth } from '@/components/hooks/useAuth';
-import { useTheme } from '@/components/hooks/useTheme';
+import { logger } from '@/utils/logger';
+// import { useTheme } from '@/components/hooks/useTheme'; // 暂时未使用
 import ThemeToggle from '@/components/ThemeToggle';
-import { MSWToggle } from '@/components/MSWProvider';
+
 
 // 使用 React.lazy 懒加载组件
 const HomeContent = React.lazy(() => import('./content/Home'));
@@ -67,7 +68,7 @@ export default function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated, isLoading, logout } = useAuth();
-  const { resolvedTheme } = useTheme();
+  // const { resolvedTheme } = useTheme(); // 暂时未使用
   
   const [selectedKey, setSelectedKey] = useState<string>('home');
   
@@ -75,7 +76,7 @@ export default function MainLayout() {
   const [renderedTabs, setRenderedTabs] = useState<Set<string>>(new Set(['home']));
   
   // 使用 useRef 来存储 URL 更新的定时器，避免频繁的同步操作
-  const urlUpdateTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const urlUpdateTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // 使用 useMemo 缓存映射对象，避免重新创建导致无限循环
   const hashToKeyMap = useMemo<Record<string, string>>(() => ({
@@ -215,7 +216,7 @@ export default function MainLayout() {
       }, 500);
     } catch (error) {
       message.error('注销失败');
-      console.error('注销错误:', error);
+      logger.error('注销错误:', error);
     }
   };
 
@@ -229,62 +230,41 @@ export default function MainLayout() {
     },
   ];
 
+  // 组件映射 - 使用useMemo缓存组件映射关系
+  const componentMap = useMemo(() => ({
+    'home': HomeContent,
+    'user': UserInfo,
+    'forward_rules': ForwardRules,
+    'egress': Egress,
+    'iptables': Iptables,
+    'routes': Routes,
+    'dashboard': Dashboard,
+    'website': Website,
+    'users': Users,
+    'user_groups': UserGroups,
+    'servers': Servers,
+    'dns_config': DnsConfig,
+  }), []);
+
   // 使用 useRef 来持久化组件实例，避免重新创建
   const componentCacheRef = useRef<Record<string, React.ReactNode>>({});
-  
+
   // 获取组件的函数 - 使用 useCallback 缓存
   const getComponent = useCallback((key: string) => {
     // 如果组件已经缓存，直接返回
     if (componentCacheRef.current[key]) {
       return componentCacheRef.current[key];
     }
-    
+
+    // 从映射中获取组件类型
+    const ComponentType = componentMap[key as keyof typeof componentMap] || HomeContent;
+
     // 创建带有Suspense包装的组件并缓存
-    let component: React.ReactNode;
-    switch (key) {
-      case 'home':
-        component = <HomeContent key={`${key}-cached`} />;
-        break;
-      case 'user':
-        component = <UserInfo key={`${key}-cached`} />;
-        break;
-      case 'forward_rules':
-        component = <ForwardRules key={`${key}-cached`} />;
-        break;
-      case 'egress':
-        component = <Egress key={`${key}-cached`} />;
-        break;
-      case 'iptables':
-        component = <Iptables key={`${key}-cached`} />;
-        break;
-      case 'routes':
-        component = <Routes key={`${key}-cached`} />;
-        break;
-      case 'dashboard':
-        component = <Dashboard key={`${key}-cached`} />;
-        break;
-      case 'website':
-        component = <Website key={`${key}-cached`} />;
-        break;
-      case 'users':
-        component = <Users key={`${key}-cached`} />;
-        break;
-      case 'user_groups':
-        component = <UserGroups key={`${key}-cached`} />;
-        break;
-      case 'servers':
-        component = <Servers key={`${key}-cached`} />;
-        break;
-      case 'dns_config':
-        component = <DnsConfig key={`${key}-cached`} />;
-        break;
-      default:
-        component = <HomeContent key={`${key}-cached`} />;
-    }
-    
+    const component = <ComponentType key={`${key}-cached`} />;
+
     componentCacheRef.current[key] = component;
     return component;
-  }, []);
+  }, [componentMap]);
 
   // Loading状态
   if (isLoading) {
@@ -395,18 +375,17 @@ export default function MainLayout() {
           
           <Space size="middle">
             <ThemeToggle size="middle" placement="bottomLeft" />
-            {import.meta.env.DEV && <MSWToggle />}
             
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
               <Space style={{ cursor: 'pointer', padding: '8px 12px', borderRadius: '8px' }}>
                 <Avatar 
-                  src={user?.avatar || undefined}
+                  src={user?.avatar ?? undefined}
                   style={{ 
                     backgroundColor: '#1890ff' 
                   }} 
                   icon={<UserOutlined />} 
                 />
-                <Text>{user?.name || '用户'}</Text>
+                <Text>{user?.name ?? '用户'}</Text>
                 <DownOutlined style={{ fontSize: '12px' }} />
               </Space>
             </Dropdown>

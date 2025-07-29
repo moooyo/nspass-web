@@ -75,8 +75,7 @@ export const defaultConfig: ProjectConfig = {
   },
   
   api: {
-    baseUrl: import.meta.env.VITE_API_BASE_URL || 
-             (import.meta.env.DEV ? 'http://localhost:8080' : 'https://api.nspass.com'),
+    baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
     timeout: 10000,
     retryAttempts: 3,
     retryDelay: 1000
@@ -99,7 +98,7 @@ export const defaultConfig: ProjectConfig = {
   },
   
   features: {
-    enableMock: import.meta.env.DEV,
+
     enableDevTools: import.meta.env.DEV,
     enableAnalytics: import.meta.env.PROD,
     enableErrorReporting: import.meta.env.PROD

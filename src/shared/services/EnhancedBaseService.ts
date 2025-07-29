@@ -8,7 +8,7 @@
  */
 
 import type { StandardApiResponse, QueryParams } from '../types/common';
-import { getRuntimeApiBaseUrl } from '@/utils/runtime-env';
+
 import { logger } from '@/utils/logger';
 
 export interface ServiceConfig {
@@ -60,7 +60,7 @@ export class EnhancedBaseService {
 
   constructor(config: ServiceConfig = {}) {
     this.config = {
-      baseURL: getRuntimeApiBaseUrl(),
+      baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
       timeout: 3000, // 3秒超时
       ...config,
     };
@@ -78,15 +78,15 @@ export class EnhancedBaseService {
    * 获取当前 baseURL
    */
   getCurrentBaseURL(): string {
-    return getRuntimeApiBaseUrl();
+    return this.config.baseURL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
   }
 
   /**
    * 构建完整的URL
    */
   private buildURL(endpoint: string, params?: QueryParams): string {
-    // 始终使用最新的运行时配置
-    const baseURL = getRuntimeApiBaseUrl();
+    // 使用当前配置的baseURL
+    const baseURL = this.config.baseURL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
     const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
 
     let fullUrl: string;

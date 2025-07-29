@@ -608,3 +608,56 @@ export function useToggle(
 
   return [value, toggle];
 }
+
+/**
+ * 统一的服务Hook
+ * 提供标准化的服务调用和错误处理
+ */
+export function useService<T = any>(serviceName: string) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const callService = useCallback(async <R = T>(
+    method: string,
+    ...args: any[]
+  ): Promise<R | null> => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // 动态导入服务
+      const serviceModule = await import(`@/services/${serviceName}`);
+      const service = serviceModule[`${serviceName}Service`] || serviceModule.default;
+
+      if (!service || typeof service[method] !== 'function') {
+        throw new Error(`Service method ${serviceName}.${method} not found`);
+      }
+
+      const result = await service[method](...args);
+
+      // 检查响应格式
+      if (result && typeof result === 'object' && 'status' in result) {
+        if (!result.status.success) {
+          throw new Error(result.status.message || 'Service call failed');
+        }
+        return result.data as R;
+      }
+
+      return result as R;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMessage);
+      console.error(`Service call failed: ${serviceName}.${method}`, err);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [serviceName]);
+
+  return {
+    loading,
+    error,
+    callService,
+    clearError: useCallback(() => setError(null), []),
+  };
+}

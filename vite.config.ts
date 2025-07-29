@@ -13,7 +13,7 @@ export default defineConfig({
     alias: {
       '@/types/generated': path.resolve(__dirname, './types/generated'),
       '@': path.resolve(__dirname, './src'),
-      '@mock': path.resolve(__dirname, './src/mocks'),
+
     },
   },
 
@@ -21,7 +21,9 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: process.env.NODE_ENV === 'development',
-    minify: process.env.NODE_ENV === 'production',
+    minify: process.env.NODE_ENV === 'production' ? 'terser' : false,
+    target: 'es2020',
+    cssCodeSplit: true,
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, 'index.html')
@@ -30,48 +32,49 @@ export default defineConfig({
         entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash][extname]',
+        manualChunks: {
+          // 将大型依赖分离到单独的chunk
+          'react-vendor': ['react', 'react-dom'],
+          'antd-vendor': ['antd', '@ant-design/icons', '@ant-design/pro-components'],
+          'router-vendor': ['react-router-dom'],
+          'utils-vendor': ['dayjs', 'lodash-es'],
+        },
       },
-      external: (id) => {
-        // In production, externalize MSW to reduce bundle size
-        if (process.env.NODE_ENV === 'production' && process.env.VITE_ENABLE_MSW === 'false') {
-          // MSW related modules
-          if (id.includes('msw') ||
-              id.includes('/mocks/') ||
-              id.includes('\\mocks\\') ||
-              id.endsWith('/init-msw') ||
-              id.endsWith('\\init-msw') ||
-              id.endsWith('/init-msw.ts') ||
-              id.endsWith('\\init-msw.ts') ||
-              id.includes('@/mocks') ||
-              id.includes('./mocks') ||
-              id.includes('../mocks') ||
-              id.includes('/src/mocks/') ||
-              id.includes('\\src\\mocks\\') ||
-              id.endsWith('mockServiceWorker.js') ||
-              id.includes('/handlers/') ||
-              id.includes('\\handlers\\') ||
-              id.includes('@mock/handlers') ||
-              id.includes('./handlers') ||
-              id.includes('../handlers')) {
-            console.log(`🚫 Externalizing MSW module in production: ${id}`);
-            return true;
-          }
-        }
-        return false;
-      },
+
     },
   },
 
   define: {
     // Environment variables
     'import.meta.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL || ''),
-    'import.meta.env.VITE_ENABLE_MSW': JSON.stringify(process.env.VITE_ENABLE_MSW || (process.env.NODE_ENV === 'development' ? 'true' : 'false')),
+
   },
 
   server: {
     port: 3000,
     host: true,
     open: false,
+    hmr: {
+      overlay: true,
+    },
+    fs: {
+      // 允许访问工作区根目录之外的文件
+      allow: ['..'],
+    },
+  },
+
+  // 优化依赖预构建
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'antd',
+      '@ant-design/icons',
+      '@ant-design/pro-components',
+      'react-router-dom',
+      'dayjs',
+    ],
+    exclude: [],
   },
 
   preview: {

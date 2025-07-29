@@ -32,5 +32,5 @@ export type {
 // 保留原有的特定hooks
 export { useApiOnce, useComponentInit } from './useApiOnce';
 export { useAuth } from './useAuth';
-export { useMockStatus } from './useMockStatus';
+
 export { useTheme } from './useTheme';
