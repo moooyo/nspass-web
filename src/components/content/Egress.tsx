@@ -27,6 +27,7 @@ import { useApiOnce } from '@/components/hooks/useApiOnce';
 import { useApiErrorHandler } from '@/hooks/useApiErrorHandler';
 import { securityUtils } from '@/shared/utils';
 import { generateRandomPort } from '@/utils/passwordUtils';
+import { parseEgressConfig } from '@/utils/egressConfigUtils';
 
 // 出口模式选项 - 使用新的枚举
 const egressModeOptions = [
@@ -53,44 +54,54 @@ const forwardTypeOptions = [
     { label: '全部', value: ForwardType.FORWARD_TYPE_ALL },
 ];
 
-// 使用服务中定义的EgressItem类型，添加display字段
+// 使用服务中定义的EgressItem类型，添加display字段和解析出的配置字段
 interface LocalEgressItem extends EgressItem {
     displayConfig?: string; // 用于显示的配置字符串
+    // 从egressConfig解析出的字段，用于向后兼容
+    targetAddress?: string;
+    target_address?: string;
+    forwardType?: string;
+    forward_type?: string;
+    destAddress?: string;
+    dest_ip?: string;
+    destPort?: string;
+    dest_port?: string;
+    supportUdp?: boolean;
+    udp_support?: boolean;
+    [key: string]: any; // 允许其他动态字段
 }
+
+
 
 // 将API数据转换为显示数据格式
 const convertEgressToLocalItem = (egress: EgressItem): LocalEgressItem => {
-    // 解析 extraConfig 获取额外配置（如果存在）
-    let supportUdp = egress.supportUdp; // 先使用直接字段
-    
-    // 如果直接字段不存在，尝试从 extraConfig 解析
-    if (supportUdp === undefined && egress.egressConfig) {
-        try {
-            const extraConfig = JSON.parse(egress.egressConfig);
-            supportUdp = extraConfig.supportUdp;
-        } catch (error) {
-            console.warn('Failed to parse egressConfig:', egress.egressConfig, error);
-        }
-    }
-    
+    // 解析 egressConfig 获取具体配置
+    const config = parseEgressConfig(egress.egressConfig || '', egress.egressMode);
+
     // 根据出口模式生成显示配置字符串
     let displayConfig = '';
-    
+
     switch (egress.egressMode) {
         case EgressMode.EGRESS_MODE_DIRECT:
-            displayConfig = `直出到: ${egress.targetAddress || 'N/A'}`;
+            displayConfig = `直出到: ${config.target_address || config.targetAddress || 'N/A'}`;
             break;
         case EgressMode.EGRESS_MODE_IPTABLES:
-            displayConfig = `${egress.forwardType || 'N/A'} -> ${egress.destAddress || 'N/A'}:${egress.destPort || 'N/A'}`;
+            const forwardType = config.forward_type || config.forwardType || 'N/A';
+            const destIp = config.dest_ip || config.destAddress || 'N/A';
+            const destPort = config.dest_port || config.destPort || 'N/A';
+            displayConfig = `${forwardType} -> ${destIp}:${destPort}`;
             break;
         case EgressMode.EGRESS_MODE_SS2022:
+            const supportUdp = config.udp_support || config.supportUdp || false;
             displayConfig = `SS2022:${egress.port || 'N/A'}, UDP: ${supportUdp ? '是' : '否'}`;
             break;
         case EgressMode.EGRESS_MODE_TROJAN:
-            displayConfig = `Trojan:${egress.port || 'N/A'} -> ${egress.destAddress || 'N/A'}:${egress.destPort || 'N/A'}`;
+            const trojanUdp = config.udp_support || config.supportUdp || false;
+            displayConfig = `Trojan:${egress.port || 'N/A'}, UDP: ${trojanUdp ? '是' : '否'}`;
             break;
         case EgressMode.EGRESS_MODE_SNELL:
-            displayConfig = `Snell:${egress.port || 'N/A'}, UDP: ${supportUdp ? '是' : '否'}`;
+            const snellUdp = config.udp_support || config.supportUdp || false;
+            displayConfig = `Snell:${egress.port || 'N/A'}, UDP: ${snellUdp ? '是' : '否'}`;
             break;
         default:
             displayConfig = '未配置';
@@ -98,80 +109,121 @@ const convertEgressToLocalItem = (egress: EgressItem): LocalEgressItem => {
 
     return {
         ...egress,
-        supportUdp, // 确保 supportUdp 在本地项目中可用
         displayConfig,
+        // 为了向后兼容，将解析出的配置字段添加到对象中
+        ...config
     };
 };
 
 // 转换前端表单数据为API请求数据
 const convertFormToCreateData = (values: any): CreateEgressData => {
     const data: CreateEgressData = {
-        egressName: values.egressName,  // 更改为egressName
+        egressId: values.egressId || `egress-${Date.now()}`, // 生成业务ID
+        egressName: values.egressName,
         serverId: values.serverId,
         egressMode: values.egressMode,
     };
 
-    // 根据模式添加对应字段
+    // 根据模式构建egressConfig JSON
+    let egressConfig: any = {};
+
     if (values.egressMode === EgressMode.EGRESS_MODE_DIRECT) {
-        data.targetAddress = values.targetAddress;
+        egressConfig = {
+            target_address: values.targetAddress
+        };
     } else if (values.egressMode === EgressMode.EGRESS_MODE_IPTABLES) {
-        data.forwardType = values.forwardType;
-        data.destAddress = values.destAddress;
-        data.destPort = values.destPort;
+        egressConfig = {
+            forward_type: values.forwardType,
+            dest_ip: values.destAddress,
+            dest_port: values.destPort
+        };
     } else if (values.egressMode === EgressMode.EGRESS_MODE_SS2022) {
+        egressConfig = {
+            udp_support: values.supportUdp || false,
+            method: values.cipher || '2022-blake3-aes-128-gcm'
+        };
+        // 通用字段
         data.password = values.password;
         data.port = values.port;
-        // supportUdp 是直接字段，不需要通过 extraConfig
-        data.supportUdp = values.supportUdp;
-        // TODO: 等待后端添加cipher字段支持
-        // data.cipher = values.cipher;
     } else if (values.egressMode === EgressMode.EGRESS_MODE_TROJAN) {
+        egressConfig = {
+            udp_support: values.supportUdp || false,
+            sni: values.sni || '',
+            skip_cert_verify: values.skipCertVerify || false
+        };
+        // 通用字段
         data.password = values.password;
         data.port = values.port;
-        data.destAddress = values.remoteAddr; // trojan使用remoteAddr字段
-        data.destPort = values.remotePort; // trojan使用remotePort字段
     } else if (values.egressMode === EgressMode.EGRESS_MODE_SNELL) {
+        egressConfig = {
+            udp_support: values.supportUdp || false,
+            version: values.version || 'v4'
+        };
+        // 通用字段
         data.password = values.password;
         data.port = values.port;
-        // supportUdp 是直接字段，不需要通过 extraConfig
-        data.supportUdp = values.supportUdp;
+    }
+
+    // 序列化egressConfig
+    if (Object.keys(egressConfig).length > 0) {
+        data.egressConfig = JSON.stringify(egressConfig);
     }
 
     return data;
 };
 
 // 转换前端表单数据为更新API请求数据
-const convertFormToUpdateData = (values: any): UpdateEgressData => {
+const convertFormToUpdateData = (values: any, id: number): UpdateEgressData => {
     const data: UpdateEgressData = {
-        egressName: values.egressName,  // 更改为egressName
+        id: id,
+        egressName: values.egressName,
         serverId: values.serverId,
         egressMode: values.egressMode,
     };
 
-    // 根据模式添加对应字段
+    // 根据模式构建egressConfig JSON
+    let egressConfig: any = {};
+
     if (values.egressMode === EgressMode.EGRESS_MODE_DIRECT) {
-        data.targetAddress = values.targetAddress;
+        egressConfig = {
+            target_address: values.targetAddress
+        };
     } else if (values.egressMode === EgressMode.EGRESS_MODE_IPTABLES) {
-        data.forwardType = values.forwardType;
-        data.destAddress = values.destAddress;
-        data.destPort = values.destPort;
+        egressConfig = {
+            forward_type: values.forwardType,
+            dest_ip: values.destAddress,
+            dest_port: values.destPort
+        };
     } else if (values.egressMode === EgressMode.EGRESS_MODE_SS2022) {
+        egressConfig = {
+            udp_support: values.supportUdp || false,
+            method: values.cipher || '2022-blake3-aes-128-gcm'
+        };
+        // 通用字段
         data.password = values.password;
         data.port = values.port;
-        // supportUdp 是直接字段，不需要通过 extraConfig
-        data.supportUdp = values.supportUdp;
-        // TODO: 等待后端添加cipher字段支持
-        // data.cipher = values.cipher;
     } else if (values.egressMode === EgressMode.EGRESS_MODE_TROJAN) {
+        egressConfig = {
+            udp_support: values.supportUdp || false,
+            sni: values.sni || '',
+            skip_cert_verify: values.skipCertVerify || false
+        };
+        // 通用字段
         data.password = values.password;
         data.port = values.port;
-        data.destAddress = values.remoteAddr; // trojan使用remoteAddr字段
-        data.destPort = values.remotePort; // trojan使用remotePort字段
     } else if (values.egressMode === EgressMode.EGRESS_MODE_SNELL) {
+        egressConfig = {
+            udp_support: values.supportUdp || false,
+            version: values.version || 'v4'
+        };
+        // 通用字段
         data.password = values.password;
         data.port = values.port;
-        // supportUdp 是直接字段，不需要通过 extraConfig
-        data.supportUdp = values.supportUdp;
+    }
+
+    // 序列化egressConfig
+    if (Object.keys(egressConfig).length > 0) {
+        data.egressConfig = JSON.stringify(egressConfig);
     }
 
     return data;
@@ -349,24 +401,40 @@ const Egress: React.FC = () => {
     // 打开编辑模态框
     const openEditModal = (record: LocalEgressItem) => {
         setEditingRecord(record);
+
+        // 解析egressConfig获取配置信息
+        const config = parseEgressConfig(record.egressConfig || '', record.egressMode);
+
         // 设置表单值
-        editForm.setFieldsValue({
-            egressName: record.egressName,  // 更改为egressName
+        const formValues: any = {
+            egressName: record.egressName,
             serverId: record.serverId,
             egressMode: record.egressMode,
-            // 根据模式设置对应字段
-            ...(record.egressMode === EgressMode.EGRESS_MODE_DIRECT && { targetAddress: record.targetAddress }),
-            ...(record.egressMode === EgressMode.EGRESS_MODE_IPTABLES && { 
-                forwardType: record.forwardType,
-                destAddress: record.destAddress,
-                destPort: record.destPort,
-            }),
-            ...(record.egressMode === EgressMode.EGRESS_MODE_SS2022 && { 
-                password: record.password,
-                supportUdp: record.supportUdp,
-                port: record.port,
-            }),
-        });
+            // 通用字段
+            password: record.password,
+            port: record.port,
+        };
+
+        // 根据模式设置对应字段
+        if (record.egressMode === EgressMode.EGRESS_MODE_DIRECT) {
+            formValues.targetAddress = config.target_address || record.targetAddress;
+        } else if (record.egressMode === EgressMode.EGRESS_MODE_IPTABLES) {
+            formValues.forwardType = config.forward_type || record.forwardType;
+            formValues.destAddress = config.dest_ip || record.destAddress;
+            formValues.destPort = config.dest_port || record.destPort;
+        } else if (record.egressMode === EgressMode.EGRESS_MODE_SS2022) {
+            formValues.supportUdp = config.udp_support || record.supportUdp;
+            formValues.cipher = config.method || '2022-blake3-aes-128-gcm';
+        } else if (record.egressMode === EgressMode.EGRESS_MODE_TROJAN) {
+            formValues.supportUdp = config.udp_support || record.supportUdp;
+            formValues.sni = config.sni || '';
+            formValues.skipCertVerify = config.skip_cert_verify || false;
+        } else if (record.egressMode === EgressMode.EGRESS_MODE_SNELL) {
+            formValues.supportUdp = config.udp_support || record.supportUdp;
+            formValues.version = config.version || 'v4';
+        }
+
+        editForm.setFieldsValue(formValues);
         setEditModalVisible(true);
     };
 
@@ -384,7 +452,7 @@ const Egress: React.FC = () => {
         }
         
         const response = await handleAsyncOperation(
-            egressService.updateEgress(editingRecord.id, convertFormToUpdateData(values)),
+            egressService.updateEgress(editingRecord.id, convertFormToUpdateData(values, editingRecord.id)),
             '更新出口',
             {
                 customSuccessMessage: '出口更新成功！',

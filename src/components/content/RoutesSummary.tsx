@@ -6,6 +6,7 @@ import { useTheme } from '../hooks/useTheme';
 import { routeService, RouteItem } from '@/services/routes';
 import { egressService, EgressItem } from '@/services/egress';
 import { getCountryCodeByName, standardizeCountryName } from '@/shared/utils/flag-utils';
+import { extractTargetAddress } from '@/utils/egressConfigUtils';
 
 const { Title, Text } = Typography;
 
@@ -93,7 +94,12 @@ const RoutesSummary: React.FC<RoutesSummaryProps> = ({ style, onRouteStatsChange
 
   // 模拟获取目标国家（基于egress配置）
   const getTargetCountry = (egress: EgressItem): string => {
-    const target = (egress.targetAddress || egress.destAddress || '').toLowerCase();
+    // 从egressConfig解析目标地址
+    const targetAddress = egress.egressConfig
+      ? extractTargetAddress(egress.egressConfig, egress.egressMode)
+      : '';
+
+    const target = targetAddress.toLowerCase();
     
     // 根据目标地址关键词判断
     if (target.includes('hk') || target.includes('hongkong') || target.includes('香港')) 

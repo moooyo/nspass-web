@@ -28,6 +28,7 @@ import { ServerItem as BaseServerItem } from './LeafletWrapper';
 import { forwardPathRulesService, ForwardPathRuleType, ForwardPathRuleStatus } from '@/services/forwardPathRules';
 import type { ForwardPathRule } from '@/types/generated/model/forwardPath';
 import { serverService } from '@/services/server';
+import { extractTargetAddress } from '@/utils/egressConfigUtils';
 import type { ServerItem as ApiServerItem } from '@/types/generated/api/servers/server_management';
 import { egressService } from '@/services/egress';
 import type { EgressItem } from '@/types/generated/model/egressItem';
@@ -919,8 +920,13 @@ const ForwardRules: React.FC = () => {
 
             // 使用API服务器信息（如果存在），否则使用出口配置信息
             const serverName = matchedApiServer?.name || `出口规则-${egressConfig.serverId}`;
-            const serverIp = matchedApiServer?.ipv4 || matchedApiServer?.ipv6 || 
-                           egressConfig.targetAddress || '未知IP';
+
+            // 从egressConfig解析目标地址
+            const targetAddress = egressConfig.egressConfig
+                ? extractTargetAddress(egressConfig.egressConfig, egressConfig.egressMode) || '未知IP'
+                : '未知IP';
+
+            const serverIp = matchedApiServer?.ipv4 || matchedApiServer?.ipv6 || targetAddress;
             const serverCountry = matchedApiServer?.country || '未知';
             
             const coords = getCountryCoordinates(serverCountry);
