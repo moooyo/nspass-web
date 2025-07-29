@@ -95,7 +95,7 @@ const Routes: React.FC = () => {
 
     // 生成不同格式的代理配置
     const generateProxyConfig = (record: RouteItem, format: 'shadowrocket' | 'clash' | 'surge' | 'loon') => {
-        if (!record || !record.protocolParams) {
+        if (!record?.protocolParams) {
             return '';
         }
 

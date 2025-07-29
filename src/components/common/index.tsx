@@ -380,7 +380,7 @@ export function CommonTable<T extends Record<string, unknown> & { [key: string]:
       />
 
       {/* 创建表单弹窗 */}
-      {renderCreateForm && renderCreateForm({
+      {renderCreateForm?.({
         visible: createModalVisible,
         onSubmit: handleCreate,
         onCancel: () => setCreateModalVisible(false),

@@ -132,7 +132,7 @@ const Servers: React.FC = () => {
                 }
                 // 过滤掉ip为空的条目，并确保格式正确
                 const validEntries = ingressValue
-                    .filter((entry: any) => entry && entry.ip && entry.ip.trim())
+                    .filter((entry: any) => entry?.ip?.trim())
                     .map((entry: any) => ({
                         ip: entry.ip.trim(),
                         comment: entry.comment?.trim() || ''

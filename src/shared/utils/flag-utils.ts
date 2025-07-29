@@ -68,7 +68,7 @@ export const flagUtils = {
     // 尝试通过countryFlagEmoji库获取
     try {
       const countryData = countryFlagEmoji.get(standardizedName);
-      if (countryData && countryData.emoji) {
+      if (countryData?.emoji) {
         return countryData.emoji;
       }
     } catch (error) {
@@ -80,7 +80,7 @@ export const flagUtils = {
     if (countryCode) {
       try {
         const countryData = countryFlagEmoji.get(countryCode);
-        if (countryData && countryData.emoji) {
+        if (countryData?.emoji) {
           return countryData.emoji;
         }
       } catch (error) {

@@ -132,7 +132,7 @@ class AuthService extends EnhancedBaseService {
    * 保存认证信息
    */
   saveAuthData(authData: LoginResponse['data']): void {
-    if (!authData || !authData.token) return;
+    if (!authData?.token) return;
     
     try {
       localStorage.setItem('auth_token', authData.token);
