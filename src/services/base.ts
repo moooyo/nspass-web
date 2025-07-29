@@ -137,14 +137,13 @@ export abstract class BaseService<T = unknown, CreateData = unknown, UpdateData 
   /**
    * 通用错误处理
    */
-  protected handleError(error: unknown, operation: string): StandardApiResponse<null> {
+  protected handleError<T>(error: unknown, operation: string): StandardApiResponse<T> {
     console.error(`${operation} 操作失败:`, error);
     const errorMessage = error instanceof Error ? error.message : `${operation}失败，请稍后重试`;
     return {
       success: false,
       message: errorMessage,
-      data: null
-    };
+    } as StandardApiResponse<T>;
   }
 }
 

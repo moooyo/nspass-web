@@ -392,26 +392,58 @@ export const apiUtils = {
   },
 
   // 处理API错误
-  handleError: (error: any): void => {
-    const errorMessage = error?.response?.data?.message || 
-                        error?.message || 
+  handleError: (error: unknown): void => {
+    const errorMessage = (error as any)?.response?.data?.message ||
+                        (error as any)?.message ||
                         '网络错误，请稍后重试';
-    
+
     message.error(errorMessage);
     console.error('API错误:', error);
   },
 
   // 构建查询参数
-  buildQueryParams: (params: Record<string, any>): string => {
+  buildQueryParams: (params: Record<string, unknown>): string => {
     const searchParams = new URLSearchParams();
-    
+
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
         searchParams.append(key, String(value));
       }
     });
-    
+
     return searchParams.toString();
+  },
+
+  // 创建标准响应
+  createResponse: <T>(data: T, success: boolean = true, message?: string): StandardApiResponse<T> => {
+    return {
+      success,
+      data,
+      message: message || (success ? '操作成功' : '操作失败')
+    };
+  },
+
+  // 处理响应
+  handleResponse: <T>(response: StandardApiResponse<T>): T => {
+    if (!response.success) {
+      const errorMessage = response.message || '请求失败';
+      message.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+    return response.data;
+  },
+
+  // 显示成功消息
+  showSuccess: (msg: string): void => {
+    message.success(msg);
+  },
+
+  // 显示错误消息
+  showError: (error: unknown): void => {
+    const errorMessage = typeof error === 'string' ? error :
+                        (error as any)?.message ||
+                        '操作失败';
+    message.error(errorMessage);
   },
 };
 

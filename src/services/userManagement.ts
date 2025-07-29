@@ -1,23 +1,41 @@
 import { httpClient, ApiResponse } from '@/utils/http-client';
+import type {
+  UserInfo,
+  UpdateUserInfoRequest,
+} from '@/types/generated/api/users/user_profile';
+import type {
+  ChangePasswordRequest,
+} from '@/types/generated/api/users/user_password';
+import type {
+  TrafficStats,
+} from '@/types/generated/api/users/user_traffic';
+import type {
+  LoginHistoryItem,
+  GetLoginHistoryRequest,
+} from '@/types/generated/api/users/user_login_history';
+import type {
+  ActivityLogItem,
+  GetActivityLogsRequest,
+} from '@/types/generated/api/users/user_activity';
+import type {
+  ToggleTwoFactorAuthRequest,
+} from '@/types/generated/api/users/user_two_factor';
+import type {
+  UploadAvatarResponse
+} from '@/types/generated/api/users/user_avatar';
+import type {
+  DeleteAccountRequest,
+} from '@/types/generated/api/users/user_account';
 
-// Local type definitions
+// 认证相关类型 - 这些可能需要从auth相关的generated类型导入
 interface RegisterRequest { username: string; email: string; password: string; }
 interface LoginRequest { username: string; password: string; }
-interface UserProfile { id: string; username: string; email: string; avatar?: string; }
-interface UpdateUserInfoRequest { username?: string; email?: string; }
-interface ChangePasswordRequest { currentPassword: string; newPassword: string; }
-interface DeleteAccountRequest { password: string; }
-interface UploadAvatarData { avatar: any; }
-type UploadAvatarResponse = ApiResponse<{avatarUrl: string}>;
-interface TrafficStats { uploadTraffic: number; downloadTraffic: number; totalTraffic: number; }
-interface LoginHistoryItem { id: string; ip: string; userAgent: string; loginTime: string; }
-interface GetLoginHistoryRequest { page?: number; pageSize?: number; }
-interface ActivityLogItem { id: string; action: string; description: string; timestamp: string; }
-interface GetActivityLogsRequest { page?: number; pageSize?: number; }
-interface ToggleTwoFactorAuthRequest { enabled: boolean; password: string; }
-interface UserConfig { userId: string; configKey: string; value: any; }
+interface UploadAvatarData { avatar: File; }
+
+// 用户配置相关类型 - 如果有generated类型可以替换
+interface UserConfig { userId: string; configKey: string; value: unknown; }
 interface GetUserConfigRequest { userId: string; }
-interface UpdateUserConfigRequest { userId: string; configKey: string; value: any; }
+interface UpdateUserConfigRequest { userId: string; configKey: string; value: unknown; }
 interface DeleteUserConfigRequest { userId: string; configKey: string; }
 interface GetUserConfigHistoryRequest { userId: string; configKey: string; page?: number; pageSize?: number; }
 
@@ -43,7 +61,11 @@ class UserManagementService {
   /**
    * 用户注册
    */
-  async register(request: RegisterRequest): Promise<ApiResponse<any>> {
+  async register(request: RegisterRequest): Promise<ApiResponse<{
+    userId: string;
+    username: string;
+    email: string;
+  }>> {
     const response = await httpClient.post<{
       userId: string;
       username: string;
@@ -55,12 +77,17 @@ class UserManagementService {
   /**
    * 用户登录
    */
-  async login(request: LoginRequest): Promise<ApiResponse<any>> {
+  async login(request: LoginRequest): Promise<ApiResponse<{
+    token: string;
+    refreshToken: string;
+    expiresIn: number;
+    user: UserInfo;
+  }>> {
     const response = await httpClient.post<{
       token: string;
       refreshToken: string;
       expiresIn: number;
-      user: UserProfile;
+      user: UserInfo;
     }>(`${this.authEndpoint}/login`, request);
     return response;
   }
@@ -70,15 +97,15 @@ class UserManagementService {
   /**
    * 获取当前用户信息
    */
-  async getCurrentUserInfo(): Promise<ApiResponse<UserProfile>> {
-    return httpClient.get<UserProfile>(`/v1/profile`);
+  async getCurrentUserInfo(): Promise<ApiResponse<UserInfo>> {
+    return httpClient.get<UserInfo>(`/v1/profile`);
   }
 
   /**
    * 更新用户信息
    */
-  async updateUserInfo(request: UpdateUserInfoRequest): Promise<ApiResponse<UserProfile>> {
-    const response = await httpClient.put<UserProfile>(`${this.usersEndpoint}/me`, request);
+  async updateUserInfo(request: UpdateUserInfoRequest): Promise<ApiResponse<UserInfo>> {
+    const response = await httpClient.put<UserInfo>(`${this.usersEndpoint}/me`, request);
     return response;
   }
 
@@ -103,11 +130,11 @@ class UserManagementService {
   /**
    * 上传头像
    */
-  async uploadAvatar(avatarData: UploadAvatarData): Promise<ApiResponse<UploadAvatarResponse['data']>> {
+  async uploadAvatar(avatarData: UploadAvatarData): Promise<ApiResponse<UploadAvatarResponse>> {
     const formData = new FormData();
     formData.append('avatar', avatarData.avatar);
-    
-    return httpClient.post<UploadAvatarResponse['data']>(`${this.userEndpoint}/avatar`, formData);
+
+    return httpClient.post<UploadAvatarResponse>(`${this.userEndpoint}/avatar`, formData);
   }
 
   // === 流量统计 ===

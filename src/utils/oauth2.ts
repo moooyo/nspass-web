@@ -109,40 +109,40 @@ export class OAuth2Service {
   /**
    * 转换用户信息格式（不同OAuth2服务器返回的用户信息格式不同）
    */
-  private transformUserInfo(userInfo: any): OAuth2User {
+  private transformUserInfo(userInfo: Record<string, unknown>): OAuth2User {
     // 针对不同的OAuth2提供商进行不同的转换
     switch (this.provider.name) {
       case 'github':
         return {
-          id: userInfo.id.toString(),
-          name: userInfo.name || userInfo.login,
-          email: userInfo.email,
-          avatar: userInfo.avatar_url,
+          id: (userInfo.id as number).toString(),
+          name: (userInfo.name as string) || (userInfo.login as string),
+          email: userInfo.email as string,
+          avatar: userInfo.avatar_url as string,
           provider: this.provider.name
         };
       case 'google':
         return {
-          id: userInfo.sub,
-          name: userInfo.name,
-          email: userInfo.email,
-          avatar: userInfo.picture,
+          id: userInfo.sub as string,
+          name: userInfo.name as string,
+          email: userInfo.email as string,
+          avatar: userInfo.picture as string,
           provider: this.provider.name
         };
       case 'microsoft':
         return {
-          id: userInfo.id,
-          name: userInfo.displayName,
-          email: userInfo.userPrincipalName || userInfo.mail,
-          avatar: userInfo.photo,
+          id: userInfo.id as string,
+          name: userInfo.displayName as string,
+          email: (userInfo.userPrincipalName as string) || (userInfo.mail as string),
+          avatar: userInfo.photo as string,
           provider: this.provider.name
         };
       default:
         // 通用转换
         return {
-          id: userInfo.id?.toString() || userInfo.sub,
-          name: userInfo.name || userInfo.display_name || userInfo.displayName,
-          email: userInfo.email || userInfo.mail,
-          avatar: userInfo.avatar_url || userInfo.picture || userInfo.photo,
+          id: (userInfo.id as number)?.toString() || (userInfo.sub as string),
+          name: (userInfo.name as string) || (userInfo.display_name as string) || (userInfo.displayName as string),
+          email: (userInfo.email as string) || (userInfo.mail as string),
+          avatar: (userInfo.avatar_url as string) || (userInfo.picture as string) || (userInfo.photo as string),
           provider: this.provider.name
         };
     }

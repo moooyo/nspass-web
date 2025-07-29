@@ -121,10 +121,8 @@ const convertFormToCreateData = (values: any): CreateEgressData => {
     } else if (values.egressMode === EgressMode.EGRESS_MODE_SS2022) {
         data.password = values.password;
         data.port = values.port;
-        // 将 supportUdp 存储在 extraConfig 中
-        if (values.supportUdp !== undefined) {
-            data.extraConfig = JSON.stringify({ supportUdp: values.supportUdp });
-        }
+        // supportUdp 是直接字段，不需要通过 extraConfig
+        data.supportUdp = values.supportUdp;
         // TODO: 等待后端添加cipher字段支持
         // data.cipher = values.cipher;
     } else if (values.egressMode === EgressMode.EGRESS_MODE_TROJAN) {
@@ -135,10 +133,8 @@ const convertFormToCreateData = (values: any): CreateEgressData => {
     } else if (values.egressMode === EgressMode.EGRESS_MODE_SNELL) {
         data.password = values.password;
         data.port = values.port;
-        // 将 supportUdp 存储在 extraConfig 中
-        if (values.supportUdp !== undefined) {
-            data.extraConfig = JSON.stringify({ supportUdp: values.supportUdp });
-        }
+        // supportUdp 是直接字段，不需要通过 extraConfig
+        data.supportUdp = values.supportUdp;
     }
 
     return data;
@@ -162,10 +158,8 @@ const convertFormToUpdateData = (values: any): UpdateEgressData => {
     } else if (values.egressMode === EgressMode.EGRESS_MODE_SS2022) {
         data.password = values.password;
         data.port = values.port;
-        // 将 supportUdp 存储在 extraConfig 中
-        if (values.supportUdp !== undefined) {
-            data.extraConfig = JSON.stringify({ supportUdp: values.supportUdp });
-        }
+        // supportUdp 是直接字段，不需要通过 extraConfig
+        data.supportUdp = values.supportUdp;
         // TODO: 等待后端添加cipher字段支持
         // data.cipher = values.cipher;
     } else if (values.egressMode === EgressMode.EGRESS_MODE_TROJAN) {
@@ -176,10 +170,8 @@ const convertFormToUpdateData = (values: any): UpdateEgressData => {
     } else if (values.egressMode === EgressMode.EGRESS_MODE_SNELL) {
         data.password = values.password;
         data.port = values.port;
-        // 将 supportUdp 存储在 extraConfig 中
-        if (values.supportUdp !== undefined) {
-            data.extraConfig = JSON.stringify({ supportUdp: values.supportUdp });
-        }
+        // supportUdp 是直接字段，不需要通过 extraConfig
+        data.supportUdp = values.supportUdp;
     }
 
     return data;

@@ -50,15 +50,16 @@ function OAuth2CallbackContent() {
         console.log('OAuth2 Callback - 提供商:', provider);
 
         // 获取 OAuth2 服务实例 (暂时使用占位符配置)
-        const oauth2Service = OAuth2Factory.getService(provider, 'placeholder', window.location.origin);
-        if (!oauth2Service) {
+        const oauth2Provider = OAuth2Factory.getService(provider, 'placeholder', window.location.origin);
+        if (!oauth2Provider) {
           setError(`不支持的 OAuth2 提供商: ${provider}`);
           setLoading(false);
           return;
         }
 
-        // 交换授权码获取用户信息
-        const userInfo = await oauth2Service.exchangeCode(code, state);
+        // 创建OAuth2Service实例并交换授权码获取用户信息
+        const oauth2Service = new OAuth2Service(oauth2Provider);
+        const userInfo = await oauth2Service.login(code, state);
         
         console.log('OAuth2 Callback - 用户信息:', userInfo);
         

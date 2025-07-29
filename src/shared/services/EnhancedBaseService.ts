@@ -26,7 +26,7 @@ export interface CacheEntry<T> {
 
 export class EnhancedBaseService {
   protected config: ServiceConfig;
-  private cache = new Map<string, CacheEntry<any>>();
+  private cache = new Map<string, CacheEntry<unknown>>();
 
   constructor(config: ServiceConfig = {}) {
     this.config = {
@@ -44,8 +44,10 @@ export class EnhancedBaseService {
    * 创建服务适配器
    * 用于适配现有服务到标准接口
    */
-  protected createAdapter<T>(config: Omit<ServiceAdapterConfig<T>, 'service'>): StandardService<T> {
-    return createServiceAdapter<T>({
+  protected createAdapter<T, CreateData = unknown, UpdateData = unknown>(
+    config: Omit<ServiceAdapterConfig<T, CreateData, UpdateData>, 'service'>
+  ): StandardService<T, CreateData, UpdateData> {
+    return createServiceAdapter<T, CreateData, UpdateData>({
       ...config,
       service: this
     });
@@ -140,7 +142,7 @@ export class EnhancedBaseService {
    */
   protected async post<T>(
     endpoint: string,
-    data?: any,
+    data?: unknown,
     options: RequestInit = {}
   ): Promise<StandardApiResponse<T>> {
     return this.request<T>(this.buildURL(endpoint), {
@@ -155,7 +157,7 @@ export class EnhancedBaseService {
    */
   protected async put<T>(
     endpoint: string,
-    data?: any,
+    data?: unknown,
     options: RequestInit = {}
   ): Promise<StandardApiResponse<T>> {
     return this.request<T>(this.buildURL(endpoint), {
@@ -240,7 +242,7 @@ export class EnhancedBaseService {
 
   public async create<T>(
     endpoint: string,
-    data: any
+    data: unknown
   ): Promise<StandardApiResponse<T>> {
     const response = await this.post<T>(endpoint, data);
     // 创建成功后清除相关缓存
@@ -251,7 +253,7 @@ export class EnhancedBaseService {
   public async update<T>(
     endpoint: string,
     id: string | number,
-    data: any
+    data: unknown
   ): Promise<StandardApiResponse<T>> {
     const response = await this.put<T>(`${endpoint}/${id}`, data);
     // 更新成功后清除相关缓存
@@ -303,10 +305,10 @@ export class EnhancedBaseService {
       return null;
     }
 
-    return entry.data;
+    return entry.data as T;
   }
 
-  private generateCacheKey(method: string, url: string, params?: any): string {
+  private generateCacheKey(method: string, url: string, params?: unknown): string {
     const baseKey = `${this.config.cachePrefix}${method}_${url}`;
     if (params) {
       const paramsStr = JSON.stringify(params);
