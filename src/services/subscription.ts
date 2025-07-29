@@ -1,4 +1,6 @@
-import { httpClient, ApiResponse } from '@/utils/http-client';
+import { EnhancedBaseService } from '@/shared/services/EnhancedBaseService';
+import { createServiceConfig } from '@/shared/services/ServiceConfig';
+import type { StandardApiResponse } from '@/shared/types/common';
 import type { 
   SubscriptionData, 
   CreateSubscriptionRequest as GeneratedCreateSubscriptionRequest,
@@ -51,13 +53,16 @@ export interface UpdateSubscriptionRequest {
   customTemplate?: string;
 }
 
-class SubscriptionService {
+class SubscriptionService extends EnhancedBaseService {
+  constructor() {
+    super(createServiceConfig('SubscriptionService'));
+  }
   private readonly endpoint = '/v1/subscriptions';
 
   /**
    * 获取订阅列表 - 匹配swagger接口 GET /v1/subscriptions
    */
-  async getSubscriptions(params: GetSubscriptionsRequest = {}): Promise<ApiResponse<SubscriptionData[]>> {
+  async getSubscriptions(params: GetSubscriptionsRequest = {}): Promise<StandardApiResponse<SubscriptionData[]>> {
     const queryParams: Record<string, string> = {};
     
     if (params.pagination?.page) {
@@ -67,34 +72,34 @@ class SubscriptionService {
       queryParams['pagination.pageSize'] = params.pagination.pageSize.toString();
     }
 
-    return httpClient.get<SubscriptionData[]>(this.endpoint, queryParams);
+    return this.get<SubscriptionData[]>(this.endpoint, queryParams);
   }
 
   /**
    * 创建订阅 - 匹配swagger接口 POST /v1/subscriptions
    */
-  async createSubscription(data: CreateSubscriptionRequest): Promise<ApiResponse<SubscriptionData>> {
-    return httpClient.post<SubscriptionData>(this.endpoint, data);
+  async createSubscription(data: CreateSubscriptionRequest): Promise<StandardApiResponse<SubscriptionData>> {
+    return this.post<SubscriptionData>(this.endpoint, data);
   }
 
   /**
    * 更新订阅 - 匹配swagger接口 PUT /v1/subscriptions/{subscriptionId}
    */
-  async updateSubscription(subscriptionId: string, data: UpdateSubscriptionRequest): Promise<ApiResponse<SubscriptionData>> {
-    return httpClient.put<SubscriptionData>(`${this.endpoint}/${subscriptionId}`, data);
+  async updateSubscription(subscriptionId: string, data: UpdateSubscriptionRequest): Promise<StandardApiResponse<SubscriptionData>> {
+    return this.put<SubscriptionData>(`${this.endpoint}/${subscriptionId}`, data);
   }
 
   /**
    * 删除订阅 - 匹配swagger接口 DELETE /v1/subscriptions/{subscriptionId}
    */
-  async deleteSubscription(subscriptionId: string): Promise<ApiResponse<void>> {
-    return httpClient.delete(`${this.endpoint}/${subscriptionId}`);
+  async deleteSubscription(subscriptionId: string): Promise<StandardApiResponse<void>> {
+    return this.delete(`${this.endpoint}/${subscriptionId}`);
   }
 
   /**
    * 获取订阅统计 - 匹配swagger接口 GET /v1/subscriptions/stats
    */
-  async getSubscriptionStats(params: GetSubscriptionStatsRequest = {}): Promise<ApiResponse<SubscriptionStats>> {
+  async getSubscriptionStats(params: GetSubscriptionStatsRequest = {}): Promise<StandardApiResponse<SubscriptionStats>> {
     const queryParams: Record<string, string> = {};
     
     if (params.startDate) queryParams.startDate = params.startDate;
@@ -103,25 +108,25 @@ class SubscriptionService {
       queryParams.type = params.type;
     }
 
-    return httpClient.get<SubscriptionStats>(`${this.endpoint}/stats`, queryParams);
+    return this.get<SubscriptionStats>(`${this.endpoint}/stats`, queryParams);
   }
 
   /**
    * 获取订阅内容 - 匹配swagger接口 GET /s/{subscriptionId}
    */
-  async getSubscriptionContent(subscriptionId: string, userAgent?: string): Promise<ApiResponse<string>> {
+  async getSubscriptionContent(subscriptionId: string, userAgent?: string): Promise<StandardApiResponse<string>> {
     const queryParams: Record<string, string> = {};
     if (userAgent) queryParams.userAgent = userAgent;
 
-    return httpClient.get<string>(`/s/${subscriptionId}`, queryParams);
+    return this.get<string>(`/s/${subscriptionId}`, queryParams);
   }
 
   /**
    * 复制订阅URL到剪贴板
    */
   async copySubscriptionUrl(userId: number, token: string): Promise<string> {
-    // 使用httpClient的当前baseURL，确保与其他API调用一致
-    const backendBaseUrl = httpClient.getCurrentBaseURL();
+    // 使用当前服务的baseURL，确保与其他API调用一致
+    const backendBaseUrl = this.getCurrentBaseURL();
     const subscriptionUrl = `${backendBaseUrl}/s/${userId}/${token}`;
     
     try {
@@ -137,7 +142,7 @@ class SubscriptionService {
    * 生成订阅URL（不复制到剪贴板）
    */
   generateSubscriptionUrl(userId: number, token: string): string {
-    const backendBaseUrl = httpClient.getCurrentBaseURL();
+    const backendBaseUrl = this.getCurrentBaseURL();
     return `${backendBaseUrl}/s/${userId}/${token}`;
   }
 

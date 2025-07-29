@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App.tsx'
 import './globals.css'
 import { logger } from './utils/logger'
+import './test-global-client' // 导入测试文件
 
 // Environment info for development
 if (import.meta.env.DEV) {

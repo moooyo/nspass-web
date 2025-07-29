@@ -1,4 +1,6 @@
-import { httpClient, ApiResponse } from '@/utils/http-client';
+import { EnhancedBaseService } from '@/shared/services/EnhancedBaseService';
+import { createServiceConfig } from '@/shared/services/ServiceConfig';
+import type { StandardApiResponse } from '@/shared/types/common';
 
 // 用户数据类型定义
 export interface User {
@@ -62,18 +64,21 @@ const USER_GROUP_MAPPING: Record<number, string> = {
   5: '测试组'
 };
 
-class UserGroupsService {
+class UserGroupsService extends EnhancedBaseService {
+  constructor() {
+    super(createServiceConfig('UserGroupsService'));
+  }
   private readonly userEndpoint = '/v1/users';
 
   /**
    * 获取用户组列表 - 基于用户数据聚合生成
    */
-  async getUserGroups(params: UserGroupListParams = {}): Promise<ApiResponse<UserGroupItem[]>> {
+  async getUserGroups(params: UserGroupListParams = {}): Promise<StandardApiResponse<UserGroupItem[]>> {
     try {
       // 获取所有用户数据
-      const usersResponse = await httpClient.get<BackendUserDetail[]>(this.userEndpoint, {
-        page: '1',
-        pageSize: '1000' // 获取所有用户来分析用户组
+      const usersResponse = await this.get<BackendUserDetail[]>(this.userEndpoint, {
+        page: 1,
+        pageSize: 1000 // 获取所有用户来分析用户组
       });
 
       if (!usersResponse.success || !usersResponse.data) {
@@ -167,7 +172,7 @@ class UserGroupsService {
   /**
    * 创建新用户组 - 目前只是模拟操作，实际需要通过用户管理来实现
    */
-  async createUserGroup(_groupData: CreateUserGroupData): Promise<ApiResponse<UserGroupItem>> {
+  async createUserGroup(_groupData: CreateUserGroupData): Promise<StandardApiResponse<UserGroupItem>> {
     // 注意：后端当前不支持独立的用户组管理
     // 这里返回一个说明性的错误
     return {
@@ -179,7 +184,7 @@ class UserGroupsService {
   /**
    * 获取用户组详情
    */
-  async getUserGroupById(id: React.Key): Promise<ApiResponse<UserGroupItem>> {
+  async getUserGroupById(id: React.Key): Promise<StandardApiResponse<UserGroupItem>> {
     const groupsResponse = await this.getUserGroups();
     
     if (!groupsResponse.success || !groupsResponse.data) {
@@ -207,7 +212,7 @@ class UserGroupsService {
   /**
    * 更新用户组信息 - 目前只是模拟操作
    */
-  async updateUserGroup(_id: React.Key, _groupData: UpdateUserGroupData): Promise<ApiResponse<UserGroupItem>> {
+  async updateUserGroup(_id: React.Key, _groupData: UpdateUserGroupData): Promise<StandardApiResponse<UserGroupItem>> {
     return {
       success: false,
       message: '当前版本不支持直接更新用户组。请通过用户管理来修改用户的用户组属性。'
@@ -217,7 +222,7 @@ class UserGroupsService {
   /**
    * 删除用户组 - 目前只是模拟操作
    */
-  async deleteUserGroup(_id: React.Key): Promise<ApiResponse<void>> {
+  async deleteUserGroup(_id: React.Key): Promise<StandardApiResponse<void>> {
     return {
       success: false,
       message: '当前版本不支持删除用户组。用户组会根据用户设置自动管理。'
@@ -227,7 +232,7 @@ class UserGroupsService {
   /**
    * 批量删除用户组 - 目前只是模拟操作
    */
-  async batchDeleteUserGroups(_ids: React.Key[]): Promise<ApiResponse<void>> {
+  async batchDeleteUserGroups(_ids: React.Key[]): Promise<StandardApiResponse<void>> {
     return {
       success: false,
       message: '当前版本不支持批量删除用户组。'
@@ -237,11 +242,11 @@ class UserGroupsService {
   /**
    * 获取用户组中的用户列表
    */
-  async getUsersByGroupId(groupId: string, params: { page?: number; pageSize?: number } = {}): Promise<ApiResponse<User[]>> {
+  async getUsersByGroupId(groupId: string, params: { page?: number; pageSize?: number } = {}): Promise<StandardApiResponse<User[]>> {
     try {
-      const usersResponse = await httpClient.get<BackendUserDetail[]>(this.userEndpoint, {
-        page: '1',
-        pageSize: '1000'
+      const usersResponse = await this.get<BackendUserDetail[]>(this.userEndpoint, {
+        page: 1,
+        pageSize: 1000
       });
 
       if (!usersResponse.success || !usersResponse.data) {
@@ -294,7 +299,7 @@ class UserGroupsService {
   /**
    * 将用户添加到用户组 - 需要通过用户更新API实现
    */
-  async addUserToGroup(_groupId: string, _userIds: React.Key[]): Promise<ApiResponse<void>> {
+  async addUserToGroup(_groupId: string, _userIds: React.Key[]): Promise<StandardApiResponse<void>> {
     return {
       success: false,
       message: '请通过用户管理页面来修改用户的用户组设置。'
@@ -304,7 +309,7 @@ class UserGroupsService {
   /**
    * 从用户组中移除用户 - 需要通过用户更新API实现
    */
-  async removeUserFromGroup(_groupId: string, _userIds: React.Key[]): Promise<ApiResponse<void>> {
+  async removeUserFromGroup(_groupId: string, _userIds: React.Key[]): Promise<StandardApiResponse<void>> {
     return {
       success: false,
       message: '请通过用户管理页面来修改用户的用户组设置。'

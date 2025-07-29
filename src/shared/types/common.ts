@@ -17,7 +17,7 @@ export interface Pagination {
 // 标准API响应格式
 export interface StandardApiResponse<T = unknown> {
   success: boolean;
-  data: T;
+  data?: T;
   message?: string;
   code?: string | number;
   timestamp?: string;

@@ -1,4 +1,5 @@
-import { httpClient, ApiResponse } from '@/utils/http-client';
+import { globalHttpClient } from '@/shared/services/EnhancedBaseService';
+import type { StandardApiResponse } from '@/shared/types/common';
 import type { DnsConfig, DnsProvider } from '@/types/generated/model/dnsConfig';
 import type {
   CreateDnsConfigRequest,
@@ -18,9 +19,11 @@ export type UpdateDnsConfigData = UpdateDnsConfigRequest;
 export type DnsConfigListParams = GetDnsConfigsRequest;
 
 // DNS配置服务
-export const dnsConfigService = {
+class DnsConfigService {
+  private readonly endpoint = '/v1/dns/configs';
+
   // 获取DNS配置列表
-  async getDnsConfigs(params?: DnsConfigListParams): Promise<ApiResponse<DnsConfigItem[]>> {
+  async getDnsConfigs(params?: DnsConfigListParams): Promise<StandardApiResponse<DnsConfigItem[]>> {
     try {
       const queryParams: Record<string, string> = {};
       if (params?.page) queryParams.page = params.page.toString();
@@ -28,50 +31,53 @@ export const dnsConfigService = {
       if (params?.configName) queryParams.configName = params.configName;
       if (params?.provider) queryParams.provider = params.provider;
 
-      return await httpClient.get<DnsConfigItem[]>('/v1/dns/configs', queryParams);
+      return await globalHttpClient.get<DnsConfigItem[]>(this.endpoint, queryParams);
     } catch (error) {
       console.error('获取DNS配置列表失败:', error);
       return { success: false, message: '获取DNS配置列表失败' };
     }
-  },
+  }
 
   // 创建DNS配置
-  async createDnsConfig(data: CreateDnsConfigData): Promise<ApiResponse<DnsConfigItem>> {
+  async createDnsConfig(data: CreateDnsConfigData): Promise<StandardApiResponse<DnsConfigItem>> {
     try {
-      return await httpClient.post<DnsConfigItem>('/v1/dns/configs', data);
+      return await globalHttpClient.post<DnsConfigItem>(this.endpoint, data);
     } catch (error) {
       console.error('创建DNS配置失败:', error);
-      return { success: false, message: '创建DNS配置失败' };
+      return { success: false, message: '创建DNS配置失败' } as StandardApiResponse<DnsConfigItem>;
     }
-  },
+  }
 
   // 更新DNS配置
-  async updateDnsConfig(id: number, data: UpdateDnsConfigData): Promise<ApiResponse<DnsConfigItem>> {
+  async updateDnsConfig(id: number, data: UpdateDnsConfigData): Promise<StandardApiResponse<DnsConfigItem>> {
     try {
-      return await httpClient.put<DnsConfigItem>(`/v1/dns/configs/${id}`, data);
+      return await globalHttpClient.put<DnsConfigItem>(`${this.endpoint}/${id}`, data);
     } catch (error) {
       console.error('更新DNS配置失败:', error);
-      return { success: false, message: '更新DNS配置失败' };
+      return { success: false, message: '更新DNS配置失败' } as StandardApiResponse<DnsConfigItem>;
     }
-  },
+  }
 
   // 删除DNS配置
-  async deleteDnsConfig(id: number): Promise<ApiResponse<boolean>> {
+  async deleteDnsConfig(id: number): Promise<StandardApiResponse<boolean>> {
     try {
-      return await httpClient.delete<boolean>(`/v1/dns/configs/${id}`);
+      return await globalHttpClient.delete<boolean>(`${this.endpoint}/${id}`);
     } catch (error) {
       console.error('删除DNS配置失败:', error);
-      return { success: false, message: '删除DNS配置失败' };
+      return { success: false, message: '删除DNS配置失败' } as StandardApiResponse<boolean>;
     }
-  },
+  }
 
   // 测试DNS配置
-  async testDnsConfig(id: number): Promise<ApiResponse<boolean>> {
+  async testDnsConfig(id: number): Promise<StandardApiResponse<boolean>> {
     try {
-      return await httpClient.post<boolean>(`/v1/dns/configs/${id}/test`);
+      return await globalHttpClient.post<boolean>(`${this.endpoint}/${id}/test`);
     } catch (error) {
       console.error('测试DNS配置失败:', error);
-      return { success: false, message: '测试DNS配置失败' };
+      return { success: false, message: '测试DNS配置失败' } as StandardApiResponse<boolean>;
     }
-  },
-}; 
+  }
+}
+
+// 创建并导出服务实例
+export const dnsConfigService = new DnsConfigService();

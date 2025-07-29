@@ -2,7 +2,7 @@
 
 import { message } from 'antd';
 import { useCallback } from 'react';
-import type { ApiResponse } from '@/utils/http-client';
+import type { StandardApiResponse } from '@/shared/types/common';
 
 /**
  * 统一的 API 错误处理 Hook
@@ -17,7 +17,7 @@ export const useApiErrorHandler = () => {
    * @param options 处理选项
    */
   const handleApiResponse = useCallback(<T>(
-    response: ApiResponse<T>,
+    response: StandardApiResponse<T>,
     operation: string,
     options: {
       /** 是否显示成功提示，默认 true */
@@ -78,7 +78,7 @@ export const useApiErrorHandler = () => {
    * @param options 处理选项
    */
   const handleAsyncOperation = useCallback(async <T>(
-    asyncOperation: Promise<ApiResponse<T>>,
+    asyncOperation: Promise<StandardApiResponse<T>>,
     operation: string,
     options: {
       /** 是否显示成功提示，默认 true */
@@ -94,7 +94,7 @@ export const useApiErrorHandler = () => {
       /** 失败时的回调函数 */
       onError?: (error: string) => void;
     } = {}
-  ): Promise<ApiResponse<T>> => {
+  ): Promise<StandardApiResponse<T>> => {
     const {
       showError = true,
       customErrorMessage,
@@ -127,7 +127,7 @@ export const useApiErrorHandler = () => {
    * 数据获取操作（通常不显示成功提示）
    */
   const handleDataFetch = useCallback(<T>(
-    response: ApiResponse<T>,
+    response: StandardApiResponse<T>,
     operation: string,
     options: {
       /** 是否显示错误提示，默认 true */
@@ -150,7 +150,7 @@ export const useApiErrorHandler = () => {
    * 用户操作（通常显示成功和失败提示）
    */
   const handleUserAction = useCallback(<T>(
-    response: ApiResponse<T>,
+    response: StandardApiResponse<T>,
     operation: string,
     options: {
       /** 是否显示成功提示，默认 true */

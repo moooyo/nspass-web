@@ -1,4 +1,6 @@
-import { httpClient } from '@/utils/http-client';
+import { EnhancedBaseService } from '@/shared/services/EnhancedBaseService';
+import { createServiceConfig } from '@/shared/services/ServiceConfig';
+import type { StandardApiResponse } from '@/shared/types/common';
 import { PasskeyManager, PasskeyUtils } from '@/utils/passkey';
 import type {
   PasskeyRegistrationOptionsResponse,
@@ -19,36 +21,40 @@ import type {
  * Passkey服务类
  * 提供与后端Passkey API的交互接口
  */
-export class PasskeyService {
+export class PasskeyService extends EnhancedBaseService {
   private baseUrl = '/v1/auth/passkey';
   private userUrl = '/v1/user/passkeys';
+
+  constructor() {
+    super(createServiceConfig('passkey'));
+  }
 
   /**
    * 获取Passkey注册选项
    */
   async getRegistrationOptions(): Promise<PasskeyRegistrationOptionsResponse> {
-    return httpClient.post(`${this.baseUrl}/registration/options`, {});
+    return this.post(`${this.baseUrl}/registration/options`, {});
   }
 
   /**
    * 验证并完成Passkey注册
    */
   async registerPasskey(request: PasskeyRegistrationRequest): Promise<PasskeyRegistrationResponse> {
-    return httpClient.post(`${this.baseUrl}/registration/verify`, request);
+    return this.post(`${this.baseUrl}/registration/verify`, request);
   }
 
   /**
    * 获取Passkey认证选项
    */
   async getAuthenticationOptions(): Promise<PasskeyAuthenticationOptionsResponse> {
-    return httpClient.post(`${this.baseUrl}/authentication/options`, {});
+    return this.post(`${this.baseUrl}/authentication/options`, {});
   }
 
   /**
    * 验证并完成Passkey认证
    */
   async authenticatePasskey(request: PasskeyAuthenticationRequest): Promise<PasskeyAuthenticationResponse> {
-    return httpClient.post(`${this.baseUrl}/authentication/verify`, request);
+    return this.post(`${this.baseUrl}/authentication/verify`, request);
   }
 
   /**
@@ -64,21 +70,21 @@ export class PasskeyService {
     }
 
     const url = params.toString() ? `${this.userUrl}?${params}` : this.userUrl;
-    return httpClient.get(url);
+    return this.get(url);
   }
 
   /**
    * 删除Passkey凭据
    */
   async deletePasskey(request: DeletePasskeyRequest): Promise<DeletePasskeyResponse> {
-    return httpClient.delete(`${this.userUrl}/${request.credentialId}`) as Promise<DeletePasskeyResponse>;
+    return this.delete(`${this.userUrl}/${request.credentialId}`) as Promise<DeletePasskeyResponse>;
   }
 
   /**
    * 重命名Passkey凭据
    */
   async renamePasskey(request: RenamePasskeyRequest): Promise<RenamePasskeyResponse> {
-    return httpClient.put(`${this.userUrl}/${request.credentialId}/name`, {
+    return this.put(`${this.userUrl}/${request.credentialId}/name`, {
       newName: request.newName
     });
   }

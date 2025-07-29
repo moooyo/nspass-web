@@ -1,4 +1,6 @@
-import { httpClient, ApiResponse } from '@/utils/http-client';
+import { EnhancedBaseService } from '@/shared/services/EnhancedBaseService';
+import { createServiceConfig } from '@/shared/services/ServiceConfig';
+import type { StandardApiResponse } from '@/shared/types/common';
 
 // 流量重置方式枚举
 export type TrafficResetType = 'NONE' | 'DAILY' | 'WEEKLY' | 'MONTHLY';
@@ -44,13 +46,16 @@ export interface UserConfigListParams {
 // 更新用户数据类型
 export type UpdateUserConfigData = Partial<CreateUserConfigData>;
 
-class UsersConfigService {
+class UsersConfigService extends EnhancedBaseService {
+  constructor() {
+    super(createServiceConfig('UsersConfigService'));
+  }
   private readonly endpoint = '/v1/users';
 
   /**
    * 获取用户配置列表
    */
-  async getUserConfigs(params: UserConfigListParams = {}): Promise<ApiResponse<UserConfigItem[]>> {
+  async getUserConfigs(params: UserConfigListParams = {}): Promise<StandardApiResponse<UserConfigItem[]>> {
     const queryParams: Record<string, string> = {};
     
     if (params.page) queryParams.page = params.page.toString();
@@ -60,63 +65,63 @@ class UsersConfigService {
     if (params.userGroup) queryParams.userGroup = params.userGroup;
     if (params.banned !== undefined) queryParams.banned = params.banned.toString();
 
-    return httpClient.get<UserConfigItem[]>(this.endpoint, queryParams);
+    return this.get<UserConfigItem[]>(this.endpoint, queryParams);
   }
 
   /**
    * 创建新用户配置
    */
-  async createUserConfig(userData: CreateUserConfigData): Promise<ApiResponse<UserConfigItem>> {
-    return httpClient.post<UserConfigItem>(this.endpoint, userData);
+  async createUserConfig(userData: CreateUserConfigData): Promise<StandardApiResponse<UserConfigItem>> {
+    return this.post<UserConfigItem>(this.endpoint, userData);
   }
 
   /**
    * 获取用户配置详情
    */
-  async getUserConfigById(id: React.Key): Promise<ApiResponse<UserConfigItem>> {
-    return httpClient.get<UserConfigItem>(`${this.endpoint}/${id}`);
+  async getUserConfigById(id: React.Key): Promise<StandardApiResponse<UserConfigItem>> {
+    return this.get<UserConfigItem>(`${this.endpoint}/${id}`);
   }
 
   /**
    * 更新用户配置信息
    */
-  async updateUserConfig(id: React.Key, userData: UpdateUserConfigData): Promise<ApiResponse<UserConfigItem>> {
-    return httpClient.put<UserConfigItem>(`${this.endpoint}/${id}`, userData);
+  async updateUserConfig(id: React.Key, userData: UpdateUserConfigData): Promise<StandardApiResponse<UserConfigItem>> {
+    return this.put<UserConfigItem>(`${this.endpoint}/${id}`, userData);
   }
 
   /**
    * 删除用户配置
    */
-  async deleteUserConfig(id: React.Key): Promise<ApiResponse<void>> {
-    return httpClient.delete<void>(`${this.endpoint}/${id}`);
+  async deleteUserConfig(id: React.Key): Promise<StandardApiResponse<void>> {
+    return this.delete<void>(`${this.endpoint}/${id}`);
   }
 
   /**
    * 封禁/解除封禁用户
    */
-  async toggleBanUser(id: React.Key, banned: boolean): Promise<ApiResponse<UserConfigItem>> {
-    return httpClient.put<UserConfigItem>(`${this.endpoint}/${id}/ban`, { banned });
+  async toggleBanUser(id: React.Key, banned: boolean): Promise<StandardApiResponse<UserConfigItem>> {
+    return this.put<UserConfigItem>(`${this.endpoint}/${id}/ban`, { banned });
   }
 
   /**
    * 重置用户流量
    */
-  async resetUserTraffic(id: React.Key): Promise<ApiResponse<void>> {
-    return httpClient.post<void>(`${this.endpoint}/${id}/resetTraffic`);
+  async resetUserTraffic(id: React.Key): Promise<StandardApiResponse<void>> {
+    return this.post<void>(`${this.endpoint}/${id}/resetTraffic`);
   }
 
   /**
    * 发送邀请注册链接
    */
-  async inviteUser(id: React.Key): Promise<ApiResponse<{ inviteLink: string }>> {
-    return httpClient.post<{ inviteLink: string }>(`${this.endpoint}/${id}/invite`);
+  async inviteUser(id: React.Key): Promise<StandardApiResponse<{ inviteLink: string }>> {
+    return this.post<{ inviteLink: string }>(`${this.endpoint}/${id}/invite`);
   }
 
   /**
    * 批量删除用户配置
    */
-  async batchDeleteUserConfigs(ids: React.Key[]): Promise<ApiResponse<void>> {
-    return httpClient.post<void>(`${this.endpoint}/batchDelete`, { ids });
+  async batchDeleteUserConfigs(ids: React.Key[]): Promise<StandardApiResponse<void>> {
+    return this.post<void>(`${this.endpoint}/batchDelete`, { ids });
   }
 
   /**
@@ -125,8 +130,8 @@ class UsersConfigService {
   async batchUpdateUserConfigs(
     ids: React.Key[], 
     updateData: UpdateUserConfigData
-  ): Promise<ApiResponse<UserConfigItem[]>> {
-    return httpClient.put<UserConfigItem[]>(`${this.endpoint}/batchUpdate`, { 
+  ): Promise<StandardApiResponse<UserConfigItem[]>> {
+    return this.put<UserConfigItem[]>(`${this.endpoint}/batchUpdate`, { 
       ids, 
       updateData 
     });

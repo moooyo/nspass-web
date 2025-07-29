@@ -4,7 +4,10 @@ import { Space, Typography, Progress, Spin, Alert, Button } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import { dashboardService } from '@/services/dashboard';
 import { MSWContext } from '@/components/MSWProvider';
-import { httpClient } from '@/utils/http-client';
+import { EnhancedBaseService } from '@/shared/services/EnhancedBaseService';
+
+// 创建全局HTTP客户端实例
+const globalHttpClient = new EnhancedBaseService();
 import type { 
   SystemOverview, 
   TrafficTrendItem, 
@@ -117,13 +120,13 @@ const Dashboard: React.FC = () => {
         console.log('✅ MSW已准备就绪，延迟加载仪表盘数据以确保httpClient完全更新');
         // 延迟500ms确保httpClient的baseURL完全更新并缓存清理完成
         setTimeout(() => {
-          console.log(`🔍 准备发送请求，当前httpClient baseURL: ${httpClient.getCurrentBaseURL()}`);
+          console.log(`🔍 准备发送请求，当前httpClient baseURL: ${globalHttpClient.getCurrentBaseURL()}`);
           loadDashboardData();
         }, 500);
       } else if (!mswEnabled && mswStatus === 'stopped') {
         console.log('✅ MSW已停用，延迟使用真实API加载仪表盘数据');
         setTimeout(() => {
-          console.log(`🔍 准备发送请求，当前httpClient baseURL: ${httpClient.getCurrentBaseURL()}`);
+          console.log(`🔍 准备发送请求，当前httpClient baseURL: ${globalHttpClient.getCurrentBaseURL()}`);
           loadDashboardData();
         }, 500);
       } else if (mswStatus === 'idle') {

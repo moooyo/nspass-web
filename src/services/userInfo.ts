@@ -1,5 +1,7 @@
 // 使用 proto 生成类型的 User Info Service
-import { httpClient, ApiResponse } from '@/utils/http-client';
+import { EnhancedBaseService } from '@/shared/services/EnhancedBaseService';
+import { createServiceConfig } from '@/shared/services/ServiceConfig';
+import type { StandardApiResponse } from '@/shared/types/common';
 import type {
   UserInfo,
   UpdateUserInfoRequest,
@@ -43,98 +45,102 @@ import type {
 //   };
 // }
 
-class UserInfoService {
+class UserInfoService extends EnhancedBaseService {
   private readonly endpoint = '/v1';
+
+  constructor() {
+    super(createServiceConfig('userInfo'));
+  }
 
   /**
    * 获取当前用户信息
    */
-  async getCurrentUserInfo(): Promise<ApiResponse<UserInfo>> {
-    return httpClient.get<UserInfo>(`${this.endpoint}/profile`);
+  async getCurrentUserInfo(): Promise<StandardApiResponse<UserInfo>> {
+    return this.get<UserInfo>(`${this.endpoint}/profile`);
   }
 
   /**
    * 更新当前用户信息
    */
-  async updateCurrentUserInfo(request: UpdateUserInfoRequest): Promise<ApiResponse<UserInfo>> {
-    return httpClient.put<UserInfo>(`${this.endpoint}/profile`, request);
+  async updateCurrentUserInfo(request: UpdateUserInfoRequest): Promise<StandardApiResponse<UserInfo>> {
+    return this.put<UserInfo>(`${this.endpoint}/profile`, request);
   }
 
   /**
    * 修改密码
    */
-  async changePassword(request: ChangePasswordRequest): Promise<ApiResponse<void>> {
-    return httpClient.post<void>('/v1/user/password', request);
+  async changePassword(request: ChangePasswordRequest): Promise<StandardApiResponse<void>> {
+    return this.post<void>('/v1/user/password', request);
   }
 
   /**
    * 删除账户
    */
-  async deleteAccount(request: DeleteAccountRequest): Promise<ApiResponse<void>> {
-    return httpClient.post<void>('/v1/user/account/delete', request);
+  async deleteAccount(request: DeleteAccountRequest): Promise<StandardApiResponse<void>> {
+    return this.post<void>('/v1/user/account/delete', request);
   }
 
   /**
    * 上传用户头像
    */
-  async uploadAvatar(file: File): Promise<ApiResponse<UploadAvatarResponse['data']>> {
+  async uploadAvatar(file: File): Promise<StandardApiResponse<UploadAvatarResponse['data']>> {
     const formData = new FormData();
     formData.append('avatar', file);
-    
-    // 使用httpClient处理文件上传
-    return httpClient.post<UploadAvatarResponse['data']>('/v1/user/avatar', formData);
+
+    // 使用EnhancedBaseService处理文件上传
+    return this.post<UploadAvatarResponse['data']>('/v1/user/avatar', formData);
   }
 
   /**
    * 获取流量统计
    */
-  async getTrafficStats(): Promise<ApiResponse<TrafficStats>> {
-    return httpClient.get<TrafficStats>('/v1/user/traffic');
+  async getTrafficStats(): Promise<StandardApiResponse<TrafficStats>> {
+    return this.get<TrafficStats>('/v1/user/traffic');
   }
 
   /**
    * 重置流量
    */
-  async resetTraffic(): Promise<ApiResponse<void>> {
-    return httpClient.post<void>('/v1/user/traffic/reset');
+  async resetTraffic(): Promise<StandardApiResponse<void>> {
+    return this.post<void>('/v1/user/traffic/reset');
   }
 
   /**
    * 获取用户登录历史
    */
-  async getLoginHistory(params: GetLoginHistoryRequest = {}): Promise<ApiResponse<LoginHistoryItem[]>> {
+  async getLoginHistory(params: GetLoginHistoryRequest = {}): Promise<StandardApiResponse<LoginHistoryItem[]>> {
     const queryParams: Record<string, string> = {};
-    
-    if (params.page) queryParams.page = params.page.toString();
-    if (params.pageSize) queryParams.pageSize = params.pageSize.toString();
 
-    return httpClient.get<LoginHistoryItem[]>('/v1/user/login-history', queryParams);
+    if (params.page) queryParams.page = params.page.toString();
+    if (params.pageSize) queryParams.pageSize.toString();
+
+    return this.get<LoginHistoryItem[]>('/v1/user/login-history', queryParams);
   }
 
   /**
    * 获取活动日志
    */
-  async getActivityLogs(params: GetActivityLogsRequest = {}): Promise<ApiResponse<ActivityLogItem[]>> {
+  async getActivityLogs(params: GetActivityLogsRequest = {}): Promise<StandardApiResponse<ActivityLogItem[]>> {
     const queryParams: Record<string, string> = {};
-    
+
     if (params.page) queryParams.page = params.page.toString();
     if (params.pageSize) queryParams.pageSize = params.pageSize.toString();
 
-    return httpClient.get<ActivityLogItem[]>('/v1/user/activity-logs', queryParams);
+    return this.get<ActivityLogItem[]>('/v1/user/activity-logs', queryParams);
   }
 
   /**
    * 启用/禁用二步验证
    */
-  async toggleTwoFactorAuth(params: ToggleTwoFactorAuthRequest): Promise<ApiResponse<TwoFactorAuthData>> {
-    return httpClient.put<TwoFactorAuthData>('/v1/user/two-factor/toggle', params);
+  async toggleTwoFactorAuth(params: ToggleTwoFactorAuthRequest): Promise<StandardApiResponse<TwoFactorAuthData>> {
+    return this.put<TwoFactorAuthData>('/v1/user/two-factor/toggle', params);
   }
 
   /**
    * 验证二步验证码
    */
-  async verifyTwoFactorAuth(params: VerifyTwoFactorAuthRequest): Promise<ApiResponse<VerifyTwoFactorAuthData>> {
-    return httpClient.post<VerifyTwoFactorAuthData>('/v1/user/two-factor/verify', params);
+  async verifyTwoFactorAuth(params: VerifyTwoFactorAuthRequest): Promise<StandardApiResponse<VerifyTwoFactorAuthData>> {
+    return this.post<VerifyTwoFactorAuthData>('/v1/user/two-factor/verify', params);
   }
 }
 

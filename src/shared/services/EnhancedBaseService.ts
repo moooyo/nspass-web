@@ -1,56 +1,127 @@
 /**
- * 增强的服务基类
- * 提供标准化的服务功能和错误处理，以及服务适配器支持
+ * 简化的服务基类
+ *
+ * 设计原则：
+ * - 所有API都必须返回标准的Proto响应格式（proto/common中定义）
+ * - 不支持其他响应格式，如果API返回非标准格式，说明Proto定义需要修改
+ * - 统一的错误处理，所有错误都转换为标准Proto格式返回
  */
 
 import type { StandardApiResponse, QueryParams } from '../types/common';
-import { apiUtils, asyncUtils } from '../utils';
-import { API_CONFIG } from '../constants';
-import { createServiceAdapter, type ServiceAdapterConfig, type StandardService } from './ServiceAdapter';
+import { getRuntimeApiBaseUrl } from '@/utils/runtime-env';
+import { logger } from '@/utils/logger';
 
 export interface ServiceConfig {
   baseURL?: string;
   timeout?: number;
-  retryCount?: number;
-  retryDelay?: number;
-  enableCache?: boolean;
-  cachePrefix?: string;
-  cacheTTL?: number;
 }
 
-export interface CacheEntry<T> {
-  data: T;
-  timestamp: number;
-  ttl: number;
+// 标准Proto API响应结构
+interface ProtoApiResponse<T = unknown> {
+  status: {
+    success: boolean;
+    message: string;
+    errorCode?: string;
+  };
+  data?: T;
+  pagination?: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  };
+}
+
+/**
+ * 将Proto响应转换为标准响应格式
+ */
+function normalizeProtoResponse<T>(response: ProtoApiResponse<T>): StandardApiResponse<T> {
+  const normalized: StandardApiResponse<T> = {
+    success: response.status.success,
+    message: response.status.message,
+    data: response.data,
+  };
+
+  // 处理分页信息
+  if (response.pagination) {
+    normalized.pagination = {
+      current: response.pagination.page,
+      pageSize: response.pagination.pageSize,
+      total: response.pagination.total,
+      totalPages: response.pagination.totalPages
+    };
+  }
+
+  return normalized;
 }
 
 export class EnhancedBaseService {
   protected config: ServiceConfig;
-  private cache = new Map<string, CacheEntry<unknown>>();
 
   constructor(config: ServiceConfig = {}) {
     this.config = {
-      timeout: API_CONFIG.TIMEOUT,
-      retryCount: API_CONFIG.RETRY_COUNT,
-      retryDelay: API_CONFIG.RETRY_DELAY,
-      enableCache: false,
-      cachePrefix: 'service_',
-      cacheTTL: 5 * 60 * 1000, // 5分钟
+      baseURL: getRuntimeApiBaseUrl(),
+      timeout: 3000, // 3秒超时
       ...config,
     };
   }
 
   /**
-   * 创建服务适配器
-   * 用于适配现有服务到标准接口
+   * 动态更新 baseURL
    */
-  protected createAdapter<T, CreateData = unknown, UpdateData = unknown>(
-    config: Omit<ServiceAdapterConfig<T, CreateData, UpdateData>, 'service'>
-  ): StandardService<T, CreateData, UpdateData> {
-    return createServiceAdapter<T, CreateData, UpdateData>({
-      ...config,
-      service: this
-    });
+  updateBaseURL(newBaseURL: string) {
+    this.config.baseURL = newBaseURL;
+    logger.info(`服务 baseURL 已更新为: ${newBaseURL}`);
+  }
+
+  /**
+   * 获取当前 baseURL
+   */
+  getCurrentBaseURL(): string {
+    return getRuntimeApiBaseUrl();
+  }
+
+  /**
+   * 构建完整的URL
+   */
+  private buildURL(endpoint: string, params?: QueryParams): string {
+    // 始终使用最新的运行时配置
+    const baseURL = getRuntimeApiBaseUrl();
+    const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+
+    let fullUrl: string;
+    if (baseURL.startsWith('http://') || baseURL.startsWith('https://')) {
+      try {
+        const url = new URL(`${baseURL}${normalizedEndpoint}`);
+        if (params) {
+          Object.entries(params).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+              url.searchParams.append(key, String(value));
+            }
+          });
+        }
+        fullUrl = url.toString();
+      } catch (error) {
+        logger.error('构建URL失败:', error);
+        fullUrl = `${baseURL}${normalizedEndpoint}`;
+      }
+    } else {
+      fullUrl = `${baseURL}${normalizedEndpoint}`;
+      if (params) {
+        const searchParams = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            searchParams.append(key, String(value));
+          }
+        });
+        const queryString = searchParams.toString();
+        if (queryString) {
+          fullUrl += `?${queryString}`;
+        }
+      }
+    }
+
+    return fullUrl;
   }
 
   /**
@@ -58,331 +129,216 @@ export class EnhancedBaseService {
    */
   protected async request<T>(
     url: string,
-    options: RequestInit & { 
-      enableCache?: boolean;
-      cacheKey?: string;
-      cacheTTL?: number;
-    } = {}
+    options: RequestInit = {}
   ): Promise<StandardApiResponse<T>> {
-    const { enableCache, cacheKey, cacheTTL, ...requestOptions } = options;
-    
-    // 检查缓存
-    if (enableCache && cacheKey) {
-      const cached = this.getFromCache<T>(cacheKey);
-      if (cached) {
-        return apiUtils.createResponse(cached, true, '从缓存获取');
-      }
-    }
-
-    // 构建请求
-    const requestFn = async () => {
+    try {
       // 使用AbortController处理超时
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
 
-      try {
-        const response = await fetch(url, {
-          signal: controller.signal,
-          ...requestOptions,
-          headers: {
-            'Content-Type': 'application/json',
-            ...requestOptions.headers,
-          },
-        });
+      // 自动添加Authorization header（除了登录和注册接口）
+      const isAuthEndpoint = url.includes('/auth/login') || url.includes('/auth/register');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...options.headers as Record<string, string>,
+      };
 
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      if (!isAuthEndpoint && typeof window !== 'undefined') {
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
         }
-
-        return response.json();
-      } catch (error) {
-        clearTimeout(timeoutId);
-        throw error;
       }
-    };
 
-    // 执行请求（带重试）
-    const result = await asyncUtils.retry(
-      requestFn,
-      this.config.retryCount!,
-      this.config.retryDelay!
-    );
+      const response = await fetch(url, {
+        signal: controller.signal,
+        ...options,
+        headers,
+      });
 
-    // 缓存结果
-    if (enableCache && cacheKey && result.success) {
-      this.setCache(cacheKey, result.data, cacheTTL || this.config.cacheTTL!);
+      clearTimeout(timeoutId);
+
+      if (response.status === 401) {
+        this.handleUnauthorized();
+        // 返回标准Proto格式的错误响应
+        const errorResponse: ProtoApiResponse<T> = {
+          status: {
+            success: false,
+            message: '未授权访问，请重新登录',
+            errorCode: 'UNAUTHORIZED'
+          }
+        };
+        return normalizeProtoResponse<T>(errorResponse);
+      }
+
+      if (!response.ok) {
+        // 尝试解析错误响应，如果是标准Proto格式
+        try {
+          const errorData = await response.json();
+          return normalizeProtoResponse<T>(errorData);
+        } catch {
+          // 如果解析失败，返回标准格式的HTTP错误
+          const errorResponse: ProtoApiResponse<T> = {
+            status: {
+              success: false,
+              message: `HTTP ${response.status}: ${response.statusText}`,
+              errorCode: `HTTP_${response.status}`
+            }
+          };
+          return normalizeProtoResponse<T>(errorResponse);
+        }
+      }
+
+      const data = await response.json();
+
+      // 直接处理标准Proto响应格式
+      return normalizeProtoResponse<T>(data);
+    } catch (error) {
+      logger.error('API request failed:', error);
+
+      // 所有错误都返回标准Proto格式
+      let errorMessage = '请求失败，请稍后重试';
+      let errorCode = 'UNKNOWN_ERROR';
+
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        errorMessage = '网络请求失败，请检查网络连接或服务器状态';
+        errorCode = 'NETWORK_ERROR';
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+        errorCode = 'REQUEST_ERROR';
+      }
+
+      const errorResponse: ProtoApiResponse<T> = {
+        status: {
+          success: false,
+          message: errorMessage,
+          errorCode
+        }
+      };
+
+      return normalizeProtoResponse<T>(errorResponse);
+    }
+  }
+
+  /**
+   * 处理未授权错误
+   */
+  private handleUnauthorized() {
+    // 仅在浏览器环境中执行
+    if (typeof window === 'undefined') {
+      return;
     }
 
-    return result;
+    logger.warn('检测到未授权访问，正在注销登录...');
+
+    // 清理认证信息
+    localStorage.removeItem('user');
+    localStorage.removeItem('login_method');
+    localStorage.removeItem('auth_token');
+
+    // 清理所有OAuth2相关的配置
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith('oauth2_')) {
+        localStorage.removeItem(key);
+      }
+    });
+
+    // 跳转到登录页面
+    window.location.href = '/login';
   }
 
   /**
    * GET请求
    */
-  protected async get<T>(
+  public async get<T>(
     endpoint: string,
-    params?: QueryParams,
-    options: { enableCache?: boolean; cacheKey?: string; cacheTTL?: number } = {}
+    params?: QueryParams
   ): Promise<StandardApiResponse<T>> {
     const url = this.buildURL(endpoint, params);
-    const cacheKey = options.cacheKey || this.generateCacheKey('GET', url);
-    
-    return this.request<T>(url, {
-      method: 'GET',
-      enableCache: options.enableCache ?? this.config.enableCache,
-      cacheKey,
-      cacheTTL: options.cacheTTL,
-    });
+    return this.request<T>(url, { method: 'GET' });
   }
 
   /**
    * POST请求
    */
-  protected async post<T>(
+  public async post<T>(
     endpoint: string,
-    data?: unknown,
-    options: RequestInit = {}
+    data?: unknown
   ): Promise<StandardApiResponse<T>> {
-    return this.request<T>(this.buildURL(endpoint), {
+    const url = this.buildURL(endpoint);
+    return this.request<T>(url, {
       method: 'POST',
       body: data ? JSON.stringify(data) : undefined,
-      ...options,
     });
   }
 
   /**
    * PUT请求
    */
-  protected async put<T>(
+  public async put<T>(
     endpoint: string,
-    data?: unknown,
-    options: RequestInit = {}
+    data?: unknown
   ): Promise<StandardApiResponse<T>> {
-    return this.request<T>(this.buildURL(endpoint), {
+    const url = this.buildURL(endpoint);
+    return this.request<T>(url, {
       method: 'PUT',
       body: data ? JSON.stringify(data) : undefined,
-      ...options,
     });
   }
 
   /**
    * DELETE请求
    */
-  protected async delete<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<StandardApiResponse<T>> {
-    return this.request<T>(this.buildURL(endpoint), {
-      method: 'DELETE',
-      ...options,
-    });
+  public async delete<T>(endpoint: string): Promise<StandardApiResponse<T>> {
+    const url = this.buildURL(endpoint);
+    return this.request<T>(url, { method: 'DELETE' });
+  }
+
+  // ===== 便利方法 - 兼容现有服务调用 =====
+
+  /**
+   * 获取列表数据
+   */
+  async getList<T>(endpoint: string, params?: QueryParams): Promise<StandardApiResponse<T[]>> {
+    return this.get<T[]>(endpoint, params);
   }
 
   /**
-   * 批量请求处理
+   * 根据ID获取单个数据
    */
-  protected async batchRequest<T>(
-    requests: Array<() => Promise<StandardApiResponse<T>>>,
-    options: { concurrency?: number; failFast?: boolean } = {}
-  ): Promise<StandardApiResponse<T[]>> {
-    const { concurrency = 5, failFast = false } = options;
-
-    try {
-      let results: T[];
-
-      if (failFast) {
-        // 快速失败模式：任何一个请求失败都会立即失败
-        const responses = await asyncUtils.limitConcurrency(requests, concurrency);
-        results = responses.map(response => apiUtils.handleResponse(response));
-      } else {
-        // 容错模式：收集所有成功的结果
-        const responses = await Promise.allSettled(
-          requests.map(req => asyncUtils.limitConcurrency([req], 1))
-        );
-        
-        results = responses
-          .map(result => result.status === 'fulfilled' ? result.value[0] : null)
-          .filter(Boolean)
-          .map(response => apiUtils.handleResponse(response!));
-      }
-
-      return apiUtils.createResponse(results, true, `批量处理完成，成功 ${results.length} 项`);
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error('批量请求失败');
-      return apiUtils.createResponse([], false, err.message);
-    }
+  async getById<T>(endpoint: string, id: string | number): Promise<StandardApiResponse<T>> {
+    return this.get<T>(`${endpoint}/${id}`);
   }
 
   /**
-   * 标准的CRUD操作
+   * 创建新数据
    */
-  public async getList<T>(
-    endpoint: string,
-    params?: QueryParams,
-    options?: { enableCache?: boolean }
-  ): Promise<StandardApiResponse<T[]>> {
-    return this.get<T[]>(endpoint, params, {
-      enableCache: options?.enableCache,
-      cacheKey: this.generateCacheKey('GET_LIST', endpoint, params),
-    });
-  }
-
-  public async getById<T>(
-    endpoint: string,
-    id: string | number,
-    options?: { enableCache?: boolean }
-  ): Promise<StandardApiResponse<T>> {
-    return this.get<T>(`${endpoint}/${id}`, undefined, {
-      enableCache: options?.enableCache,
-      cacheKey: this.generateCacheKey('GET_BY_ID', endpoint, { id }),
-    });
-  }
-
-  public async create<T>(
-    endpoint: string,
-    data: unknown
-  ): Promise<StandardApiResponse<T>> {
-    const response = await this.post<T>(endpoint, data);
-    // 创建成功后清除相关缓存
-    this.clearCacheByPattern(endpoint);
-    return response;
-  }
-
-  public async update<T>(
-    endpoint: string,
-    id: string | number,
-    data: unknown
-  ): Promise<StandardApiResponse<T>> {
-    const response = await this.put<T>(`${endpoint}/${id}`, data);
-    // 更新成功后清除相关缓存
-    this.clearCacheByPattern(endpoint);
-    this.clearCacheByPattern(`${endpoint}/${id}`);
-    return response;
-  }
-
-  public async deleteItem<T>(
-    endpoint: string,
-    id: string | number
-  ): Promise<StandardApiResponse<T>> {
-    const response = await this.delete<T>(`${endpoint}/${id}`);
-    // 删除成功后清除相关缓存
-    this.clearCacheByPattern(endpoint);
-    this.clearCacheByPattern(`${endpoint}/${id}`);
-    return response;
-  }
-
-  public async batchDelete<T>(
-    endpoint: string,
-    ids: (string | number)[]
-  ): Promise<StandardApiResponse<T>> {
-    const response = await this.post<T>(`${endpoint}/batch-delete`, { ids });
-    // 批量删除成功后清除相关缓存
-    this.clearCacheByPattern(endpoint);
-    ids.forEach(id => this.clearCacheByPattern(`${endpoint}/${id}`));
-    return response;
+  async create<T>(endpoint: string, data: unknown): Promise<StandardApiResponse<T>> {
+    return this.post<T>(endpoint, data);
   }
 
   /**
-   * 缓存管理
+   * 更新数据
    */
-  private setCache<T>(key: string, data: T, ttl: number): void {
-    this.cache.set(key, {
-      data,
-      timestamp: Date.now(),
-      ttl,
-    });
-  }
-
-  private getFromCache<T>(key: string): T | null {
-    const entry = this.cache.get(key);
-    if (!entry) return null;
-
-    // 检查是否过期
-    if (Date.now() - entry.timestamp > entry.ttl) {
-      this.cache.delete(key);
-      return null;
-    }
-
-    return entry.data as T;
-  }
-
-  private generateCacheKey(method: string, url: string, params?: unknown): string {
-    const baseKey = `${this.config.cachePrefix}${method}_${url}`;
-    if (params) {
-      const paramsStr = JSON.stringify(params);
-      return `${baseKey}_${Buffer.from(paramsStr).toString('base64')}`;
-    }
-    return baseKey;
-  }
-
-  private clearCacheByPattern(pattern: string): void {
-    for (const key of this.cache.keys()) {
-      if (key.includes(pattern)) {
-        this.cache.delete(key);
-      }
-    }
+  async update<T>(endpoint: string, id: string | number, data: unknown): Promise<StandardApiResponse<T>> {
+    return this.put<T>(`${endpoint}/${id}`, data);
   }
 
   /**
-   * 工具方法
+   * 删除单个数据
    */
-  private buildURL(endpoint: string, params?: QueryParams): string {
-    let url = endpoint;
-    
-    if (this.config.baseURL) {
-      url = `${this.config.baseURL.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}`;
-    }
-
-    if (params) {
-      const searchParams = new URLSearchParams();
-      
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          if (Array.isArray(value)) {
-            value.forEach(v => searchParams.append(key, String(v)));
-          } else {
-            searchParams.append(key, String(value));
-          }
-        }
-      });
-
-      if (searchParams.toString()) {
-        url += `?${searchParams.toString()}`;
-      }
-    }
-
-    return url;
+  async deleteItem<T>(endpoint: string, id: string | number): Promise<StandardApiResponse<T>> {
+    return this.delete<T>(`${endpoint}/${id}`);
   }
 
   /**
-   * 清理资源
+   * 批量删除
    */
-  public dispose(): void {
-    this.cache.clear();
-  }
-
-  /**
-   * 获取缓存统计信息
-   */
-  public getCacheStats(): {
-    size: number;
-    keys: string[];
-    hitRate?: number;
-  } {
-    return {
-      size: this.cache.size,
-      keys: Array.from(this.cache.keys()),
-    };
-  }
-
-  /**
-   * 清空所有缓存
-   */
-  public clearAllCache(): void {
-    this.cache.clear();
+  async batchDelete<T>(endpoint: string, ids: (string | number)[]): Promise<StandardApiResponse<T>> {
+    return this.post<T>(`${endpoint}/batch-delete`, { ids });
   }
 }
 
-export default EnhancedBaseService;
+// 创建全局共享的HTTP客户端实例
+export const globalHttpClient = new EnhancedBaseService();

@@ -1,6 +1,6 @@
 import React, { useState, FC, useRef, useCallback, useMemo, useEffect, lazy, Suspense } from 'react';
 import { Button, Tag, Popconfirm, Badge, Space, Tooltip, Modal, Form, Card, Row, Col, Typography, Divider } from 'antd';
-import { handleApiResponse, message } from '@/utils/message';
+import { message, handleApiResponse } from '@/utils/message';
 import {
     ProTable,
     ProColumns,

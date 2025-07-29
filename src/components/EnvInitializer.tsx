@@ -1,9 +1,12 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { httpClient } from '@/utils/http-client';
-import { getRuntimeApiBaseUrl } from '@/utils/runtime-env';
+import { EnhancedBaseService } from '@/shared/services/EnhancedBaseService';
+import { getRuntimeApiBaseUrl, updateRuntimeApiBaseUrl } from '@/utils/runtime-env';
 import { logger } from '@/utils/logger';
+
+// 创建全局HTTP客户端实例
+const globalHttpClient = new EnhancedBaseService();
 
 /**
  * 环境变量初始化组件
@@ -18,21 +21,28 @@ export const EnvInitializer: React.FC = () => {
     if (typeof window === 'undefined') return;
 
     logger.group('🔧 Environment Initializer');
-    
-    // 获取运行时API URL
+
+    // 在开发环境中，动态设置本地 API URL
+    if (import.meta.env.DEV) {
+      const localApiUrl = 'http://localhost:8080';
+      updateRuntimeApiBaseUrl(localApiUrl);
+      logger.info('🔧 开发环境: 已设置本地 API URL:', localApiUrl);
+    }
+
+    // 获取运行时API URL（现在会返回动态设置的URL）
     const runtimeApiUrl = getRuntimeApiBaseUrl();
     setCurrentApiUrl(runtimeApiUrl);
-    
-    // 更新httpClient的baseURL
-    httpClient.updateBaseURL(runtimeApiUrl);
-    
+
+    // 更新globalHttpClient的baseURL
+    globalHttpClient.updateBaseURL(runtimeApiUrl);
+
     // 输出调试信息
     logger.info('📊 环境变量检查结果:');
     logger.info('  window.__ENV__:', (window as any).__ENV__);
     logger.info('  最终选择的API URL:', runtimeApiUrl);
-    logger.info('  HTTP Client Base URL:', httpClient.getCurrentBaseURL());
+    logger.info('  HTTP Client Base URL:', globalHttpClient.getCurrentBaseURL());
     logger.info('  部署平台: Cloudflare Workers');
-    
+
     // 验证API URL
     if (runtimeApiUrl.includes('localhost') && import.meta.env.PROD) {
       logger.error('⚠️ 生产环境警告: API URL 仍指向 localhost');
@@ -40,7 +50,7 @@ export const EnvInitializer: React.FC = () => {
     } else {
       logger.info('✅ API URL 配置正确:', runtimeApiUrl);
     }
-    
+
     logger.groupEnd();
     setInitialized(true);
   }, []);

@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { Switch, Card, Typography, Alert, Space, Button, Popover, Input, Form, Divider, message } from 'antd';
 import { ApiOutlined, CheckCircleOutlined, ExclamationCircleOutlined, LoadingOutlined, ReloadOutlined, InfoCircleOutlined, SettingOutlined, SaveOutlined } from '@ant-design/icons';
 import { useTheme } from './hooks/useTheme';
-import { httpClient } from '@/utils/http-client';
+import { globalHttpClient } from '@/shared/services/EnhancedBaseService';
 import { apiRefreshEventBus } from '@/utils/api-refresh-bus';
 import { getRuntimeApiBaseUrl } from '@/utils/runtime-env';
 import { logger } from '@/utils/logger';
@@ -127,8 +127,7 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // 立即应用用户配置到httpClient（如果MSW未启用）
         if (!enabled) {
           const url = `${config.port === '443' ? 'https' : 'http'}://${config.url}${config.port === '443' || config.port === '80' ? '' : ':' + config.port}`;
-          httpClient.clearCache();
-          httpClient.updateBaseURL(url);
+          globalHttpClient.updateBaseURL(url);
           console.log('🎯 立即应用用户配置到HTTP客户端（优先级最高）:', url);
         }
       } catch {
@@ -150,8 +149,7 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ? window.location.origin 
       : `${backendConfig.port === '443' ? 'https' : 'http'}://${backendConfig.url}${backendConfig.port === '443' || backendConfig.port === '80' ? '' : ':' + backendConfig.port}`;
     
-    httpClient.clearCache();
-    httpClient.updateBaseURL(url);
+    globalHttpClient.updateBaseURL(url);
   }, [backendConfig]);
 
   // 更新后端配置 - 用户设置具有最高优先级
@@ -165,8 +163,7 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ? window.location.origin 
       : `${config.port === '443' ? 'https' : 'http'}://${config.url}${config.port === '443' || config.port === '80' ? '' : ':' + config.port}`;
     
-    httpClient.clearCache();
-    httpClient.updateBaseURL(url);
+    globalHttpClient.updateBaseURL(url);
     console.log('🎯 HTTP客户端已更新为用户设置的后端配置（优先级最高）:', url);
   }, [enabled]);
 
@@ -208,7 +205,6 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           localStorage.setItem('nspass-mock-enabled', 'false');
           
           // 彻底清理缓存和配置
-          httpClient.clearCache();
           
           // 移除延迟，直接更新baseURL
           updateBaseURL(false);
@@ -292,8 +288,7 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               localStorage.setItem('nspass-mock-enabled', 'true');
               // 更新baseURL为Mock模式（移除不必要的延迟）
               const url = window.location.origin;
-              httpClient.clearCache();
-              httpClient.updateBaseURL(url);
+              globalHttpClient.updateBaseURL(url);
               console.log('🎯 MSW自动启动，baseURL设置为:', url);
               console.log('✅ MSW 自动启动成功');
             } else {
@@ -316,8 +311,7 @@ export const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setStatus('stopped');
         // 更新baseURL为后端API模式（移除不必要的延迟）
         const url = `${backendConfig.port === '443' ? 'https' : 'http'}://${backendConfig.url}${backendConfig.port === '443' || backendConfig.port === '80' ? '' : ':' + backendConfig.port}`;
-        httpClient.clearCache();
-        httpClient.updateBaseURL(url);
+        globalHttpClient.updateBaseURL(url);
         console.log('🎯 MSW保持停止，baseURL设置为:', url);
         console.log('⏹️ 根据保存的状态保持 MSW 停止状态');
       }

@@ -1,4 +1,6 @@
-import { httpClient, ApiResponse } from '@/utils/http-client';
+import { EnhancedBaseService, type ServiceConfig } from '@/shared/services/EnhancedBaseService';
+import type { StandardApiResponse, QueryParams } from '@/shared/types/common';
+import { createServiceConfig } from '@/shared/services/ServiceConfig';
 
 /**
  * 统一的分页参数接口
@@ -10,24 +12,14 @@ export interface PaginationParams {
 }
 
 /**
- * 统一的查询参数接口
+ * 扩展的查询参数接口
  */
-export interface QueryParams extends PaginationParams {
+export interface ExtendedQueryParams extends QueryParams {
   [key: string]: unknown;
 }
 
-/**
- * 统一的 API 响应接口
- */
-export interface StandardApiResponse<T = unknown> extends ApiResponse<T> {
-  total?: number;
-  pagination?: {
-    current: number;
-    pageSize: number;
-    total: number;
-    totalPages: number;
-  };
-}
+// 重新导出共享类型
+export type { StandardApiResponse, QueryParams } from '@/shared/types/common';
 
 /**
  * 批量操作请求接口
@@ -46,10 +38,17 @@ export interface BatchStatusUpdateRequest extends BatchOperationRequest {
 /**
  * 基础 Service 抽象类
  * 提供通用的 CRUD 操作模板
+ * 继承 EnhancedBaseService 以获得统一的HTTP请求功能
  */
-export abstract class BaseService<T = unknown, CreateData = unknown, UpdateData = unknown> {
+export abstract class BaseService<T = unknown, CreateData = unknown, UpdateData = unknown> extends EnhancedBaseService {
   protected abstract readonly endpoint: string;
-  protected readonly httpClient = httpClient;
+
+  constructor(serviceName: string = 'base', config?: ServiceConfig) {
+    // 使用配置管理器创建服务配置
+    const serviceConfig = createServiceConfig(serviceName, config);
+
+    super(serviceConfig);
+  }
 
   /**
    * 构建查询参数
@@ -77,61 +76,60 @@ export abstract class BaseService<T = unknown, CreateData = unknown, UpdateData 
   }
 
   /**
-   * 获取列表数据
+   * 获取列表数据 - 便利方法
    */
-  async getList(params: QueryParams = {}): Promise<StandardApiResponse<T[]>> {
-    const queryParams = this.buildQueryParams(params);
-    return this.httpClient.get<T[]>(this.endpoint, queryParams);
+  async getItems(params: ExtendedQueryParams = {}): Promise<StandardApiResponse<T[]>> {
+    return super.getList<T[]>(this.endpoint, params) as Promise<StandardApiResponse<T[]>>;
   }
 
   /**
-   * 根据 ID 获取单个数据
+   * 根据 ID 获取单个数据 - 便利方法
    */
-  async getById(id: string | number): Promise<StandardApiResponse<T>> {
-    return this.httpClient.get<T>(`${this.endpoint}/${id}`);
+  async getItem(id: string | number): Promise<StandardApiResponse<T>> {
+    return super.getById<T>(this.endpoint, id);
   }
 
   /**
-   * 创建新数据
+   * 创建新数据 - 便利方法
    */
-  async create(data: CreateData): Promise<StandardApiResponse<T>> {
-    return this.httpClient.post<T>(this.endpoint, data);
+  async createItem(data: CreateData): Promise<StandardApiResponse<T>> {
+    return super.create<T>(this.endpoint, data);
   }
 
   /**
-   * 更新数据
+   * 更新数据 - 便利方法
    */
-  async update(id: string | number, data: UpdateData): Promise<StandardApiResponse<T>> {
-    return this.httpClient.put<T>(`${this.endpoint}/${id}`, data);
+  async updateItem(id: string | number, data: UpdateData): Promise<StandardApiResponse<T>> {
+    return super.update<T>(this.endpoint, id, data);
   }
 
   /**
-   * 删除数据
+   * 删除数据 - 便利方法
    */
-  async delete(id: string | number): Promise<StandardApiResponse<void>> {
-    return this.httpClient.delete<void>(`${this.endpoint}/${id}`);
+  async removeItem(id: string | number): Promise<StandardApiResponse<void>> {
+    return super.deleteItem<void>(this.endpoint, id);
   }
 
   /**
-   * 批量删除
+   * 批量删除 - 便利方法
    */
-  async batchDelete(ids: (string | number)[]): Promise<StandardApiResponse<void>> {
-    return this.httpClient.post<void>(`${this.endpoint}/batch-delete`, { ids });
+  async batchRemoveItems(ids: (string | number)[]): Promise<StandardApiResponse<void>> {
+    return super.batchDelete<void>(this.endpoint, ids);
   }
 
   /**
    * 搜索数据
    */
-  async search(query: string, params: QueryParams = {}): Promise<StandardApiResponse<T[]>> {
-    const queryParams = this.buildQueryParams({ ...params, query });
-    return this.httpClient.get<T[]>(`${this.endpoint}/search`, queryParams);
+  async search(query: string, params: ExtendedQueryParams = {}): Promise<StandardApiResponse<T[]>> {
+    const searchParams = { ...params, query };
+    return super.getList<T>(this.endpoint, searchParams);
   }
 
   /**
    * 批量更新状态
    */
   async batchUpdateStatus(ids: (string | number)[], status: string): Promise<StandardApiResponse<T[]>> {
-    return this.httpClient.post<T[]>(`${this.endpoint}/batch/status`, { ids, status });
+    return this.post<T[]>(`${this.endpoint}/batch/status`, { ids, status });
   }
 
   /**
@@ -188,7 +186,12 @@ export class ServiceManager {
    * 清理所有服务的缓存
    */
   clearAllCaches(): void {
-    httpClient.clearCache();
+    // 清理所有服务实例的缓存
+    this.services.forEach(service => {
+      if (service && typeof (service as any).clearAllCache === 'function') {
+        (service as any).clearAllCache();
+      }
+    });
   }
 }
 

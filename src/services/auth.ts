@@ -1,12 +1,15 @@
 // 认证相关的API服务
-import { httpClient } from '@/utils/http-client';
+import { EnhancedBaseService } from '@/shared/services/EnhancedBaseService';
+import { createServiceConfig } from '@/shared/services/ServiceConfig';
 import {
   LoginType,
   type LoginRequest as GeneratedLoginRequest,
   type RegisterRequest as GeneratedRegisterRequest,
   type LoginResponse as GeneratedLoginResponse,
   type RegisterResponse as GeneratedRegisterResponse,
-} from '@/types/generated/api/users/user_auth';// 重新导出枚举类型
+} from '@/types/generated/api/users/user_auth';
+
+// 重新导出枚举类型
 export { LoginType };
 
 // 重新导出生成的类型，提供更简洁的导入路径
@@ -21,8 +24,12 @@ export interface LegacyLoginRequest {
   password: string;
 }
 
-class AuthService {
+class AuthService extends EnhancedBaseService {
   private endpoint = '/v1/auth';
+
+  constructor() {
+    super(createServiceConfig('auth'));
+  }
 
   /**
    * 用户登录
@@ -44,7 +51,7 @@ class AuthService {
         requestData = credentials;
       }
 
-      const response = await httpClient.post<LoginResponse['data']>(`${this.endpoint}/login`, requestData);
+      const response = await this.post<LoginResponse['data']>(`${this.endpoint}/login`, requestData);
       
       return {
         status: {
@@ -70,7 +77,7 @@ class AuthService {
    */
   async register(userData: RegisterRequest): Promise<RegisterResponse> {
     try {
-      const response = await httpClient.post<RegisterResponse['data']>(`${this.endpoint}/register`, userData);
+      const response = await this.post<RegisterResponse['data']>(`${this.endpoint}/register`, userData);
       
       return {
         status: {

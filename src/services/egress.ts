@@ -1,4 +1,6 @@
-import { httpClient, ApiResponse } from '@/utils/http-client';
+import { EnhancedBaseService } from '@/shared/services/EnhancedBaseService';
+import { createServiceConfig } from '@/shared/services/ServiceConfig';
+import type { StandardApiResponse } from '@/shared/types/common';
 // 使用 generated 类型定义
 import type { EgressItem } from '@/types/generated/model/egressItem';
 import { EgressMode, ForwardType } from '@/types/generated/model/egress';
@@ -22,15 +24,19 @@ export type EgressListParams = GetEgressListRequest;
 export type TestEgressConnectionData = TestEgressConnectionRequest;
 export type ValidateEgressConfigData = ValidateEgressConfigRequest;
 
-class EgressService {
+class EgressService extends EnhancedBaseService {
   private readonly endpoint = '/v1/egress';
+
+  constructor() {
+    super(createServiceConfig('egress'));
+  }
 
   /**
    * 获取出口列表 - 匹配swagger接口 GET /v1/egress
    */
-  async getEgressList(params: EgressListParams = {}): Promise<ApiResponse<EgressItem[]>> {
+  async getEgressList(params: EgressListParams = {}): Promise<StandardApiResponse<EgressItem[]>> {
     const queryParams: Record<string, string> = {};
-    
+
     if (params.page) queryParams.page = params.page.toString();
     if (params.pageSize) queryParams.pageSize = params.pageSize.toString();
     if (params.egressName) queryParams.egressName = params.egressName;
@@ -39,41 +45,41 @@ class EgressService {
       queryParams.egressMode = params.egressMode;
     }
 
-    return httpClient.get<EgressItem[]>(this.endpoint, queryParams);
+    return this.get<EgressItem[]>(this.endpoint, queryParams);
   }
 
   /**
    * 创建新出口 - 匹配swagger接口 POST /v1/egress
    */
-  async createEgress(egressData: CreateEgressData): Promise<ApiResponse<EgressItem>> {
-    return httpClient.post<EgressItem>(this.endpoint, egressData);
+  async createEgress(egressData: CreateEgressData): Promise<StandardApiResponse<EgressItem>> {
+    return this.post<EgressItem>(this.endpoint, egressData);
   }
 
   /**
    * 获取出口详情 - 匹配swagger接口 GET /v1/egress/{id}
    */
-  async getEgressById(id: React.Key): Promise<ApiResponse<EgressItem>> {
-    return httpClient.get<EgressItem>(`${this.endpoint}/${id}`);
+  async getEgressById(id: React.Key): Promise<StandardApiResponse<EgressItem>> {
+    return this.get<EgressItem>(`${this.endpoint}/${id}`);
   }
 
   /**
    * 更新出口信息 - 匹配swagger接口 PUT /v1/egress/{id}
    */
-  async updateEgress(id: React.Key, egressData: UpdateEgressData): Promise<ApiResponse<EgressItem>> {
-    return httpClient.put<EgressItem>(`${this.endpoint}/${id}`, egressData);
+  async updateEgress(id: React.Key, egressData: UpdateEgressData): Promise<StandardApiResponse<EgressItem>> {
+    return this.put<EgressItem>(`${this.endpoint}/${id}`, egressData);
   }
 
   /**
    * 删除出口 - 匹配swagger接口 DELETE /v1/egress/{id}
    */
-  async deleteEgress(id: React.Key): Promise<ApiResponse<void>> {
-    return httpClient.delete<void>(`${this.endpoint}/${id}`);
+  async deleteEgress(id: React.Key): Promise<StandardApiResponse<void>> {
+    return this.delete<void>(`${this.endpoint}/${id}`);
   }
 
   /**
    * 获取出口统计信息 - 匹配swagger接口 GET /v1/egress/{id}/stats
    */
-  async getEgressStats(id: React.Key, days?: number): Promise<ApiResponse<{
+  async getEgressStats(id: React.Key, days?: number): Promise<StandardApiResponse<{
     connectionsCount: number;
     bytesTransferred: number;
     lastActivity: string;
@@ -81,35 +87,35 @@ class EgressService {
     const queryParams: Record<string, string> = {};
     if (days) queryParams.days = days.toString();
     
-    return httpClient.get(`${this.endpoint}/${id}/stats`, queryParams);
+    return this.get(`${this.endpoint}/${id}/stats`, queryParams);
   }
 
   /**
    * 测试出口连接 - 匹配swagger接口 POST /v1/egress/{id}/test
    */
-  async testEgressConnection(id: React.Key, data: TestEgressConnectionData = {}): Promise<ApiResponse<{
+  async testEgressConnection(id: React.Key, data: TestEgressConnectionData = {}): Promise<StandardApiResponse<{
     success: boolean;
     latency: number;
     error?: string;
   }>> {
-    return httpClient.post(`${this.endpoint}/${id}/test`, data);
+    return this.post(`${this.endpoint}/${id}/test`, data);
   }
 
   /**
    * 获取可用服务器列表 - 匹配swagger接口 GET /v1/egress/available-servers
    */
-  async getAvailableServers(): Promise<ApiResponse<AvailableServerItem[]>> {
-    return httpClient.get<AvailableServerItem[]>(`${this.endpoint}/available-servers`);
+  async getAvailableServers(): Promise<StandardApiResponse<AvailableServerItem[]>> {
+    return this.get<AvailableServerItem[]>(`${this.endpoint}/available-servers`);
   }
 
   /**
    * 验证出口配置 - 匹配swagger接口 POST /v1/egress/validate-config
    */
-  async validateEgressConfig(configData: ValidateEgressConfigData): Promise<ApiResponse<{
+  async validateEgressConfig(configData: ValidateEgressConfigData): Promise<StandardApiResponse<{
     valid: boolean;
     errors?: string[];
   }>> {
-    return httpClient.post<{ valid: boolean; errors?: string[] }>(`${this.endpoint}/validate-config`, configData);
+    return this.post<{ valid: boolean; errors?: string[] }>(`${this.endpoint}/validate-config`, configData);
   }
 }
 

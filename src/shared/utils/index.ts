@@ -388,7 +388,7 @@ export const apiUtils = {
     if (!response.success) {
       throw new Error(response.message || '请求失败');
     }
-    return response.data;
+    return response.data as T;
   },
 
   // 处理API错误
@@ -430,7 +430,7 @@ export const apiUtils = {
       message.error(errorMessage);
       throw new Error(errorMessage);
     }
-    return response.data;
+    return response.data as T;
   },
 
   // 显示成功消息

@@ -4,8 +4,8 @@ import {
     ProFormText,
     ModalForm,
   } from '@ant-design/pro-components';
-  import { handleApiResponse, OperationType } from '@/utils/message';
-  import { Card, Row, Col, Avatar, Typography, Space, Tag, Divider, Progress, Statistic, Button, message } from 'antd';
+  import { message, handleApiResponse, OperationType } from '@/utils/message';
+  import { Card, Row, Col, Avatar, Typography, Space, Tag, Divider, Progress, Statistic, Button } from 'antd';
   import { 
     UserOutlined, 
     CrownOutlined, 

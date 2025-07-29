@@ -2,8 +2,6 @@
 
 import { message as antdMessage } from 'antd';
 import { MessageInstance } from 'antd/es/message/interface';
-import { ApiResponseHandler, OperationType, type ResponseHandlerOptions } from './api-response-handler';
-import type { ApiResponse } from './http-client';
 
 let messageInstance: MessageInstance | null = null;
 
@@ -30,37 +28,39 @@ export const message = {
   destroy: () => getInstance().destroy(),
 };
 
-// 导出类型和处理器
-export { ApiResponseHandler, OperationType };
-export type { ResponseHandlerOptions };
-
-// API响应处理函数
+// 兼容性函数 - 用于替换已删除的 handleApiResponse
 export const handleApiResponse = {
-  /**
-   * 处理API响应 - 完整版本
-   */
-  handle: <T>(response: ApiResponse<T>, options: ResponseHandlerOptions) => {
-    return ApiResponseHandler.handle(response, options);
+  fetch: <T>(response: any, operation: string) => {
+    if (!response.success) {
+      message.error(`${operation}失败: ${response.message || '未知错误'}`);
+    }
+    return response;
   },
+  handle: (response: any, options: any) => {
+    if (response.success) {
+      if (options.forceShowSuccess) {
+        message.success(`${options.operation}成功`);
+      }
+    } else {
+      message.error(`${options.operation}失败: ${response.message || '未知错误'}`);
+    }
+    return response;
+  },
+  userAction: <T>(response: any, operation: string, operationType?: any) => {
+    if (response.success) {
+      message.success(`${operation}成功`);
+    } else {
+      message.error(`${operation}失败: ${response.message || '未知错误'}`);
+    }
+    return response;
+  }
+};
 
-  /**
-   * 处理异步API操作
-   */
-  handleAsync: <T>(asyncOperation: Promise<ApiResponse<T>>, options: ResponseHandlerOptions) => {
-    return ApiResponseHandler.handleAsync(asyncOperation, options);
-  },
-
-  /**
-   * 处理数据获取操作（不显示成功提示）
-   */
-  fetch: <T>(response: ApiResponse<T>, operation: string) => {
-    return ApiResponseHandler.fetch(response, operation);
-  },
-
-  /**
-   * 处理用户操作（显示成功提示）
-   */
-  userAction: <T>(response: ApiResponse<T>, operation: string, operationType: OperationType = OperationType.SAVE) => {
-    return ApiResponseHandler.userAction(response, operation, operationType);
-  },
-}; 
+// 兼容性枚举
+export const OperationType = {
+  FETCH: 'FETCH',
+  SAVE: 'SAVE',
+  DELETE: 'DELETE',
+  START: 'START',
+  STOP: 'STOP'
+};

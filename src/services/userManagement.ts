@@ -1,4 +1,6 @@
-import { httpClient, ApiResponse } from '@/utils/http-client';
+import { EnhancedBaseService } from '@/shared/services/EnhancedBaseService';
+import { createServiceConfig } from '@/shared/services/ServiceConfig';
+import type { StandardApiResponse } from '@/shared/types/common';
 import type {
   UserInfo,
   UpdateUserInfoRequest,
@@ -40,7 +42,7 @@ interface DeleteUserConfigRequest { userId: string; configKey: string; }
 interface GetUserConfigHistoryRequest { userId: string; configKey: string; page?: number; pageSize?: number; }
 
 // 注释掉不再使用的toProtoResponse函数  
-// function toProtoResponse<T>(response: ApiResponse<T>): { base: CommonApiResponse; data?: T } {
+// function toProtoResponse<T>(response: StandardApiResponse<T>): { base: CommonApiResponse; data?: T } {
 //   return {
 //     base: {
 //       success: response.success,
@@ -51,7 +53,10 @@ interface GetUserConfigHistoryRequest { userId: string; configKey: string; page?
 //   };
 // }
 
-class UserManagementService {
+class UserManagementService extends EnhancedBaseService {
+  constructor() {
+    super(createServiceConfig('UserManagementService'));
+  }
   private readonly authEndpoint = '/v1/auth';
   private readonly userEndpoint = '/v1/user';
   private readonly usersEndpoint = '/v1/users';
@@ -61,12 +66,12 @@ class UserManagementService {
   /**
    * 用户注册
    */
-  async register(request: RegisterRequest): Promise<ApiResponse<{
+  async register(request: RegisterRequest): Promise<StandardApiResponse<{
     userId: string;
     username: string;
     email: string;
   }>> {
-    const response = await httpClient.post<{
+    const response = await this.post<{
       userId: string;
       username: string;
       email: string;
@@ -77,13 +82,13 @@ class UserManagementService {
   /**
    * 用户登录
    */
-  async login(request: LoginRequest): Promise<ApiResponse<{
+  async login(request: LoginRequest): Promise<StandardApiResponse<{
     token: string;
     refreshToken: string;
     expiresIn: number;
     user: UserInfo;
   }>> {
-    const response = await httpClient.post<{
+    const response = await this.post<{
       token: string;
       refreshToken: string;
       expiresIn: number;
@@ -97,15 +102,15 @@ class UserManagementService {
   /**
    * 获取当前用户信息
    */
-  async getCurrentUserInfo(): Promise<ApiResponse<UserInfo>> {
-    return httpClient.get<UserInfo>(`/v1/profile`);
+  async getCurrentUserInfo(): Promise<StandardApiResponse<UserInfo>> {
+    return this.get<UserInfo>(`/v1/profile`);
   }
 
   /**
    * 更新用户信息
    */
-  async updateUserInfo(request: UpdateUserInfoRequest): Promise<ApiResponse<UserInfo>> {
-    const response = await httpClient.put<UserInfo>(`${this.usersEndpoint}/me`, request);
+  async updateUserInfo(request: UpdateUserInfoRequest): Promise<StandardApiResponse<UserInfo>> {
+    const response = await this.put<UserInfo>(`${this.usersEndpoint}/me`, request);
     return response;
   }
 
@@ -114,15 +119,15 @@ class UserManagementService {
   /**
    * 修改密码
    */
-  async changePassword(request: ChangePasswordRequest): Promise<ApiResponse<void>> {
-    return httpClient.post<void>(`${this.userEndpoint}/password`, request);
+  async changePassword(request: ChangePasswordRequest): Promise<StandardApiResponse<void>> {
+    return this.post<void>(`${this.userEndpoint}/password`, request);
   }
 
   /**
    * 删除账户
    */
-  async deleteAccount(request: DeleteAccountRequest): Promise<ApiResponse<void>> {
-    return httpClient.post<void>(`${this.userEndpoint}/delete-account`, request);
+  async deleteAccount(request: DeleteAccountRequest): Promise<StandardApiResponse<void>> {
+    return this.post<void>(`${this.userEndpoint}/delete-account`, request);
   }
 
   // === 头像管理 ===
@@ -130,11 +135,11 @@ class UserManagementService {
   /**
    * 上传头像
    */
-  async uploadAvatar(avatarData: UploadAvatarData): Promise<ApiResponse<UploadAvatarResponse>> {
+  async uploadAvatar(avatarData: UploadAvatarData): Promise<StandardApiResponse<UploadAvatarResponse>> {
     const formData = new FormData();
     formData.append('avatar', avatarData.avatar);
 
-    return httpClient.post<UploadAvatarResponse>(`${this.userEndpoint}/avatar`, formData);
+    return this.post<UploadAvatarResponse>(`${this.userEndpoint}/avatar`, formData);
   }
 
   // === 流量统计 ===
@@ -142,15 +147,15 @@ class UserManagementService {
   /**
    * 获取流量统计
    */
-  async getTrafficStats(): Promise<ApiResponse<TrafficStats>> {
-    return httpClient.get<TrafficStats>(`${this.userEndpoint}/traffic`);
+  async getTrafficStats(): Promise<StandardApiResponse<TrafficStats>> {
+    return this.get<TrafficStats>(`${this.userEndpoint}/traffic`);
   }
 
   /**
    * 重置流量统计
    */
-  async resetTraffic(): Promise<ApiResponse<void>> {
-    return httpClient.post<void>(`${this.userEndpoint}/traffic/reset`);
+  async resetTraffic(): Promise<StandardApiResponse<void>> {
+    return this.post<void>(`${this.userEndpoint}/traffic/reset`);
   }
 
   // === 登录历史 ===
@@ -158,13 +163,13 @@ class UserManagementService {
   /**
    * 获取登录历史
    */
-  async getLoginHistory(request: GetLoginHistoryRequest = {}): Promise<ApiResponse<LoginHistoryItem[]>> {
+  async getLoginHistory(request: GetLoginHistoryRequest = {}): Promise<StandardApiResponse<LoginHistoryItem[]>> {
     const queryParams: Record<string, string> = {};
     
     if (request.page) queryParams.page = request.page.toString();
     if (request.pageSize) queryParams.pageSize = request.pageSize.toString();
 
-    return httpClient.get<LoginHistoryItem[]>(`${this.userEndpoint}/login-history`, queryParams);
+    return this.get<LoginHistoryItem[]>(`${this.userEndpoint}/login-history`, queryParams);
   }
 
   // === 活动日志 ===
@@ -172,13 +177,13 @@ class UserManagementService {
   /**
    * 获取活动日志
    */
-  async getActivityLogs(request: GetActivityLogsRequest = {}): Promise<ApiResponse<ActivityLogItem[]>> {
+  async getActivityLogs(request: GetActivityLogsRequest = {}): Promise<StandardApiResponse<ActivityLogItem[]>> {
     const queryParams: Record<string, string> = {};
     
     if (request.page) queryParams.page = request.page.toString();
     if (request.pageSize) queryParams.pageSize = request.pageSize.toString();
 
-    return httpClient.get<ActivityLogItem[]>(`${this.userEndpoint}/activity-logs`, queryParams);
+    return this.get<ActivityLogItem[]>(`${this.userEndpoint}/activity-logs`, queryParams);
   }
 
   // === 二步验证 ===
@@ -186,8 +191,8 @@ class UserManagementService {
   /**
    * 切换二步验证
    */
-  async toggleTwoFactorAuth(request: ToggleTwoFactorAuthRequest): Promise<ApiResponse<{enabled: boolean; qrCode?: string}>> {
-    return httpClient.post<{
+  async toggleTwoFactorAuth(request: ToggleTwoFactorAuthRequest): Promise<StandardApiResponse<{enabled: boolean; qrCode?: string}>> {
+    return this.post<{
       enabled: boolean;
       qrCode?: string;
     }>(`${this.userEndpoint}/2fa/toggle`, request);
@@ -198,15 +203,15 @@ class UserManagementService {
   /**
    * 获取用户配置
    */
-  async getUserConfig(request: GetUserConfigRequest): Promise<ApiResponse<UserConfig[]>> {
-    return httpClient.get<UserConfig[]>(`${this.usersEndpoint}/${request.userId}/configs`);
+  async getUserConfig(request: GetUserConfigRequest): Promise<StandardApiResponse<UserConfig[]>> {
+    return this.get<UserConfig[]>(`${this.usersEndpoint}/${request.userId}/configs`);
   }
 
   /**
    * 更新用户配置
    */
-  async updateUserConfig(request: UpdateUserConfigRequest): Promise<ApiResponse<UserConfig>> {
-    return httpClient.put<UserConfig>(`${this.usersEndpoint}/${request.userId}/configs/${request.configKey}`, {
+  async updateUserConfig(request: UpdateUserConfigRequest): Promise<StandardApiResponse<UserConfig>> {
+    return this.put<UserConfig>(`${this.usersEndpoint}/${request.userId}/configs/${request.configKey}`, {
       value: request.value
     });
   }
@@ -214,20 +219,20 @@ class UserManagementService {
   /**
    * 删除用户配置
    */
-  async deleteUserConfig(request: DeleteUserConfigRequest): Promise<ApiResponse<void>> {
-    return httpClient.delete<void>(`${this.usersEndpoint}/${request.userId}/configs/${request.configKey}`);
+  async deleteUserConfig(request: DeleteUserConfigRequest): Promise<StandardApiResponse<void>> {
+    return this.delete<void>(`${this.usersEndpoint}/${request.userId}/configs/${request.configKey}`);
   }
 
   /**
    * 获取用户配置历史
    */
-  async getUserConfigHistory(request: GetUserConfigHistoryRequest): Promise<ApiResponse<UserConfig[]>> {
+  async getUserConfigHistory(request: GetUserConfigHistoryRequest): Promise<StandardApiResponse<UserConfig[]>> {
     const queryParams: Record<string, string> = {};
     
     if (request.page) queryParams.page = request.page.toString();
     if (request.pageSize) queryParams.pageSize = request.pageSize.toString();
 
-    return httpClient.get<UserConfig[]>(`${this.usersEndpoint}/${request.userId}/configs/${request.configKey}/history`, queryParams);
+    return this.get<UserConfig[]>(`${this.usersEndpoint}/${request.userId}/configs/${request.configKey}/history`, queryParams);
   }
 }
 

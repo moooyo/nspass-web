@@ -44,12 +44,12 @@ const IptablesManagement: React.FC = () => {
   const loadServers = useCallback(async () => {
     setServersLoading(true);
     try {
-      const result = await serverService.getList();
+      const result = await serverService.getServers();
       if (result.success && result.data) {
-        setServers(result.data);
+        setServers(result.data as ServerItem[]);
         // 自动选择第一个服务器
-        if (result.data.length > 0 && result.data[0].id) {
-          setSelectedServer(result.data[0].id);
+        if (result.data.length > 0 && (result.data as ServerItem[])[0].id) {
+          setSelectedServer((result.data as ServerItem[])[0].id!);
         }
       }
     } catch {
@@ -63,10 +63,10 @@ const IptablesManagement: React.FC = () => {
   const loadMappings = useCallback(async () => {
     try {
       // 加载所有服务器
-      const serverResult = await serverService.getList();
+      const serverResult = await serverService.getServers();
       if (serverResult.success && serverResult.data) {
         const sMap: Record<string, string> = {};
-        serverResult.data.forEach(server => {
+        (serverResult.data as ServerItem[]).forEach(server => {
           if (server.id) {
             sMap[server.id.toString()] = server.name || `服务器 ${server.id}`;
           }
