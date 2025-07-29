@@ -19,7 +19,7 @@ export const EnvInitializer: React.FC = () => {
     logger.group('🔧 Environment Initializer');
 
     // 直接使用环境变量中的API URL，不再动态设置
-    const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+    const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.nspass.xforward.de';
     setCurrentApiUrl(apiUrl);
 
     // 更新globalHttpClient的baseURL

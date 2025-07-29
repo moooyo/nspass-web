@@ -60,7 +60,7 @@ export class EnhancedBaseService {
 
   constructor(config: ServiceConfig = {}) {
     this.config = {
-      baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
+      baseURL: import.meta.env.VITE_API_BASE_URL || 'https://api.nspass.xforward.de',
       timeout: 3000, // 3秒超时
       ...config,
     };
@@ -78,7 +78,7 @@ export class EnhancedBaseService {
    * 获取当前 baseURL
    */
   getCurrentBaseURL(): string {
-    return this.config.baseURL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+    return this.config.baseURL || import.meta.env.VITE_API_BASE_URL || 'https://api.nspass.xforward.de';
   }
 
   /**
@@ -86,7 +86,7 @@ export class EnhancedBaseService {
    */
   private buildURL(endpoint: string, params?: QueryParams): string {
     // 使用当前配置的baseURL
-    const baseURL = this.config.baseURL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+    const baseURL = this.config.baseURL || import.meta.env.VITE_API_BASE_URL || 'https://api.nspass.xforward.de';
     const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
 
     let fullUrl: string;

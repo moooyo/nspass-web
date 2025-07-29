@@ -24,6 +24,7 @@ export default defineConfig({
     minify: process.env.NODE_ENV === 'production' ? 'terser' : false,
     target: 'es2020',
     cssCodeSplit: true,
+    chunkSizeWarningLimit: 1000, // 增加到 1MB 来避免警告
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, 'index.html')
@@ -33,11 +34,9 @@ export default defineConfig({
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash][extname]',
         manualChunks: {
-          // 将大型依赖分离到单独的chunk
+          // 保守的分包策略，只分离最大的依赖
           'react-vendor': ['react', 'react-dom'],
-          'antd-vendor': ['antd', '@ant-design/icons', '@ant-design/pro-components'],
-          'router-vendor': ['react-router-dom'],
-          'utils-vendor': ['dayjs', 'lodash-es'],
+          'antd-vendor': ['antd'],
         },
       },
 

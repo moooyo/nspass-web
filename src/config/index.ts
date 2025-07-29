@@ -75,7 +75,7 @@ export const defaultConfig: ProjectConfig = {
   },
   
   api: {
-    baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
+    baseUrl: import.meta.env.VITE_API_BASE_URL || 'https://api.nspass.xforward.de',
     timeout: 10000,
     retryAttempts: 3,
     retryDelay: 1000
@@ -130,7 +130,7 @@ export const defaultConfig: ProjectConfig = {
 export const environmentConfigs: Record<string, Partial<ProjectConfig>> = {
   development: {
     api: {
-      baseUrl: '/api',
+      baseUrl: 'https://api.nspass.xforward.de',
       timeout: 30000,
       retryAttempts: 3,
       retryDelay: 1000
@@ -151,7 +151,7 @@ export const environmentConfigs: Record<string, Partial<ProjectConfig>> = {
   
   production: {
     api: {
-      baseUrl: import.meta.env.VITE_API_BASE_URL || 'https://api.nspass.com',
+      baseUrl: import.meta.env.VITE_API_BASE_URL || 'https://api.nspass.xforward.de',
       timeout: 10000,
       retryAttempts: 3,
       retryDelay: 1000

@@ -9,7 +9,7 @@ import type { ServiceConfig } from './EnhancedBaseService';
  * 默认服务配置
  */
 export const DEFAULT_SERVICE_CONFIG: ServiceConfig = {
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://api.nspass.xforward.de',
   timeout: 30000,
 };
 
