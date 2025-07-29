@@ -13,12 +13,13 @@ import {
     QueryFilter,
 } from '@ant-design/pro-components';
 import { Form } from 'antd';
-import { 
-    PlusOutlined, 
+import {
+    PlusOutlined,
     ReloadOutlined,
     EditOutlined,
     DeleteOutlined,
     ThunderboltOutlined,
+    EyeOutlined,
 } from '@ant-design/icons';
 import { egressService, EgressItem, CreateEgressData, UpdateEgressData, EgressMode, ForwardType } from '@/services/egress';
 import { serverService } from '@/services/server';
@@ -26,7 +27,7 @@ import type { ServerItem } from '@/types/generated/api/servers/server_management
 import { useApiOnce } from '@/components/hooks/useApiOnce';
 import { useApiErrorHandler } from '@/hooks/useApiErrorHandler';
 import { securityUtils } from '@/shared/utils';
-import { generateRandomPort } from '@/utils/passwordUtils';
+import { generateRandomPortFromRange } from '@/utils/passwordUtils';
 import { parseEgressConfig } from '@/utils/egressConfigUtils';
 
 // 出口模式选项 - 使用新的枚举
@@ -235,6 +236,8 @@ const Egress: React.FC = () => {
     const [createModalVisible, setCreateModalVisible] = useState<boolean>(false);
     const [editModalVisible, setEditModalVisible] = useState<boolean>(false);
     const [editingRecord, setEditingRecord] = useState<LocalEgressItem | null>(null);
+    const [configViewModalVisible, setConfigViewModalVisible] = useState<boolean>(false);
+    const [viewingConfig, setViewingConfig] = useState<LocalEgressItem | null>(null);
     const [form] = Form.useForm();
     const [editForm] = Form.useForm();
     
@@ -251,60 +254,47 @@ const Egress: React.FC = () => {
         value: server.id,
     }));
 
-    // 监听表单字段变化，当选择shadowsocks-2022时自动生成端口
+    // 监听表单字段变化，当选择需要端口的出口类型时自动生成端口
     const handleEgressModeChange = useCallback((egressMode: EgressMode, formInstance: any) => {
-        // 为需要密码的出口类型自动生成密码和端口
-        if (egressMode === EgressMode.EGRESS_MODE_SS2022) {
+        // 为需要密码和端口的出口类型自动生成
+        if (egressMode === EgressMode.EGRESS_MODE_SS2022 ||
+            egressMode === EgressMode.EGRESS_MODE_TROJAN ||
+            egressMode === EgressMode.EGRESS_MODE_SNELL) {
+
+            // 获取当前选择的服务器
+            const selectedServerId = formInstance.getFieldValue('serverId');
+            const selectedServer = servers.find(server => server.id === selectedServerId);
+
             // 自动生成端口
             const currentPort = formInstance.getFieldValue('port');
             if (!currentPort) {
-                const randomPort = generateRandomPort(20000, 50000);
+                const randomPort = generateRandomPortFromRange(selectedServer?.availablePorts, 20000, 50000);
                 formInstance.setFieldValue('port', randomPort);
             }
+
             // 自动生成密码
             const currentPassword = formInstance.getFieldValue('password');
             if (!currentPassword) {
-                const randomPassword = securityUtils.generateRandomPassword(100, 128);
+                let randomPassword: string;
+                if (egressMode === EgressMode.EGRESS_MODE_SS2022) {
+                    randomPassword = securityUtils.generateRandomPassword(100, 128);
+                } else if (egressMode === EgressMode.EGRESS_MODE_TROJAN) {
+                    randomPassword = securityUtils.generateRandomPassword(32, 64);
+                } else { // SNELL
+                    randomPassword = securityUtils.generateRandomPassword(16, 32);
+                }
                 formInstance.setFieldValue('password', randomPassword);
             }
-            // 默认启用UDP支持
-            const currentUdpSupport = formInstance.getFieldValue('supportUdp');
-            if (currentUdpSupport === undefined || currentUdpSupport === null) {
-                formInstance.setFieldValue('supportUdp', true);
-            }
-        } else if (egressMode === EgressMode.EGRESS_MODE_TROJAN) {
-            // 自动生成端口
-            const currentPort = formInstance.getFieldValue('port');
-            if (!currentPort) {
-                const randomPort = generateRandomPort(20000, 50000);
-                formInstance.setFieldValue('port', randomPort);
-            }
-            // 自动生成密码
-            const currentPassword = formInstance.getFieldValue('password');
-            if (!currentPassword) {
-                const randomPassword = securityUtils.generateRandomPassword(32, 64);
-                formInstance.setFieldValue('password', randomPassword);
-            }
-        } else if (egressMode === EgressMode.EGRESS_MODE_SNELL) {
-            // 自动生成端口
-            const currentPort = formInstance.getFieldValue('port');
-            if (!currentPort) {
-                const randomPort = generateRandomPort(20000, 50000);
-                formInstance.setFieldValue('port', randomPort);
-            }
-            // 自动生成密码
-            const currentPassword = formInstance.getFieldValue('password');
-            if (!currentPassword) {
-                const randomPassword = securityUtils.generateRandomPassword(16, 32);
-                formInstance.setFieldValue('password', randomPassword);
-            }
-            // 默认启用UDP支持
-            const currentUdpSupport = formInstance.getFieldValue('supportUdp');
-            if (currentUdpSupport === undefined || currentUdpSupport === null) {
-                formInstance.setFieldValue('supportUdp', true);
+
+            // 默认启用UDP支持（SS2022和Snell）
+            if (egressMode === EgressMode.EGRESS_MODE_SS2022 || egressMode === EgressMode.EGRESS_MODE_SNELL) {
+                const currentUdpSupport = formInstance.getFieldValue('supportUdp');
+                if (currentUdpSupport === undefined || currentUdpSupport === null) {
+                    formInstance.setFieldValue('supportUdp', true);
+                }
             }
         }
-    }, []);
+    }, [servers]);
 
     // 确保 form 实例在需要时才被使用
     useEffect(() => {
@@ -397,6 +387,12 @@ const Egress: React.FC = () => {
             }
         );
     };
+
+    // 打开配置查看模态框
+    const openConfigViewModal = useCallback((record: LocalEgressItem) => {
+        setViewingConfig(record);
+        setConfigViewModalVisible(true);
+    }, []);
 
     // 打开编辑模态框
     const openEditModal = (record: LocalEgressItem) => {
@@ -553,23 +549,54 @@ const Egress: React.FC = () => {
         {
             title: '出口配置',
             dataIndex: 'displayConfig',
-            width: '35%',
+            width: '25%',
             formItemProps: {
                 rules: [{ required: true, message: '出口配置为必填项' }],
             },
         },
         {
+            title: '通用配置',
+            width: '15%',
+            hideInSearch: true,
+            render: (_, record) => (
+                <div style={{ fontSize: '12px' }}>
+                    {record.port && (
+                        <div>
+                            <span style={{ color: '#666' }}>端口: </span>
+                            <span style={{ color: '#1890ff', fontFamily: 'monospace' }}>{record.port}</span>
+                        </div>
+                    )}
+                    {record.password && (
+                        <div>
+                            <span style={{ color: '#666' }}>密码: </span>
+                            <span style={{ color: '#52c41a', fontFamily: 'monospace' }}>
+                                {record.password.length > 20 ? `${record.password.substring(0, 20)}...` : record.password}
+                            </span>
+                        </div>
+                    )}
+                    {!record.port && !record.password && (
+                        <span style={{ color: '#999' }}>无通用配置</span>
+                    )}
+                </div>
+            ),
+        },
+        {
             title: '操作',
             valueType: 'option',
-            width: '20%',
+            width: '25%',
             render: (_, record) => {
                 const isValidId = record.id && record.id !== 0;
-                
+
                 return [
+                    <Tooltip key="view" title="查看配置">
+                        <a onClick={() => openConfigViewModal(record)}>
+                            <Tag icon={<EyeOutlined />} color="green">查看</Tag>
+                        </a>
+                    </Tooltip>,
                     <Tooltip key="edit" title={isValidId ? "编辑" : "后端数据错误：ID无效"}>
-                        <a 
+                        <a
                             onClick={() => isValidId ? openEditModal(record) : undefined}
-                            style={{ 
+                            style={{
                                 opacity: isValidId ? 1 : 0.5,
                                 cursor: isValidId ? 'pointer' : 'not-allowed'
                             }}
@@ -719,7 +746,8 @@ const Egress: React.FC = () => {
                 <ProFormText
                     name="egressName"
                     label="出口名称"
-                    placeholder="请输入出口名称，不填将自动生成"
+                    placeholder="请输入出口名称"
+                    rules={[{ required: true, message: '出口名称为必填项' }]}
                 />
                 
                 <ProFormSelect
@@ -821,14 +849,15 @@ const Egress: React.FC = () => {
                                         max={65535}
                                         fieldProps={{
                                             addonAfter: (
-                                                <Tooltip title="生成20000-50000范围内的随机端口">
-                                                    <Button 
-                                                        type="text" 
+                                                <Tooltip title="根据服务器可用端口范围生成随机端口">
+                                                    <Button
+                                                        type="text"
                                                         icon={<ThunderboltOutlined />}
                                                         onClick={() => {
-                                                            const randomPort = generateRandomPort(20000, 50000);
+                                                            const selectedServerId = form.getFieldValue('serverId');
+                                                            const selectedServer = servers.find(server => server.id === selectedServerId);
+                                                            const randomPort = generateRandomPortFromRange(selectedServer?.availablePorts, 20000, 50000);
                                                             form.setFieldValue('port', randomPort);
-                                                            // handleDataResponse.userAction(`已生成随机端口: ${randomPort}`, true);
                                                         }}
                                                         size="small"
                                                     />
@@ -875,12 +904,14 @@ const Egress: React.FC = () => {
                                         max={65535}
                                         fieldProps={{
                                             addonAfter: (
-                                                <Tooltip title="生成20000-50000范围内的随机端口">
-                                                    <Button 
-                                                        type="text" 
+                                                <Tooltip title="根据服务器可用端口范围生成随机端口">
+                                                    <Button
+                                                        type="text"
                                                         icon={<ThunderboltOutlined />}
                                                         onClick={() => {
-                                                            const randomPort = generateRandomPort(20000, 50000);
+                                                            const selectedServerId = form.getFieldValue('serverId');
+                                                            const selectedServer = servers.find(server => server.id === selectedServerId);
+                                                            const randomPort = generateRandomPortFromRange(selectedServer?.availablePorts, 20000, 50000);
                                                             form.setFieldValue('port', randomPort);
                                                         }}
                                                         size="small"
@@ -936,12 +967,14 @@ const Egress: React.FC = () => {
                                         max={65535}
                                         fieldProps={{
                                             addonAfter: (
-                                                <Tooltip title="生成20000-50000范围内的随机端口">
-                                                    <Button 
-                                                        type="text" 
+                                                <Tooltip title="根据服务器可用端口范围生成随机端口">
+                                                    <Button
+                                                        type="text"
                                                         icon={<ThunderboltOutlined />}
                                         onClick={() => {
-                                            const randomPort = generateRandomPort(20000, 50000);
+                                            const selectedServerId = form.getFieldValue('serverId');
+                                            const selectedServer = servers.find(server => server.id === selectedServerId);
+                                            const randomPort = generateRandomPortFromRange(selectedServer?.availablePorts, 20000, 50000);
                                             form.setFieldValue('port', randomPort);
                                         }}
                                         size="small"
@@ -1084,14 +1117,15 @@ const Egress: React.FC = () => {
                                         max={65535}
                                         fieldProps={{
                                             addonAfter: (
-                                                <Tooltip title="生成20000-50000范围内的随机端口">
-                                                    <Button 
-                                                        type="text" 
+                                                <Tooltip title="根据服务器可用端口范围生成随机端口">
+                                                    <Button
+                                                        type="text"
                                                         icon={<ThunderboltOutlined />}
                                                         onClick={() => {
-                                                            const randomPort = generateRandomPort(20000, 50000);
+                                                            const selectedServerId = editForm.getFieldValue('serverId');
+                                                            const selectedServer = servers.find(server => server.id === selectedServerId);
+                                                            const randomPort = generateRandomPortFromRange(selectedServer?.availablePorts, 20000, 50000);
                                                             editForm.setFieldValue('port', randomPort);
-                                                            // handleDataResponse.userAction(`已生成随机端口: ${randomPort}`, true);
                                                         }}
                                                         size="small"
                                                     />
@@ -1138,12 +1172,14 @@ const Egress: React.FC = () => {
                                         max={65535}
                                         fieldProps={{
                                             addonAfter: (
-                                                <Tooltip title="生成20000-50000范围内的随机端口">
-                                                    <Button 
-                                                        type="text" 
+                                                <Tooltip title="根据服务器可用端口范围生成随机端口">
+                                                    <Button
+                                                        type="text"
                                                         icon={<ThunderboltOutlined />}
                                                         onClick={() => {
-                                                            const randomPort = generateRandomPort(20000, 50000);
+                                                            const selectedServerId = editForm.getFieldValue('serverId');
+                                                            const selectedServer = servers.find(server => server.id === selectedServerId);
+                                                            const randomPort = generateRandomPortFromRange(selectedServer?.availablePorts, 20000, 50000);
                                                             editForm.setFieldValue('port', randomPort);
                                                         }}
                                                         size="small"
@@ -1199,12 +1235,14 @@ const Egress: React.FC = () => {
                                         max={65535}
                                         fieldProps={{
                                             addonAfter: (
-                                                <Tooltip title="生成20000-50000范围内的随机端口">
-                                                    <Button 
-                                                        type="text" 
+                                                <Tooltip title="根据服务器可用端口范围生成随机端口">
+                                                    <Button
+                                                        type="text"
                                                         icon={<ThunderboltOutlined />}
                                         onClick={() => {
-                                            const randomPort = generateRandomPort(20000, 50000);
+                                            const selectedServerId = editForm.getFieldValue('serverId');
+                                            const selectedServer = servers.find(server => server.id === selectedServerId);
+                                            const randomPort = generateRandomPortFromRange(selectedServer?.availablePorts, 20000, 50000);
                                             editForm.setFieldValue('port', randomPort);
                                         }}
                                         size="small"
@@ -1222,6 +1260,72 @@ const Egress: React.FC = () => {
         }                        return null;
                     }}
                 </ProFormDependency>
+            </ModalForm>
+
+            {/* 配置查看模态框 */}
+            <ModalForm
+                title="查看出口配置"
+                width={800}
+                open={configViewModalVisible}
+                onOpenChange={setConfigViewModalVisible}
+                submitter={false}
+                modalProps={{
+                    destroyOnHidden: true,
+                    onCancel: () => {
+                        setConfigViewModalVisible(false);
+                        setViewingConfig(null);
+                    },
+                }}
+            >
+                {viewingConfig && (
+                    <div>
+                        <div style={{ marginBottom: 16 }}>
+                            <h4>基本信息</h4>
+                            <div style={{ background: '#f5f5f5', padding: 12, borderRadius: 4 }}>
+                                <p><strong>出口名称:</strong> {viewingConfig.egressName}</p>
+                                <p><strong>出口ID:</strong> {viewingConfig.egressId}</p>
+                                <p><strong>服务器ID:</strong> {viewingConfig.serverId}</p>
+                                <p><strong>出口模式:</strong> {
+                                    viewingConfig.egressMode === EgressMode.EGRESS_MODE_DIRECT ? '直出' :
+                                    viewingConfig.egressMode === EgressMode.EGRESS_MODE_IPTABLES ? 'iptables' :
+                                    viewingConfig.egressMode === EgressMode.EGRESS_MODE_SS2022 ? 'shadowsocks-2022' :
+                                    viewingConfig.egressMode === EgressMode.EGRESS_MODE_TROJAN ? 'Trojan' :
+                                    viewingConfig.egressMode === EgressMode.EGRESS_MODE_SNELL ? 'Snell' :
+                                    viewingConfig.egressMode
+                                }</p>
+                                {viewingConfig.port && <p><strong>端口:</strong> {viewingConfig.port}</p>}
+                                {viewingConfig.password && <p><strong>密码:</strong> {viewingConfig.password}</p>}
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4>详细配置 (JSON)</h4>
+                            <pre style={{
+                                background: '#f5f5f5',
+                                padding: 12,
+                                borderRadius: 4,
+                                overflow: 'auto',
+                                maxHeight: 400,
+                                fontSize: '12px',
+                                fontFamily: 'monospace'
+                            }}>
+                                {JSON.stringify(
+                                    {
+                                        egressId: viewingConfig.egressId,
+                                        egressName: viewingConfig.egressName,
+                                        serverId: viewingConfig.serverId,
+                                        egressMode: viewingConfig.egressMode,
+                                        port: viewingConfig.port,
+                                        password: viewingConfig.password,
+                                        egressConfig: viewingConfig.egressConfig ? JSON.parse(viewingConfig.egressConfig) : null
+                                    },
+                                    null,
+                                    2
+                                )}
+                            </pre>
+                        </div>
+                    </div>
+                )}
             </ModalForm>
         </div>
     );
