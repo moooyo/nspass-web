@@ -9,6 +9,7 @@ import {
     ModalForm,
     ProFormTextArea,
     ProFormDependency,
+    ProFormText,
 } from '@ant-design/pro-components';
 import { PlusOutlined, ReloadOutlined, EyeOutlined } from '@ant-design/icons';
 import {
@@ -18,6 +19,154 @@ import {
     DnsProviderConfigListParams,
     DnsProvider
 } from '../../../services/dnsConfig';
+
+// DNS Provider配置字段定义
+interface ProviderFieldConfig {
+    name: string;
+    label: string;
+    type: 'text' | 'password' | 'email' | 'url';
+    required: boolean;
+    placeholder?: string;
+    description?: string;
+}
+
+// DNS Provider配置信息
+interface ProviderConfig {
+    name: string;
+    description: string;
+    fields: ProviderFieldConfig[];
+}
+
+// 不同DNS Provider的配置信息
+const providerConfigs: Record<DnsProvider, ProviderConfig> = {
+    [DnsProvider.DNS_PROVIDER_CLOUDFLARE]: {
+        name: 'Cloudflare',
+        description: 'Cloudflare DNS服务配置 - 全球领先的DNS服务提供商',
+        fields: [
+            {
+                name: 'email',
+                label: 'Email',
+                type: 'email',
+                required: true,
+                placeholder: '请输入Cloudflare账户邮箱',
+                description: '您的Cloudflare账户邮箱地址'
+            },
+            {
+                name: 'api_key',
+                label: 'API Key',
+                type: 'password',
+                required: true,
+                placeholder: '请输入Cloudflare API Key',
+                description: '从Cloudflare控制台获取的Global API Key，用于API访问认证'
+            }
+        ]
+    },
+    [DnsProvider.DNS_PROVIDER_UNSPECIFIED]: {
+        name: '未指定',
+        description: '请选择一个DNS Provider',
+        fields: []
+    },
+    [DnsProvider.UNRECOGNIZED]: {
+        name: '未识别',
+        description: '未识别的DNS Provider类型',
+        fields: []
+    }
+};
+
+// 为将来扩展准备的示例配置（注释掉，因为proto中还没有定义）
+/*
+// 示例：阿里云DNS配置
+[DnsProvider.DNS_PROVIDER_ALIYUN]: {
+    name: '阿里云DNS',
+    description: '阿里云DNS服务配置',
+    fields: [
+        {
+            name: 'access_key_id',
+            label: 'Access Key ID',
+            type: 'text',
+            required: true,
+            placeholder: '请输入阿里云Access Key ID',
+            description: '阿里云账户的Access Key ID'
+        },
+        {
+            name: 'access_key_secret',
+            label: 'Access Key Secret',
+            type: 'password',
+            required: true,
+            placeholder: '请输入阿里云Access Key Secret',
+            description: '阿里云账户的Access Key Secret'
+        },
+        {
+            name: 'region',
+            label: '地域',
+            type: 'text',
+            required: true,
+            placeholder: '请输入地域，如：cn-hangzhou',
+            description: '阿里云服务地域'
+        }
+    ]
+}
+*/
+
+
+
+// DNS Provider配置表单组件
+const DnsProviderConfigForm: React.FC<{ provider: DnsProvider }> = ({ provider }) => {
+    const config = providerConfigs[provider];
+    const fields = config?.fields || [];
+
+    if (fields.length === 0) {
+        return (
+            <ProFormTextArea
+                name="config"
+                label="配置参数"
+                placeholder="请输入JSON格式的配置参数"
+                rules={[
+                    {
+                        validator: (_: any, value: string) => {
+                            if (!value) return Promise.resolve();
+                            try {
+                                JSON.parse(value);
+                                return Promise.resolve();
+                            } catch {
+                                return Promise.reject(new Error('请输入有效的JSON格式'));
+                            }
+                        }
+                    }
+                ]}
+                fieldProps={{
+                    rows: 6,
+                }}
+            />
+        );
+    }
+
+    return (
+        <>
+            {config.description && (
+                <div style={{ marginBottom: 16, color: '#666', fontSize: '14px' }}>
+                    {config.description}
+                </div>
+            )}
+            {fields.map((field: ProviderFieldConfig) => (
+                <ProFormText
+                    key={field.name}
+                    name={field.name}
+                    label={field.label}
+                    rules={[
+                        { required: field.required, message: `请输入${field.label}` },
+                        ...(field.type === 'email' ? [{ type: 'email' as const, message: '请输入有效的邮箱地址' }] : [])
+                    ]}
+                    placeholder={field.placeholder}
+                    tooltip={field.description}
+                    fieldProps={{
+                        type: field.type === 'password' ? 'password' : 'text'
+                    }}
+                />
+            ))}
+        </>
+    );
+};
 
 const DnsProviderConfig: React.FC = () => {
     const [editableKeys, setEditableKeys] = useState<React.Key[]>([]);
@@ -72,13 +221,28 @@ const DnsProviderConfig: React.FC = () => {
     // 处理创建DNS Provider配置
     const handleCreateDnsProviderConfig = async (values: any) => {
         try {
+            let configString: string;
+
+            // 根据provider类型处理配置数据
+            if (values.provider === DnsProvider.DNS_PROVIDER_CLOUDFLARE) {
+                // 对于Cloudflare，从结构化字段构建JSON
+                const config = {
+                    email: values.email,
+                    api_key: values.api_key
+                };
+                configString = JSON.stringify(config);
+            } else {
+                // 对于其他provider，直接使用config字段
+                configString = values.config || '{}';
+            }
+
             const data: CreateDnsProviderConfigData = {
                 provider: values.provider,
-                config: values.config,
+                config: configString,
             };
 
             const response = await dnsProviderConfigService.createDnsProviderConfig(data);
-            
+
             if (response.success) {
                 message.success('DNS Provider配置创建成功');
                 setCreateModalVisible(false);
@@ -102,9 +266,14 @@ const DnsProviderConfig: React.FC = () => {
     };
 
     // 使用 useMemo 缓存DNS Provider选项
-    const dnsProviderOptions = useMemo(() => [
-        { label: 'Cloudflare', value: DnsProvider.DNS_PROVIDER_CLOUDFLARE },
-    ], []);
+    const dnsProviderOptions = useMemo(() =>
+        Object.entries(providerConfigs)
+            .filter(([provider]) => provider !== DnsProvider.DNS_PROVIDER_UNSPECIFIED && provider !== DnsProvider.UNRECOGNIZED)
+            .map(([provider, config]) => ({
+                label: config.name,
+                value: provider as DnsProvider,
+            }))
+    , []);
 
     // 使用 useMemo 缓存表格列配置，避免每次渲染重新创建
     const columns: ProColumns<DnsProviderConfigItem>[] = useMemo(() => [
@@ -119,9 +288,12 @@ const DnsProviderConfig: React.FC = () => {
             dataIndex: 'provider',
             width: '20%',
             valueType: 'select',
-            valueEnum: {
-                [DnsProvider.DNS_PROVIDER_CLOUDFLARE]: { text: 'Cloudflare' },
-            },
+            valueEnum: Object.fromEntries(
+                Object.entries(providerConfigs).map(([provider, config]) => [
+                    provider,
+                    { text: config.name }
+                ])
+            ),
             editable: false,
         },
         {
@@ -215,61 +387,9 @@ const DnsProviderConfig: React.FC = () => {
                 />
                 
                 <ProFormDependency name={['provider']}>
-                    {({ provider }) => {
-                        if (provider === DnsProvider.DNS_PROVIDER_CLOUDFLARE) {
-                            return (
-                                <ProFormTextArea
-                                    name="config"
-                                    label="Cloudflare配置"
-                                    placeholder='请输入Cloudflare配置，例如：{"email": "your-email@example.com", "api_key": "your-api-key"}'
-                                    rules={[
-                                        { required: true, message: '请输入配置参数' },
-                                        {
-                                            validator: (_: any, value: string) => {
-                                                if (!value) return Promise.resolve();
-                                                try {
-                                                    const config = JSON.parse(value);
-                                                    if (!config.email || !config.api_key) {
-                                                        return Promise.reject(new Error('Cloudflare配置必须包含email和api_key字段'));
-                                                    }
-                                                    return Promise.resolve();
-                                                } catch {
-                                                    return Promise.reject(new Error('请输入有效的JSON格式'));
-                                                }
-                                            }
-                                        }
-                                    ]}
-                                    fieldProps={{
-                                        rows: 6,
-                                    }}
-                                />
-                            );
-                        } else {
-                            return (
-                                <ProFormTextArea
-                                    name="config"
-                                    label="配置参数"
-                                    placeholder="请输入JSON格式的配置参数"
-                                    rules={[
-                                        {
-                                            validator: (_: any, value: string) => {
-                                                if (!value) return Promise.resolve();
-                                                try {
-                                                    JSON.parse(value);
-                                                    return Promise.resolve();
-                                                } catch {
-                                                    return Promise.reject(new Error('请输入有效的JSON格式'));
-                                                }
-                                            }
-                                        }
-                                    ]}
-                                    fieldProps={{
-                                        rows: 6,
-                                    }}
-                                />
-                            );
-                        }
-                    }}
+                    {({ provider }) => (
+                        <DnsProviderConfigForm provider={provider} />
+                    )}
                 </ProFormDependency>
             </ModalForm>
 
