@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "NODE_ENV=development vite",
+    "dev": "NODE_ENV=development VITE_API_BASE_URL=http://localhost:8080 vite",
     "dev:watch": "npm run proto:check && vite --watch",
     "build": "NODE_ENV=production VITE_API_BASE_URL=https://api.nspass.xforward.de npm run proto:check && vite build && cp src/favicon.ico dist/favicon.ico",
     "build:dev": "NODE_ENV=development VITE_API_BASE_URL=https://api.nspass.xforward.de npm run proto:check && vite build && cp src/favicon.ico dist/favicon.ico",

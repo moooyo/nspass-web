@@ -90,7 +90,7 @@ class DnsConfigService {
 
 // DNS Provider配置服务
 class DnsProviderConfigService {
-  private readonly endpoint = '/v1/dns/provider-configs';
+  private readonly endpoint = '/v1/dns/provider';
 
   // 获取DNS Provider配置列表
   async getDnsProviderConfigs(params?: DnsProviderConfigListParams): Promise<StandardApiResponse<DnsProviderConfigItem[]>> {
