@@ -23,6 +23,7 @@ import {
 } from '@ant-design/icons';
 import { egressService, EgressItem, CreateEgressData, UpdateEgressData, EgressMode, ForwardType } from '@/services/egress';
 import { serverService } from '@/services/server';
+import { dnsConfigService, DnsConfigItem } from '@/services/dnsConfig';
 import type { ServerItem } from '@/types/generated/api/servers/server_management';
 import { useApiOnce } from '@/components/hooks/useApiOnce';
 import { useApiErrorHandler } from '@/hooks/useApiErrorHandler';
@@ -123,6 +124,7 @@ const convertFormToCreateData = (values: any): CreateEgressData => {
         egressName: values.egressName,
         serverId: values.serverId,
         egressMode: values.egressMode,
+        dnsConfigId: values.dnsConfigId, // 添加DNS配置ID
     };
 
     // 根据模式构建egressConfig JSON
@@ -180,6 +182,7 @@ const convertFormToUpdateData = (values: any, id: number): UpdateEgressData => {
         egressName: values.egressName,
         serverId: values.serverId,
         egressMode: values.egressMode,
+        dnsConfigId: values.dnsConfigId, // 添加DNS配置ID
     };
 
     // 根据模式构建egressConfig JSON
@@ -244,6 +247,10 @@ const Egress: React.FC = () => {
     // 服务器数据状态
     const [servers, setServers] = useState<ServerItem[]>([]);
     const [serversLoading, setServersLoading] = useState<boolean>(false);
+
+    // DNS配置数据状态
+    const [dnsConfigs, setDnsConfigs] = useState<DnsConfigItem[]>([]);
+    const [dnsConfigsLoading, setDnsConfigsLoading] = useState<boolean>(false);
     
     // 统一错误处理
     const { handleAsyncOperation } = useApiErrorHandler();
@@ -252,6 +259,12 @@ const Egress: React.FC = () => {
     const serverOptions = servers.map(server => ({
         label: `${server.name} (${server.ipv4 || server.ipv6 || 'N/A'})`,
         value: server.id,
+    }));
+
+    // 转换DNS配置数据为选项格式
+    const dnsConfigOptions = dnsConfigs.map(config => ({
+        label: `${config.domain} (ID: ${config.id})`,
+        value: config.id,
     }));
 
     // 监听表单字段变化，当选择需要端口的出口类型时自动生成端口
@@ -355,10 +368,33 @@ const Egress: React.FC = () => {
         }
     }, [handleAsyncOperation]);
 
+    // 加载DNS配置数据
+    const loadDnsConfigsData = useCallback(async () => {
+        setDnsConfigsLoading(true);
+        try {
+            await handleAsyncOperation(
+                dnsConfigService.getDnsConfigs({ pageSize: 1000 }),
+                '获取DNS配置列表',
+                {
+                    showSuccess: false, // 数据获取不显示成功提示
+                    onSuccess: (data) => {
+                        setDnsConfigs(data || []);
+                    },
+                    onError: () => {
+                        setDnsConfigs([]); // 失败时清空数据
+                    }
+                }
+            );
+        } finally {
+            setDnsConfigsLoading(false);
+        }
+    }, [handleAsyncOperation]);
+
     // 使用useApiOnce防止重复API调用
     useApiOnce(() => {
         loadEgressData();
         loadServersData();
+        loadDnsConfigsData();
     });
 
     // 生成并设置随机密码
@@ -406,6 +442,7 @@ const Egress: React.FC = () => {
             egressName: record.egressName,
             serverId: record.serverId,
             egressMode: record.egressMode,
+            dnsConfigId: record.dnsConfigId, // 添加DNS配置ID
             // 通用字段
             password: record.password,
             port: record.port,
@@ -555,6 +592,26 @@ const Egress: React.FC = () => {
             },
         },
         {
+            title: 'DNS配置',
+            dataIndex: 'dnsConfigId',
+            width: '12%',
+            hideInSearch: true,
+            render: (_, record) => {
+                if (!record.dnsConfigId) {
+                    return <span style={{ color: '#999' }}>未配置</span>;
+                }
+                const dnsConfig = dnsConfigs.find(config => config.id === record.dnsConfigId);
+                return dnsConfig ? (
+                    <div style={{ fontSize: '12px' }}>
+                        <div style={{ color: '#1890ff' }}>{dnsConfig.domain}</div>
+                        <div style={{ color: '#666' }}>ID: {record.dnsConfigId}</div>
+                    </div>
+                ) : (
+                    <span style={{ color: '#ff4d4f' }}>配置不存在</span>
+                );
+            },
+        },
+        {
             title: '通用配置',
             width: '15%',
             hideInSearch: true,
@@ -635,30 +692,40 @@ const Egress: React.FC = () => {
             <QueryFilter
                 defaultCollapsed
                 split
-                defaultColsNumber={3}
+                defaultColsNumber={4}
                 onFinish={async (values) => {
                     console.log('✓ 出口配置查询完成:', values);
                     // 不显示查询成功提示，只在console记录
                 }}
             >
-                <ProFormText name="egressName" label="出口名称" colProps={{ span: 8 }} />
-                <ProFormSelect 
-                    name="serverId" 
-                    label="服务器ID" 
-                    colProps={{ span: 8 }}
+                <ProFormText name="egressName" label="出口名称" colProps={{ span: 6 }} />
+                <ProFormSelect
+                    name="serverId"
+                    label="服务器ID"
+                    colProps={{ span: 6 }}
                     options={serverOptions}
                     fieldProps={{
                         loading: serversLoading,
                     }}
                 />
-                <ProFormSelect 
-                    name="egressMode" 
-                    label="出口模式" 
-                    colProps={{ span: 8 }}
+                <ProFormSelect
+                    name="egressMode"
+                    label="出口模式"
+                    colProps={{ span: 6 }}
                     valueEnum={{
                         [EgressMode.EGRESS_MODE_DIRECT]: { text: '直出' },
                         [EgressMode.EGRESS_MODE_IPTABLES]: { text: 'iptables' },
                         [EgressMode.EGRESS_MODE_SS2022]: { text: 'shadowsocks-2022' },
+                    }}
+                />
+                <ProFormSelect
+                    name="dnsConfigId"
+                    label="DNS配置"
+                    colProps={{ span: 6 }}
+                    options={dnsConfigOptions}
+                    fieldProps={{
+                        loading: dnsConfigsLoading,
+                        placeholder: '请选择DNS配置',
                     }}
                 />
             </QueryFilter>
@@ -769,7 +836,18 @@ const Egress: React.FC = () => {
                         onChange: (value) => handleEgressModeChange(value as EgressMode, form)
                     }}
                 />
-                
+
+                <ProFormSelect
+                    name="dnsConfigId"
+                    label="DNS配置"
+                    options={dnsConfigOptions}
+                    fieldProps={{
+                        loading: dnsConfigsLoading,
+                        placeholder: '请选择DNS配置（可选）',
+                    }}
+                    tooltip="选择DNS配置用于域名解析，可选项"
+                />
+
                 <ProFormDependency name={['egressMode']}>
                     {({ egressMode }) => {
                         // 直出模式
@@ -1037,7 +1115,18 @@ const Egress: React.FC = () => {
                         onChange: (value) => handleEgressModeChange(value as EgressMode, editForm)
                     }}
                 />
-                
+
+                <ProFormSelect
+                    name="dnsConfigId"
+                    label="DNS配置"
+                    options={dnsConfigOptions}
+                    fieldProps={{
+                        loading: dnsConfigsLoading,
+                        placeholder: '请选择DNS配置（可选）',
+                    }}
+                    tooltip="选择DNS配置用于域名解析，可选项"
+                />
+
                 <ProFormDependency name={['egressMode']}>
                     {({ egressMode }) => {
                         // 直出模式
