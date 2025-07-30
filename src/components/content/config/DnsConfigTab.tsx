@@ -8,16 +8,13 @@ import {
     ProFormText,
     QueryFilter,
     ModalForm,
-    ProFormTextArea,
-    ProFormDependency,
 } from '@ant-design/pro-components';
-import { PlusOutlined, ReloadOutlined, EyeOutlined, CloudOutlined } from '@ant-design/icons';
+import { PlusOutlined, ReloadOutlined, EyeOutlined } from '@ant-design/icons';
 import {
     dnsConfigService,
     DnsConfigItem,
     CreateDnsConfigData,
     DnsConfigListParams,
-    DnsProvider,
     dnsProviderConfigService,
     DnsProviderConfigItem
 } from '../../../services/dnsConfig';
@@ -116,6 +113,8 @@ const DnsConfigTab: React.FC = () => {
 
     // 打开编辑Modal
     const openEditModal = (record: DnsConfigItem) => {
+        // 打开Modal前先刷新Provider配置列表
+        loadProviderConfigs();
         setEditingRecord(record);
         setEditModalVisible(true);
     };
@@ -274,7 +273,18 @@ const DnsConfigTab: React.FC = () => {
 
                 <ProFormSelect
                     name="providerId"
-                    label="DNS Provider"
+                    label={
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span>DNS Provider</span>
+                            <Button
+                                size="small"
+                                icon={<ReloadOutlined />}
+                                onClick={loadProviderConfigs}
+                                title="刷新Provider列表"
+                                style={{ border: 'none', padding: '0 4px' }}
+                            />
+                        </div>
+                    }
                     options={providerConfigOptions}
                     rules={[{ required: true, message: '请选择DNS Provider' }]}
                     placeholder="请选择DNS Provider"
@@ -309,7 +319,18 @@ const DnsConfigTab: React.FC = () => {
             >
                 <ProFormSelect
                     name="providerId"
-                    label="DNS Provider"
+                    label={
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span>DNS Provider</span>
+                            <Button
+                                size="small"
+                                icon={<ReloadOutlined />}
+                                onClick={loadProviderConfigs}
+                                title="刷新Provider列表"
+                                style={{ border: 'none', padding: '0 4px' }}
+                            />
+                        </div>
+                    }
                     options={providerConfigOptions}
                     rules={[{ required: true, message: '请选择DNS Provider' }]}
                     placeholder="请选择DNS Provider"
@@ -348,6 +369,8 @@ const DnsConfigTab: React.FC = () => {
                         key="button"
                         icon={<PlusOutlined />}
                         onClick={() => {
+                            // 打开Modal前先刷新Provider配置列表
+                            loadProviderConfigs();
                             setCreateModalVisible(true);
                         }}
                         type="primary"

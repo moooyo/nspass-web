@@ -834,17 +834,26 @@ const ForwardRules: React.FC = () => {
                                         .filter((server: ServerItem) => server.type === 'EXIT')
                                         .map((server: ServerItem) => (
                                             <Col span={12} key={server.id}>
-                                                <Card 
-                                                    hoverable 
+                                                <Card
+                                                    hoverable
                                                     size="small"
                                                     onClick={() => handleServerSelect(server)}
                                                     style={{ cursor: 'pointer' }}
                                                 >
                                                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                        <Typography.Text strong>{server.name}</Typography.Text>
-                                                        <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+                                                        {/* 显示出口名称（主要标题） */}
+                                                        <Typography.Text strong style={{ fontSize: 13, color: '#1890ff' }}>
+                                                            {(server as any)._egressName || server.name.split(' (')[0]}
+                                                        </Typography.Text>
+                                                        {/* 显示服务器名称 */}
+                                                        <Typography.Text style={{ fontSize: 12, marginTop: 2 }}>
+                                                            服务器: {(server as any)._serverName || server.name.split(' (')[1]?.replace(')', '') || '未知'}
+                                                        </Typography.Text>
+                                                        {/* 显示IP地址 */}
+                                                        <Typography.Text type="secondary" style={{ fontSize: 11, marginTop: 1 }}>
                                                             IP: {server.ip}
                                                         </Typography.Text>
+                                                        {/* 显示国家/地区 */}
                                                         <Typography.Text type="secondary" style={{ fontSize: 11 }}>
                                                             {server.location.country}
                                                         </Typography.Text>
@@ -918,8 +927,12 @@ const ForwardRules: React.FC = () => {
                 );
             });
 
-            // 使用API服务器信息（如果存在），否则使用出口配置信息
-            const serverName = matchedApiServer?.name || `出口规则-${egressConfig.serverId}`;
+            // 构建显示名称：优先显示出口名称，然后是服务器名称
+            const egressName = egressConfig.egressName || `出口-${egressConfig.id || egressConfig.serverId}`;
+            const serverName = matchedApiServer?.name || `服务器-${egressConfig.serverId}`;
+
+            // 组合显示名称：出口名称 + 服务器名称
+            const displayName = `${egressName} (${serverName})`;
 
             // 从egressConfig解析目标地址
             const targetAddress = egressConfig.egressConfig
@@ -928,13 +941,13 @@ const ForwardRules: React.FC = () => {
 
             const serverIp = matchedApiServer?.ipv4 || matchedApiServer?.ipv6 || targetAddress;
             const serverCountry = matchedApiServer?.country || '未知';
-            
+
             const coords = getCountryCoordinates(serverCountry);
-            
+
             // 创建出口规则项
             const exitServer: ServerItem = {
                 id: (egressConfig.id ? egressConfig.id.toString() : `egress-${egressConfig.serverId}`),
-                name: serverName,
+                name: displayName,
                 type: 'EXIT',
                 ip: serverIp,
                 location: {
@@ -946,7 +959,10 @@ const ForwardRules: React.FC = () => {
                 },
                 // 附加出口配置信息用于调试
                 _egressConfig: egressConfig,
-                _matchedApiServer: matchedApiServer
+                _matchedApiServer: matchedApiServer,
+                // 添加额外字段用于更详细的显示
+                _egressName: egressName,
+                _serverName: serverName
             };
             
             exitServers.push(exitServer);
