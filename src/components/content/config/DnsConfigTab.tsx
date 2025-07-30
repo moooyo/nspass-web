@@ -23,10 +23,11 @@ import {
 } from '../../../services/dnsConfig';
 
 const DnsConfigTab: React.FC = () => {
-    const [editableKeys, setEditableKeys] = useState<React.Key[]>([]);
     const [dataSource, setDataSource] = useState<DnsConfigItem[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [createModalVisible, setCreateModalVisible] = useState<boolean>(false);
+    const [editModalVisible, setEditModalVisible] = useState<boolean>(false);
+    const [editingRecord, setEditingRecord] = useState<DnsConfigItem | null>(null);
     const [viewJsonModalVisible, setViewJsonModalVisible] = useState<boolean>(false);
     const [currentJsonData, setCurrentJsonData] = useState<string>('');
     const [providerConfigs, setProviderConfigs] = useState<DnsProviderConfigItem[]>([]);
@@ -96,7 +97,7 @@ const DnsConfigTab: React.FC = () => {
             };
 
             const response = await dnsConfigService.createDnsConfig(data);
-            
+
             if (response.success) {
                 message.success('DNS配置创建成功');
                 setCreateModalVisible(false);
@@ -109,6 +110,42 @@ const DnsConfigTab: React.FC = () => {
         } catch (error) {
             console.error('创建DNS配置失败:', error);
             message.error('创建DNS配置失败');
+            return false;
+        }
+    };
+
+    // 打开编辑Modal
+    const openEditModal = (record: DnsConfigItem) => {
+        setEditingRecord(record);
+        setEditModalVisible(true);
+    };
+
+    // 处理编辑DNS配置
+    const handleEditDnsConfig = async (values: any) => {
+        try {
+            if (!editingRecord?.id) {
+                message.error('无法更新：缺少配置ID');
+                return false;
+            }
+
+            const response = await dnsConfigService.updateDnsConfig(editingRecord.id, {
+                providerId: values.providerId,
+                domain: values.domain,
+            });
+
+            if (response.success) {
+                message.success('DNS配置更新成功');
+                setEditModalVisible(false);
+                setEditingRecord(null);
+                loadDnsConfigs();
+                return true;
+            } else {
+                message.error(response.message || 'DNS配置更新失败');
+                return false;
+            }
+        } catch (error) {
+            console.error('更新DNS配置失败:', error);
+            message.error('更新DNS配置失败');
             return false;
         }
     };
@@ -173,12 +210,10 @@ const DnsConfigTab: React.FC = () => {
             title: '操作',
             valueType: 'option',
             width: '22%',
-            render: (text, record, _, action) => [
+            render: (_, record) => [
                 <a
                     key="editable"
-                    onClick={() => {
-                        action?.startEditable?.(record.id!);
-                    }}
+                    onClick={() => openEditModal(record)}
                 >
                     编辑
                 </a>,
@@ -236,7 +271,7 @@ const DnsConfigTab: React.FC = () => {
                     rules={[{ required: true, message: '请输入配置名称' }]}
                     placeholder="请输入配置名称"
                 />
-                
+
                 <ProFormSelect
                     name="providerId"
                     label="DNS Provider"
@@ -244,7 +279,42 @@ const DnsConfigTab: React.FC = () => {
                     rules={[{ required: true, message: '请选择DNS Provider' }]}
                     placeholder="请选择DNS Provider"
                 />
-                
+
+                <ProFormText
+                    name="domain"
+                    label="域名"
+                    rules={[{ required: true, message: '请输入域名' }]}
+                    placeholder="请输入域名"
+                />
+            </ModalForm>
+
+            {/* 编辑DNS配置的Modal */}
+            <ModalForm
+                title="编辑DNS配置"
+                width="600px"
+                open={editModalVisible}
+                onOpenChange={setEditModalVisible}
+                onFinish={handleEditDnsConfig}
+                modalProps={{
+                    destroyOnClose: true,
+                    onCancel: () => {
+                        setEditModalVisible(false);
+                        setEditingRecord(null);
+                    },
+                }}
+                initialValues={{
+                    providerId: editingRecord?.providerId,
+                    domain: editingRecord?.domain,
+                }}
+            >
+                <ProFormSelect
+                    name="providerId"
+                    label="DNS Provider"
+                    options={providerConfigOptions}
+                    rules={[{ required: true, message: '请选择DNS Provider' }]}
+                    placeholder="请选择DNS Provider"
+                />
+
                 <ProFormText
                     name="domain"
                     label="域名"
@@ -307,54 +377,11 @@ const DnsConfigTab: React.FC = () => {
                     setDataSource([...value]);
                 }}
                 editable={{
-                    type: 'single',
-                    editableKeys,
-                    onSave: async (rowKey, data, row) => {
-                        try {
-                            if (!data.id) {
-                                message.error('无法更新：缺少配置ID');
-                                return false;
-                            }
-                            const response = await dnsConfigService.updateDnsConfig(data.id, {
-                                providerId: data.providerId,
-                                domain: data.domain,
-                            });
-                            if (response.success) {
-                                message.success('DNS配置更新成功');
-                                loadDnsConfigs();
-                            } else {
-                                message.error(response.message || 'DNS配置更新失败');
-                            }
-                        } catch (error) {
-                            console.error('更新失败:', error);
-                        }
-                    },
-                    onDelete: async (_key, record) => {
-                        try {
-                            if (!record.id) {
-                                message.error('无法删除：缺少配置ID');
-                                return false;
-                            }
-                            const response = await dnsConfigService.deleteDnsConfig(record.id);
-                            if (response.success) {
-                                message.success('DNS配置删除成功');
-                                loadDnsConfigs();
-                            } else {
-                                message.error(response.message || 'DNS配置删除失败');
-                            }
-                        } catch (error) {
-                            console.error('删除失败:', error);
-                        }
-                    },
-                    onValuesChange: (_record, recordList) => {
-                        setDataSource(recordList);
-                    },
-                    deleteText: '删除',
-                    deletePopconfirmMessage: '确定删除这条记录吗？',
-                    onlyOneLineEditorAlertMessage: '只能同时编辑一行记录',
-                    onlyAddOneLineAlertMessage: '只能同时新增一行记录',
-                    actionRender: (_row, _config, dom) => [dom.save, dom.cancel, dom.delete],
-                    onChange: setEditableKeys,
+                    type: 'multiple',
+                    editableKeys: [],
+                    onSave: async () => false,
+                    onChange: () => {},
+                    actionRender: () => [],
                 }}
                 pagination={{
                     ...pagination,

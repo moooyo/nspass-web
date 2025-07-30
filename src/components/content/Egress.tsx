@@ -462,6 +462,11 @@ const Egress: React.FC = () => {
             formValues.supportUdp = config.udp_support || record.supportUdp;
             formValues.sni = config.sni || '';
             formValues.skipCertVerify = config.skip_cert_verify || false;
+
+            // 设置远端地址和远端端口
+            const selectedServer = servers.find(server => server.id === record.serverId);
+            formValues.remoteAddr = selectedServer?.ipv4 || selectedServer?.ipv6 || '';
+            formValues.remotePort = record.port || '';
         } else if (record.egressMode === EgressMode.EGRESS_MODE_SNELL) {
             formValues.supportUdp = config.udp_support || record.supportUdp;
             formValues.version = config.version || 'v4';

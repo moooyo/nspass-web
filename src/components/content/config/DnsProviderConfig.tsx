@@ -44,20 +44,12 @@ const providerConfigs: Record<DnsProvider, ProviderConfig> = {
         description: 'Cloudflare DNS服务配置 - 全球领先的DNS服务提供商',
         fields: [
             {
-                name: 'email',
-                label: 'Email',
-                type: 'email',
-                required: true,
-                placeholder: '请输入Cloudflare账户邮箱',
-                description: '您的Cloudflare账户邮箱地址'
-            },
-            {
-                name: 'api_key',
-                label: 'API Key',
+                name: 'api_token',
+                label: 'API Token',
                 type: 'password',
                 required: true,
-                placeholder: '请输入Cloudflare API Key',
-                description: '从Cloudflare控制台获取的Global API Key，用于API访问认证'
+                placeholder: '请输入Cloudflare API Token',
+                description: '从Cloudflare控制台获取的API Token，用于API访问认证'
             }
         ]
     },
@@ -169,10 +161,11 @@ const DnsProviderConfigForm: React.FC<{ provider: DnsProvider }> = ({ provider }
 };
 
 const DnsProviderConfig: React.FC = () => {
-    const [editableKeys, setEditableKeys] = useState<React.Key[]>([]);
     const [dataSource, setDataSource] = useState<DnsProviderConfigItem[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [createModalVisible, setCreateModalVisible] = useState<boolean>(false);
+    const [editModalVisible, setEditModalVisible] = useState<boolean>(false);
+    const [editingRecord, setEditingRecord] = useState<DnsProviderConfigItem | null>(null);
     const [viewJsonModalVisible, setViewJsonModalVisible] = useState<boolean>(false);
     const [currentJsonData, setCurrentJsonData] = useState<string>('');
     const [pagination, setPagination] = useState({
@@ -227,8 +220,7 @@ const DnsProviderConfig: React.FC = () => {
             if (values.provider === DnsProvider.DNS_PROVIDER_CLOUDFLARE) {
                 // 对于Cloudflare，从结构化字段构建JSON
                 const config = {
-                    email: values.email,
-                    api_key: values.api_key
+                    api_token: values.api_token
                 };
                 configString = JSON.stringify(config);
             } else {
@@ -255,6 +247,77 @@ const DnsProviderConfig: React.FC = () => {
         } catch (error) {
             console.error('创建DNS Provider配置失败:', error);
             message.error('创建DNS Provider配置失败');
+            return false;
+        }
+    };
+
+    // 解析配置获取初始值
+    const getEditInitialValues = (record: DnsProviderConfigItem) => {
+        const initialValues: any = {
+            provider: record.provider,
+        };
+
+        try {
+            const config = JSON.parse(record.config || '{}');
+            if (record.provider === DnsProvider.DNS_PROVIDER_CLOUDFLARE) {
+                initialValues.api_token = config.api_token || '';
+            } else {
+                initialValues.config = record.config || '{}';
+            }
+        } catch (error) {
+            console.warn('Failed to parse config:', error);
+            initialValues.config = record.config || '{}';
+        }
+
+        return initialValues;
+    };
+
+    // 打开编辑Modal
+    const openEditModal = (record: DnsProviderConfigItem) => {
+        setEditingRecord(record);
+        setEditModalVisible(true);
+    };
+
+    // 处理编辑DNS Provider配置
+    const handleEditDnsProviderConfig = async (values: any) => {
+        try {
+            if (!editingRecord?.id) {
+                message.error('无法更新：缺少配置ID');
+                return false;
+            }
+
+            let configString: string;
+
+            // 根据provider类型处理配置数据
+            if (values.provider === DnsProvider.DNS_PROVIDER_CLOUDFLARE) {
+                // 对于Cloudflare，从结构化字段构建JSON
+                const config = {
+                    api_token: values.api_token
+                };
+                configString = JSON.stringify(config);
+            } else {
+                // 对于其他provider，直接使用config字段
+                configString = values.config || '{}';
+            }
+
+            const response = await dnsProviderConfigService.updateDnsProviderConfig(editingRecord.id, {
+                provider: values.provider,
+                config: configString,
+            });
+
+            if (response.success) {
+                message.success('DNS Provider配置更新成功');
+                setEditModalVisible(false);
+                setEditingRecord(null);
+                loadDnsProviderConfigs();
+                return true;
+            } else {
+                message.error(response.message || 'DNS Provider配置更新失败');
+                return false;
+            }
+        } catch (error) {
+            console.error('更新DNS Provider配置失败:', error);
+            message.error('更新DNS Provider配置失败');
             return false;
         }
     };
@@ -329,12 +392,10 @@ const DnsProviderConfig: React.FC = () => {
             title: '操作',
             valueType: 'option',
             width: '12%',
-            render: (_, record, __, action) => [
+            render: (_, record) => [
                 <a
                     key="editable"
-                    onClick={() => {
-                        action?.startEditable?.(record.id!);
-                    }}
+                    onClick={() => openEditModal(record)}
                 >
                     编辑
                 </a>,
@@ -385,7 +446,38 @@ const DnsProviderConfig: React.FC = () => {
                     rules={[{ required: true, message: '请选择DNS Provider' }]}
                     placeholder="请选择DNS Provider"
                 />
-                
+
+                <ProFormDependency name={['provider']}>
+                    {({ provider }) => (
+                        <DnsProviderConfigForm provider={provider} />
+                    )}
+                </ProFormDependency>
+            </ModalForm>
+
+            {/* 编辑DNS Provider配置的Modal */}
+            <ModalForm
+                title="编辑DNS Provider配置"
+                width="600px"
+                open={editModalVisible}
+                onOpenChange={setEditModalVisible}
+                onFinish={handleEditDnsProviderConfig}
+                modalProps={{
+                    destroyOnClose: true,
+                    onCancel: () => {
+                        setEditModalVisible(false);
+                        setEditingRecord(null);
+                    },
+                }}
+                initialValues={editingRecord ? getEditInitialValues(editingRecord) : {}}
+            >
+                <ProFormSelect
+                    name="provider"
+                    label="DNS Provider"
+                    options={dnsProviderOptions}
+                    rules={[{ required: true, message: '请选择DNS Provider' }]}
+                    placeholder="请选择DNS Provider"
+                />
+
                 <ProFormDependency name={['provider']}>
                     {({ provider }) => (
                         <DnsProviderConfigForm provider={provider} />
@@ -453,54 +545,11 @@ const DnsProviderConfig: React.FC = () => {
                     setDataSource([...value]);
                 }}
                 editable={{
-                    type: 'single',
-                    editableKeys,
-                    onSave: async (_, data) => {
-                        try {
-                            if (!data.id) {
-                                message.error('无法更新：缺少配置ID');
-                                return false;
-                            }
-                            const response = await dnsProviderConfigService.updateDnsProviderConfig(data.id, {
-                                provider: data.provider,
-                                config: data.config,
-                            });
-                            if (response.success) {
-                                message.success('DNS Provider配置更新成功');
-                                loadDnsProviderConfigs();
-                            } else {
-                                message.error(response.message || 'DNS Provider配置更新失败');
-                            }
-                        } catch (error) {
-                            console.error('更新失败:', error);
-                        }
-                    },
-                    onDelete: async (_, record) => {
-                        try {
-                            if (!record.id) {
-                                message.error('无法删除：缺少配置ID');
-                                return false;
-                            }
-                            const response = await dnsProviderConfigService.deleteDnsProviderConfig(record.id);
-                            if (response.success) {
-                                message.success('DNS Provider配置删除成功');
-                                loadDnsProviderConfigs();
-                            } else {
-                                message.error(response.message || 'DNS Provider配置删除失败');
-                            }
-                        } catch (error) {
-                            console.error('删除失败:', error);
-                        }
-                    },
-                    onValuesChange: (_, recordList) => {
-                        setDataSource(recordList);
-                    },
-                    deleteText: '删除',
-                    deletePopconfirmMessage: '确定删除这条记录吗？',
-                    onlyOneLineEditorAlertMessage: '只能同时编辑一行记录',
-                    onlyAddOneLineAlertMessage: '只能同时新增一行记录',
-                    actionRender: (_, __, dom) => [dom.save, dom.cancel, dom.delete],
-                    onChange: setEditableKeys,
+                    type: 'multiple',
+                    editableKeys: [],
+                    onSave: async () => false,
+                    onChange: () => {},
+                    actionRender: () => [],
                 }}
                 pagination={{
                     ...pagination,
