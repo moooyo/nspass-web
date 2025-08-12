@@ -274,4 +274,275 @@ export const handlers = [
       ]
     })
   }),
+
+  // Subscription Management
+  http.get('*/v1/subscriptions', ({ request }) => {
+    incrementRequests()
+    const url = new URL(request.url)
+    const page = parseInt(url.searchParams.get('page') || '1')
+    const limit = parseInt(url.searchParams.get('limit') || '10')
+    
+    const mockSubscriptions = [
+      {
+        id: '1',
+        name: 'iOS订阅',
+        type: 'surge',
+        status: 'active',
+        requests: 1234,
+        lastAccess: '2024-01-15T10:30:00Z',
+        userAgent: 'Surge iOS/4.11.1',
+        expiresAt: '2024-12-31T23:59:59Z',
+        description: 'iOS设备专用订阅配置'
+      },
+      {
+        id: '2',
+        name: 'Android订阅',
+        type: 'clash',
+        status: 'active',
+        requests: 856,
+        lastAccess: '2024-01-15T09:15:00Z',
+        userAgent: 'Clash for Android/2.5.12',
+        description: 'Android设备订阅配置'
+      }
+    ]
+    
+    return HttpResponse.json({
+      success: true,
+      data: {
+        subscriptions: mockSubscriptions,
+        total: mockSubscriptions.length,
+        page,
+        limit
+      }
+    })
+  }),
+
+  http.post('*/v1/subscriptions', async ({ request }) => {
+    incrementRequests()
+    const body = await request.json() as any
+    
+    return HttpResponse.json({
+      success: true,
+      message: '订阅创建成功',
+      data: {
+        id: Date.now().toString(),
+        ...body,
+        requests: 0,
+        createdAt: new Date().toISOString()
+      }
+    })
+  }),
+
+  http.delete('*/v1/subscriptions/:id', ({ params }) => {
+    incrementRequests()
+    return HttpResponse.json({
+      success: true,
+      message: '订阅删除成功'
+    })
+  }),
+
+  // Egress Management
+  http.get('*/v1/egress', () => {
+    incrementRequests()
+    const mockEgress = [
+      {
+        id: '1',
+        name: 'US-West-SS',
+        type: 'shadowsocks',
+        server: 'us-west.example.com',
+        port: 8388,
+        status: 'running',
+        protocol: 'shadowsocks',
+        encryption: 'aes-256-gcm',
+        traffic: 15.6 * 1024 * 1024 * 1024,
+        connections: 23,
+        lastActive: '2024-01-15T10:30:00Z'
+      },
+      {
+        id: '2',
+        name: 'EU-Central-Trojan',
+        type: 'trojan',
+        server: 'eu-central.example.com',
+        port: 443,
+        status: 'running',
+        protocol: 'trojan',
+        traffic: 8.2 * 1024 * 1024 * 1024,
+        connections: 15,
+        lastActive: '2024-01-15T09:45:00Z'
+      }
+    ]
+    
+    return HttpResponse.json({
+      success: true,
+      data: mockEgress
+    })
+  }),
+
+  http.post('*/v1/egress', async ({ request }) => {
+    incrementRequests()
+    const body = await request.json() as any
+    
+    return HttpResponse.json({
+      success: true,
+      message: '出口配置创建成功',
+      data: {
+        id: Date.now().toString(),
+        ...body,
+        status: 'stopped',
+        traffic: 0,
+        connections: 0,
+        createdAt: new Date().toISOString()
+      }
+    })
+  }),
+
+  // Routes Management
+  http.get('*/v1/routes', () => {
+    incrementRequests()
+    const mockRoutes = [
+      {
+        id: '1',
+        name: '美国线路A',
+        path: ['SH-01', 'HK-02', 'US-West'],
+        egress: 'US-West-SS',
+        status: 'active',
+        priority: 1,
+        traffic: 12.5 * 1024 * 1024 * 1024,
+        latency: 156,
+        connections: 45,
+        createdAt: '2024-01-10T08:00:00Z',
+        lastActive: '2024-01-15T10:30:00Z'
+      },
+      {
+        id: '2',
+        name: '欧洲直连',
+        path: ['BJ-01', 'EU-Central'],
+        egress: 'EU-Central-Trojan',
+        status: 'active',
+        priority: 2,
+        traffic: 8.3 * 1024 * 1024 * 1024,
+        latency: 203,
+        connections: 28,
+        createdAt: '2024-01-08T14:30:00Z',
+        lastActive: '2024-01-15T09:45:00Z'
+      }
+    ]
+    
+    return HttpResponse.json({
+      success: true,
+      data: mockRoutes
+    })
+  }),
+
+  // Forward Rules Management
+  http.get('*/v1/forward-rules', () => {
+    incrementRequests()
+    const mockForwardRules = [
+      {
+        id: '1',
+        name: 'HTTP代理转发',
+        sourceServer: 'SH-01',
+        sourcePort: 8080,
+        targetServer: 'HK-02',
+        targetPort: 3128,
+        protocol: 'tcp',
+        status: 'active',
+        priority: 1,
+        connections: 67,
+        traffic: 8.5 * 1024 * 1024 * 1024,
+        latency: 45,
+        createdAt: '2024-01-10T08:00:00Z',
+        lastActive: '2024-01-15T10:30:00Z'
+      },
+      {
+        id: '2',
+        name: 'HTTPS流量转发',
+        sourceServer: 'BJ-01',
+        sourcePort: 443,
+        targetServer: 'US-West',
+        targetPort: 443,
+        protocol: 'tcp',
+        status: 'active',
+        priority: 2,
+        connections: 123,
+        traffic: 15.2 * 1024 * 1024 * 1024,
+        latency: 156,
+        createdAt: '2024-01-08T14:30:00Z',
+        lastActive: '2024-01-15T10:25:00Z'
+      }
+    ]
+    
+    return HttpResponse.json({
+      success: true,
+      data: mockForwardRules
+    })
+  }),
+
+  // IPTables Management  
+  http.get('*/v1/iptables', () => {
+    incrementRequests()
+    const mockIptablesRules = [
+      {
+        id: '1',
+        name: 'SSH访问限制',
+        chain: 'INPUT',
+        table: 'filter',
+        protocol: 'tcp',
+        source: '192.168.1.0/24',
+        destination: 'any',
+        port: '22',
+        action: 'ACCEPT',
+        status: 'active',
+        priority: 1,
+        matches: 1547,
+        bytes: 234567,
+        createdAt: '2024-01-10T08:00:00Z',
+        lastMatch: '2024-01-15T10:30:00Z'
+      },
+      {
+        id: '2',
+        name: 'HTTP流量转发',
+        chain: 'PREROUTING',
+        table: 'nat',
+        protocol: 'tcp',
+        source: 'any',
+        destination: '10.0.0.1',
+        port: '80',
+        action: 'REDIRECT',
+        status: 'active',
+        priority: 2,
+        matches: 45623,
+        bytes: 123456789,
+        createdAt: '2024-01-08T14:30:00Z',
+        lastMatch: '2024-01-15T10:25:00Z'
+      }
+    ]
+    
+    return HttpResponse.json({
+      success: true,
+      data: mockIptablesRules
+    })
+  }),
+
+  // DNS Configuration
+  http.get('*/v1/dns/configs', () => {
+    incrementRequests()
+    const mockDnsConfigs = [
+      {
+        id: '1',
+        name: 'Cloudflare DNS',
+        provider: 'cloudflare',
+        apiKey: '****key****',
+        email: 'admin@example.com',
+        status: 'active',
+        domains: ['example.com', 'sub.example.com'],
+        lastUpdate: '2024-01-15T10:30:00Z'
+      }
+    ]
+    
+    return HttpResponse.json({
+      success: true,
+      data: mockDnsConfigs
+    })
+  }),
 ]

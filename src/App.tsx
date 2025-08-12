@@ -8,7 +8,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import EnvInitializer from './components/EnvInitializer';
 import ModernMainLayout from './components/ModernMainLayout';
 import ModernLoginPage from './login/ModernLoginPage';
-import LoginPageBasic from './login/LoginPageBasic';
+// import LoginPageBasic from './login/LoginPageBasic';
 import CallbackPageNew from './login/CallbackPageNew';
 import TestPage from './TestPage';
 import ModernTestPage from './pages/ModernTestPage';

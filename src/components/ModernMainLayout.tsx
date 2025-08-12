@@ -3,13 +3,12 @@ import { useNavigate, useLocation, Routes, Route } from 'react-router-dom'
 import { 
   Home, Users, Server, Shield, Router, Database, Settings, 
   BarChart3, UserCheck, Globe, Menu, X, Bell, Search,
-  LogOut, User, Moon, Sun, Monitor, ChevronDown,
-  Activity, TrendingUp, Zap, AlertTriangle
+  LogOut, User, Moon, Sun, Monitor,
+  Activity, Zap
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import {
@@ -31,6 +30,11 @@ import { logger } from '@/utils/logger'
 // Import pages
 import ModernDashboard from '../pages/ModernDashboard'
 import ModernUsers from '../pages/ModernUsers'
+import ModernSubscription from '../pages/ModernSubscription'
+import ModernEgress from '../pages/ModernEgress'
+import ModernRoutes from '../pages/ModernRoutes'
+import ModernIptables from '../pages/ModernIptables'
+import ModernForwardRules from '../pages/ModernForwardRules'
 import SettingsPage from '../pages/SettingsPage'
 
 // Route configuration
@@ -49,7 +53,7 @@ const routes = [
     path: '/user',
     label: '用户信息',
     icon: User,
-    component: ModernDashboard,
+    component: ModernDashboard, // TODO: 创建用户信息页面
     group: 'basic'
   },
   {
@@ -57,7 +61,7 @@ const routes = [
     path: '/forward_rules',
     label: '转发规则',
     icon: Router,
-    component: ModernDashboard,
+    component: ModernForwardRules,
     aliases: ['/rules'],
     group: 'basic'
   },
@@ -66,7 +70,7 @@ const routes = [
     path: '/egress',
     label: '出口配置',
     icon: Globe,
-    component: ModernDashboard,
+    component: ModernEgress,
     group: 'basic'
   },
   {
@@ -74,7 +78,7 @@ const routes = [
     path: '/iptables',
     label: 'IPTables 管理',
     icon: Shield,
-    component: ModernDashboard,
+    component: ModernIptables,
     group: 'basic'
   },
   {
@@ -82,7 +86,16 @@ const routes = [
     path: '/routes',
     label: '查看线路',
     icon: Router,
-    component: ModernDashboard,
+    component: ModernRoutes,
+    group: 'basic'
+  },
+  {
+    key: 'subscription',
+    path: '/subscription',
+    label: '订阅管理',
+    icon: Globe,
+    component: ModernSubscription,
+    aliases: ['/subscriptions'],
     group: 'basic'
   },
   
@@ -108,7 +121,7 @@ const routes = [
     path: '/user_groups',
     label: '用户组管理',
     icon: UserCheck,
-    component: ModernDashboard,
+    component: ModernDashboard, // TODO: 创建用户组管理页面
     aliases: ['/groups'],
     group: 'admin'
   },
@@ -117,7 +130,7 @@ const routes = [
     path: '/servers',
     label: '服务器管理',
     icon: Server,
-    component: ModernDashboard,
+    component: ModernDashboard, // TODO: 创建服务器管理页面
     group: 'admin'
   },
   {
@@ -125,7 +138,7 @@ const routes = [
     path: '/dns_config',
     label: 'DNS配置',
     icon: Database,
-    component: ModernDashboard,
+    component: ModernDashboard, // TODO: 创建DNS配置页面
     aliases: ['/dns'],
     group: 'admin'
   },
@@ -134,7 +147,7 @@ const routes = [
     path: '/website',
     label: '网站配置',
     icon: Settings,
-    component: ModernDashboard,
+    component: ModernDashboard, // TODO: 创建网站配置页面
     group: 'admin'
   },
   {
@@ -373,7 +386,7 @@ export default function ModernMainLayout() {
       {/* Main content */}
       <div className={cn(
         "transition-all duration-300 ease-in-out",
-        sidebarOpen ? "lg:ml-64" : "ml-0"
+        sidebarOpen ? "lg:ml-64" : "lg:ml-0"
       )}>
         {/* Top Header */}
         <header className="sticky top-0 z-30 h-16 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
