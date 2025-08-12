@@ -1,8 +1,34 @@
 import React, { useState, useEffect, Suspense, useMemo, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { HomeOutlined, MenuFoldOutlined, MenuUnfoldOutlined, UnorderedListOutlined, UserOutlined, ApiOutlined, LogoutOutlined, DownOutlined, DashboardOutlined, SettingOutlined, TeamOutlined, UsergroupAddOutlined, CloudServerOutlined, CloudOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
-import type { MenuProps } from 'antd';
-import { Button, Layout, Menu, theme, Dropdown, Avatar, Space, Typography, Spin } from 'antd';
+import { 
+  Home, 
+  Menu as MenuIcon, 
+  X, 
+  List, 
+  User, 
+  Zap, 
+  LogOut, 
+  ChevronDown, 
+  BarChart3, 
+  Settings, 
+  Users, 
+  UsersRound, 
+  Server, 
+  Cloud, 
+  Shield, 
+  Rocket,
+  PanelLeft,
+  PanelRight
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
 import { message } from '@/utils/message';
 import { useAuth } from '@/components/hooks/useAuth';
 import { logger } from '@/utils/logger';
@@ -23,45 +49,33 @@ const Users = React.lazy(() => import('./content/config/Users'));
 const UserGroups = React.lazy(() => import('./content/config/UserGroups'));
 const Servers = React.lazy(() => import('./content/config/Servers'));
 const DnsConfig = React.lazy(() => import('./content/config/DnsConfig'));
+const Subscription = React.lazy(() => import('./content/Subscription'));
 
-const { Header, Sider, Footer } = Layout;
-const { Text } = Typography;
-
-type MenuItem = Required<MenuProps>['items'][number];
-
-function getItem(
-  label: React.ReactNode,
-  key: React.Key,
-  icon?: React.ReactNode,
-  children?: MenuItem[],
-  type?: 'group',
-): MenuItem {
-  return {
-    key,
-    icon,
-    children,
-    label,
-    type,
-  } as MenuItem;
+// 菜单项配置
+interface NavigationItem {
+  key: string;
+  label: string;
+  icon: React.ReactNode;
+  group: 'basic' | 'admin';
 }
 
-const items: MenuItem[] = [
-  getItem('首页', 'home', <HomeOutlined />),
-  getItem('用户信息', 'user', <UserOutlined />),
-  getItem('转发规则', 'forward_rules', <UnorderedListOutlined />),
-  getItem('出口配置', 'egress', <ApiOutlined />),
-  getItem('iptables 管理', 'iptables', <SafetyCertificateOutlined />),
-  getItem('查看线路', 'routes', <UnorderedListOutlined />),
+const navigationItems: NavigationItem[] = [
+  // 基础功能组
+  { key: 'home', label: '首页', icon: <Home className="h-4 w-4" />, group: 'basic' },
+  { key: 'user', label: '用户信息', icon: <User className="h-4 w-4" />, group: 'basic' },
+  { key: 'forward_rules', label: '转发规则', icon: <List className="h-4 w-4" />, group: 'basic' },
+  { key: 'egress', label: '出口配置', icon: <Zap className="h-4 w-4" />, group: 'basic' },
+  { key: 'iptables', label: 'iptables 管理', icon: <Shield className="h-4 w-4" />, group: 'basic' },
+  { key: 'routes', label: '查看线路', icon: <List className="h-4 w-4" />, group: 'basic' },
+  { key: 'subscription', label: '订阅管理', icon: <Rocket className="h-4 w-4" />, group: 'basic' },
   
-  // 分隔线，分隔基础功能和系统管理功能
-  { type: 'divider' },
-  
-  getItem('仪表盘', 'dashboard', <DashboardOutlined />),
-  getItem('网站配置', 'website', <SettingOutlined />),
-  getItem('用户管理', 'users', <TeamOutlined />),
-  getItem('用户组管理', 'user_groups', <UsergroupAddOutlined />),
-  getItem('服务器管理', 'servers', <CloudServerOutlined />),
-  getItem('DNS配置', 'dns_config', <CloudOutlined />),
+  // 高级功能组
+  { key: 'dashboard', label: '仪表盘', icon: <BarChart3 className="h-4 w-4" />, group: 'admin' },
+  { key: 'website', label: '网站配置', icon: <Settings className="h-4 w-4" />, group: 'admin' },
+  { key: 'users', label: '用户管理', icon: <Users className="h-4 w-4" />, group: 'admin' },
+  { key: 'user_groups', label: '用户组管理', icon: <UsersRound className="h-4 w-4" />, group: 'admin' },
+  { key: 'servers', label: '服务器管理', icon: <Server className="h-4 w-4" />, group: 'admin' },
+  { key: 'dns_config', label: 'DNS配置', icon: <Cloud className="h-4 w-4" />, group: 'admin' },
 ];
 
 export default function MainLayout() {
@@ -90,6 +104,8 @@ export default function MainLayout() {
     '/egress': 'egress',
     '/iptables': 'iptables',
     '/routes': 'routes',
+    '/subscription': 'subscription',
+    '/subscriptions': 'subscription',
     // 系统配置简化映射
     '/config': 'dashboard',
     '/dashboard': 'dashboard',
@@ -109,6 +125,7 @@ export default function MainLayout() {
     'egress': '/egress',
     'iptables': '/iptables',
     'routes': '/routes',
+    'subscription': '/subscription',
     'dashboard': '/config',
     'website': '/website',
     'users': '/users',
@@ -124,6 +141,7 @@ export default function MainLayout() {
     'egress': '出口配置',
     'iptables': 'iptables 管理',
     'routes': '查看线路',
+    'subscription': '订阅管理',
     'dashboard': '仪表盘',
     'website': '网站配置',
     'users': '用户管理',
@@ -157,8 +175,14 @@ export default function MainLayout() {
     }, 100); // 100ms延迟，避免频繁更新
   }, [keyToHashMap, location.pathname, navigate]);
 
-  // 菜单折叠状态
-  const [collapsed, setCollapsed] = useState(false);
+  // 菜单折叠状态 - 从localStorage读取初始状态
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('nspass-sidebar-collapsed');
+      return saved ? JSON.parse(saved) : false;
+    }
+    return false;
+  });
 
   // 从路径初始化selectedKey
   useEffect(() => {
@@ -183,6 +207,44 @@ export default function MainLayout() {
       navigate('/login');
     }
   }, [isLoading, isAuthenticated, navigate]);
+
+  // 持久化折叠状态
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('nspass-sidebar-collapsed', JSON.stringify(collapsed));
+    }
+  }, [collapsed]);
+
+  // 键盘快捷键支持
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+\ 或 Cmd+\ 切换侧边栏
+      if ((e.ctrlKey || e.metaKey) && e.key === '\\') {
+        e.preventDefault();
+        setCollapsed(prev => !prev);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // 响应式设计 - 检测屏幕尺寸
+  useEffect(() => {
+    const handleResize = () => {
+      if (typeof window !== 'undefined') {
+        const width = window.innerWidth;
+        // 在小屏幕设备上自动折叠
+        if (width < 768 && !collapsed) {
+          setCollapsed(true);
+        }
+      }
+    };
+
+    handleResize(); // 初始检查
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [collapsed]);
 
   // 优化：延迟URL更新的菜单选择处理
   const handleMenuSelect = useCallback(({ key }: { key: string }) => {
@@ -220,15 +282,12 @@ export default function MainLayout() {
     }
   };
 
-  // 用户下拉菜单
-  const userMenuItems: MenuProps['items'] = [
-    {
-      key: 'logout',
-      icon: <LogoutOutlined />,
-      label: '注销',
-      onClick: handleLogout,
-    },
-  ];
+  // 用户下拉菜单处理
+  const handleUserMenuAction = (action: string) => {
+    if (action === 'logout') {
+      handleLogout();
+    }
+  };
 
   // 组件映射 - 使用useMemo缓存组件映射关系
   const componentMap = useMemo(() => ({
@@ -238,6 +297,7 @@ export default function MainLayout() {
     'egress': Egress,
     'iptables': Iptables,
     'routes': Routes,
+    'subscription': Subscription,
     'dashboard': Dashboard,
     'website': Website,
     'users': Users,
@@ -269,13 +329,11 @@ export default function MainLayout() {
   // Loading状态
   if (isLoading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh' 
-      }}>
-        <Spin size="large" />
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <p className="text-sm text-muted-foreground">正在加载...</p>
+        </div>
       </div>
     );
   }
@@ -285,157 +343,148 @@ export default function MainLayout() {
     return null; // useEffect 会处理跳转
   }
 
-  const {
-    token: { colorBgContainer, borderRadiusLG },
-  } = theme.useToken();
-
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Sider 
-        trigger={null} 
-        collapsible 
-        collapsed={collapsed}
-        width={220} // 增加宽度以适应中文菜单
-        collapsedWidth={80}
-        style={{
-          position: 'fixed',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          zIndex: 100,
-          boxShadow: '2px 0 8px 0 rgba(29, 35, 41, 0.05)',
-          height: '100vh',
-          overflowY: 'auto',
-          overflowX: 'visible',
-        }}
+    <div className="min-h-screen bg-background">
+      {/* 侧边栏 */}
+      <aside 
+        className={`fixed left-0 top-0 z-40 h-screen bg-card border-r transition-all duration-300 ease-in-out ${
+          collapsed ? 'w-16' : 'w-64'
+        }`}
       >
-        <div style={{ 
-          height: 32, 
-          margin: 16, 
-          background: 'rgba(255, 255, 255, 0.2)',
-          borderRadius: 6,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'white',
-          fontSize: '16px',
-          fontWeight: 'bold'
-        }}>
-          {collapsed ? 'N' : 'NSPass'}
+        {/* Logo区域 */}
+        <div className="h-16 flex items-center justify-center border-b px-4">
+          <div className="font-bold text-lg text-foreground">
+            {collapsed ? 'N' : 'NSPass'}
+          </div>
         </div>
-        <Menu
-          theme="dark"
-          mode="inline"
-          selectedKeys={[selectedKey]}
-          items={items}
-          onSelect={handleMenuSelect}
-          style={{
-            height: '100%',
-            overflowY: 'auto',
-            overflowX: 'visible',
-            maxHeight: 'none',
-            border: 'none',
-          }}
-        />
-      </Sider>
-      
-      <Layout style={{ marginLeft: collapsed ? 80 : 200, transition: 'all 0.2s' }}>
-        <Header 
-          style={{ 
-            padding: '0 24px', 
-            background: colorBgContainer,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-            position: 'sticky',
-            top: 0,
-            zIndex: 10
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center' }}>
+
+        {/* 导航菜单 */}
+        <nav className="p-2 space-y-1">
+          {/* 基础功能组 */}
+          {navigationItems.filter(item => item.group === 'basic').map((item) => (
+            <button
+              key={item.key}
+              onClick={() => handleMenuSelect({ key: item.key })}
+              className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 ${
+                selectedKey === item.key
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              } ${collapsed ? 'justify-center' : ''}`}
+              title={collapsed ? item.label : undefined}
+            >
+              {item.icon}
+              {!collapsed && <span className="truncate">{item.label}</span>}
+            </button>
+          ))}
+
+          {/* 分隔线 */}
+          <div className="my-4 border-t" />
+
+          {/* 高级功能组 */}
+          {navigationItems.filter(item => item.group === 'admin').map((item) => (
+            <button
+              key={item.key}
+              onClick={() => handleMenuSelect({ key: item.key })}
+              className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 ${
+                selectedKey === item.key
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              } ${collapsed ? 'justify-center' : ''}`}
+              title={collapsed ? item.label : undefined}
+            >
+              {item.icon}
+              {!collapsed && <span className="truncate">{item.label}</span>}
+            </button>
+          ))}
+        </nav>
+      </aside>
+
+      {/* 主内容区域 */}
+      <div className={`transition-all duration-300 ease-in-out ${collapsed ? 'ml-16' : 'ml-64'}`}>
+        {/* 顶部导航栏 */}
+        <header className="h-16 bg-background border-b flex items-center justify-between px-6 sticky top-0 z-30">
+          <div className="flex items-center space-x-4">
+            {/* 折叠按钮 - 固定在左侧 */}
             <Button
-              type="text"
-              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              variant="ghost"
+              size="icon"
               onClick={() => setCollapsed(!collapsed)}
-              style={{
-                fontSize: '16px',
-                width: 64,
-                height: 64,
-                marginRight: 16,
-              }}
-            />
-            
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Text strong style={{ fontSize: '18px', color: 'var(--text-primary)' }}>
-                {keyToDisplayNameMap[selectedKey] || '首页'}
-              </Text>
+              className="h-10 w-10 hover:bg-accent"
+              title={`${collapsed ? '展开' : '收起'}侧边栏 (Ctrl+\\)`}
+            >
+              {collapsed ? <PanelRight className="h-4 w-4" /> : <PanelLeft className="h-4 w-4" />}
+            </Button>
+
+            {/* 当前页面标题 */}
+            <h1 className="text-xl font-semibold text-foreground">
+              {keyToDisplayNameMap[selectedKey] || '首页'}
+            </h1>
+          </div>
+
+          <div className="flex items-center space-x-4">
+            {/* 主题切换按钮 */}
+            <ThemeToggle size="middle" placement="bottomLeft" />
+
+            {/* 用户菜单 */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center space-x-2 h-10">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user?.avatar} alt={user?.name || '用户'} />
+                    <AvatarFallback>
+                      <User className="h-4 w-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="hidden md:inline-block">{user?.name ?? '用户'}</span>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleUserMenuAction('logout')}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  注销
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </header>
+
+        {/* 页面内容 */}
+        <main className="p-6">
+          <div className="bg-card rounded-lg border min-h-[calc(100vh-8rem)]">
+            <div className="p-6">
+              <Suspense fallback={
+                <div className="flex items-center justify-center h-64">
+                  <div className="flex flex-col items-center space-y-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <p className="text-sm text-muted-foreground">正在加载组件...</p>
+                  </div>
+                </div>
+              }>
+                {/* 只渲染已经访问过的组件，使用缓存 */}
+                <div>
+                  {Array.from(renderedTabs).map(key => (
+                    <div 
+                      key={key} 
+                      className={key === selectedKey ? 'block' : 'hidden'}
+                      style={{ minHeight: '500px' }}
+                    >
+                      {getComponent(key)}
+                    </div>
+                  ))}
+                </div>
+              </Suspense>
             </div>
           </div>
-          
-          <Space size="middle">
-            <ThemeToggle size="middle" placement="bottomLeft" />
-            
-            <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-              <Space style={{ cursor: 'pointer', padding: '8px 12px', borderRadius: '8px' }}>
-                <Avatar 
-                  src={user?.avatar ?? undefined}
-                  style={{ 
-                    backgroundColor: '#1890ff' 
-                  }} 
-                  icon={<UserOutlined />} 
-                />
-                <Text>{user?.name ?? '用户'}</Text>
-                <DownOutlined style={{ fontSize: '12px' }} />
-              </Space>
-            </Dropdown>
-          </Space>
-        </Header>
-        
-        <Layout.Content
-          style={{
-            margin: '24px',
-            minHeight: 280,
-            background: colorBgContainer,
-            borderRadius: borderRadiusLG,
-            overflow: 'auto'
-          }}
-        >
-          <div style={{ padding: '24px' }}>
-            <Suspense fallback={
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
-                alignItems: 'center', 
-                height: '200px' 
-              }}>
-                <Spin size="large" />
-              </div>
-            }>
-              {/* 只渲染已经访问过的组件，使用缓存 */}
-              <div>
-                {Array.from(renderedTabs).map(key => (
-                  <div 
-                    key={key} 
-                    style={{ 
-                      display: key === selectedKey ? 'block' : 'none',
-                      minHeight: '500px'
-                    }}
-                  >
-                    {getComponent(key)}
-                  </div>
-                ))}
-              </div>
-            </Suspense>
+        </main>
+
+        {/* 页脚 */}
+        <footer className="border-t bg-background py-4">
+          <div className="text-center text-sm text-muted-foreground">
+            NSPass Web ©2024 Created with React + Vite + shadcn/ui
           </div>
-        </Layout.Content>
-        
-        <Footer style={{ textAlign: 'center', padding: '12px 50px' }}>
-          <Text type="secondary" style={{ fontSize: '12px' }}>
-            NSPass Web ©2024 Created with Vite + Antd
-          </Text>
-        </Footer>
-      </Layout>
-    </Layout>
+        </footer>
+      </div>
+    </div>
   );
 }
