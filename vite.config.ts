@@ -36,7 +36,7 @@ export default defineConfig({
         manualChunks: {
           // 保守的分包策略，只分离最大的依赖
           'react-vendor': ['react', 'react-dom'],
-          'antd-vendor': ['antd'],
+          'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-select'],
         },
       },
 
@@ -67,11 +67,11 @@ export default defineConfig({
     include: [
       'react',
       'react-dom',
-      'antd',
-      '@ant-design/icons',
-      '@ant-design/pro-components',
       'react-router-dom',
-      'dayjs',
+      'zustand',
+      'lucide-react',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-select',
     ],
     exclude: [],
   },

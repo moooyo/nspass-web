@@ -1,77 +1,55 @@
-import React, { memo } from 'react';
-import { Layout, Button, Card, Typography } from 'antd';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { HomeOutlined, UserOutlined, LogoutOutlined } from '@ant-design/icons';
-import { logger } from '@/utils/logger';
+import React, { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuthStore } from '@/stores/auth'
+import SimpleDashboard from '@/pages/SimpleDashboard'
 
-const { Header, Content } = Layout;
-const { Title, Text } = Typography;
+export default function SimpleMainLayout() {
+  const navigate = useNavigate()
+  const { isAuthenticated, isLoading } = useAuthStore()
 
-const SimpleMainLayout = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  
-  logger.debug('SimpleMainLayout rendering...', location.pathname);
-  
-  return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Header style={{ 
-        background: '#001529', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between' 
+  // Check authentication
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navigate('/login')
+    }
+  }, [isLoading, isAuthenticated, navigate])
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f9fafb'
       }}>
-        <Title level={3} style={{ color: 'white', margin: 0 }}>
-          NSPass Dashboard
-        </Title>
-        <Button 
-          type="text" 
-          style={{ color: 'white' }}
-          icon={<LogoutOutlined />}
-          onClick={() => navigate('/login')}
-        >
-          退出登录
-        </Button>
-      </Header>
-      
-      <Content style={{ padding: '20px' }}>
-        <Card>
-          <Title level={2}>欢迎使用 NSPass</Title>
-          <Text>这是一个简化的主页面 - Vite 版本</Text>
-          <br />
-          <br />
-          <p><strong>当前路径:</strong> {location.pathname}</p>
-          <p><strong>时间:</strong> {new Date().toLocaleString()}</p>
-          
-          <div style={{ marginTop: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <Button 
-              type="primary" 
-              icon={<HomeOutlined />}
-              onClick={() => navigate('/dashboard')}
-            >
-              仪表板
-            </Button>
-            <Button 
-              icon={<UserOutlined />}
-              onClick={() => navigate('/profile')}
-            >
-              用户信息
-            </Button>
-            <Button 
-              onClick={() => navigate('/settings')}
-            >
-              设置
-            </Button>
-            <Button 
-              onClick={() => navigate('/login')}
-            >
-              返回登录
-            </Button>
-          </div>
-        </Card>
-      </Content>
-    </Layout>
-  );
-};
+        <div style={{
+          backgroundColor: 'white',
+          padding: '40px',
+          borderRadius: '8px',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+          textAlign: 'center'
+        }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '4px solid #e5e7eb',
+            borderTop: '4px solid #3b82f6',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 16px'
+          }}></div>
+          <p style={{ color: '#6b7280', margin: '0' }}>加载中...</p>
+        </div>
+      </div>
+    )
+  }
 
-export default memo(SimpleMainLayout);
+  // Not authenticated
+  if (!isAuthenticated) {
+    return null // useEffect will handle redirect
+  }
+
+  return <SimpleDashboard />
+}

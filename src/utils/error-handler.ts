@@ -3,7 +3,7 @@
  * 提供标准化的错误处理、日志记录和用户提示
  */
 
-import { message } from 'antd';
+import { toast } from '@/hooks/use-toast';
 import { logger } from './logger';
 
 export interface ErrorInfo {
@@ -241,11 +241,23 @@ class ErrorHandler {
     
     // 根据错误类型选择不同的消息类型
     if (errorInfo.code?.includes('VALIDATION')) {
-      message.warning(userMessage);
+      toast({
+        variant: "destructive",
+        title: "验证失败",
+        description: userMessage,
+      });
     } else if (errorInfo.code?.includes('AUTH')) {
-      message.error(userMessage);
+      toast({
+        variant: "destructive",
+        title: "认证失败",
+        description: userMessage,
+      });
     } else {
-      message.error(userMessage);
+      toast({
+        variant: "destructive",
+        title: "操作失败",
+        description: userMessage,
+      });
     }
   }
 

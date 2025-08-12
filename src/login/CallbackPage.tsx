@@ -2,18 +2,19 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Spin, Result, Button } from 'antd';
-import { LoadingOutlined } from '@ant-design/icons';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { OAuth2Service, OAuth2Factory, OAuth2User } from '@/utils/oauth2';
-import { useAuth } from '@/components/hooks/useAuth';
+import { useAuthStore } from '@/stores/auth';
 
 function OAuth2CallbackContent() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { login: authLogin } = useAuth();
+  const { setUser, setAuthenticated } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<OAuth2User | null>(null);
+  const [user, setUserState] = useState<OAuth2User | null>(null);
 
   useEffect(() => {
     const handleCallback = async () => {
