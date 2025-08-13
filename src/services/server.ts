@@ -103,21 +103,21 @@ class UnifiedServerService extends BaseService<ServerItem, ServerCreateData, Ser
    */
   async getServers(params: ServerQueryParams = {}): Promise<StandardApiResponse<ServerItem[]>> {
     try {
-      const queryParams = this.buildQueryParams(params);
+      const finalParams = { ...params };
       
       // 处理特殊的状态参数
       if (params.status && params.status !== 'all') {
-        queryParams.status = stringToStatus(params.status);
+        finalParams.status = stringToStatus(params.status);
       }
       
-      const response = await this.get<ServerItem[]>(this.endpoint, queryParams);
+      const response = await this.get<ServerItem[]>(this.endpoint, finalParams);
       
       return {
         ...response,
         data: response.data || []
       };
     } catch (error) {
-      return this.handleError(error, '获取服务器列表');
+      return this.handleError(error as Error, '获取服务器列表');
     }
   }
 
@@ -174,7 +174,7 @@ class UnifiedServerService extends BaseService<ServerItem, ServerCreateData, Ser
         data: groups
       };
     } catch (error) {
-      return this.handleError(error, '获取服务器组');
+      return this.handleError(error as Error, '获取服务器组');
     }
   }
 
@@ -189,7 +189,7 @@ class UnifiedServerService extends BaseService<ServerItem, ServerCreateData, Ser
       ]);
 
       if (!serversResponse.success || !groupsResponse.success) {
-        return this.handleError(null, '获取服务器统计信息');
+        return this.handleError(new Error('获取服务器数据失败'), '获取服务器统计信息');
       }
 
       const servers = serversResponse.data || [];
@@ -209,7 +209,7 @@ class UnifiedServerService extends BaseService<ServerItem, ServerCreateData, Ser
         data: stats
       };
     } catch (error) {
-      return this.handleError(error, '获取服务器统计信息');
+      return this.handleError(error as Error, '获取服务器统计信息');
     }
   }
 
@@ -225,7 +225,7 @@ class UnifiedServerService extends BaseService<ServerItem, ServerCreateData, Ser
       
       return await this.create<ServerItem>(this.endpoint, createData);
     } catch (error) {
-      return this.handleError(error, '创建服务器');
+      return this.handleError(error as Error, '创建服务器');
     }
   }
 
@@ -243,7 +243,7 @@ class UnifiedServerService extends BaseService<ServerItem, ServerCreateData, Ser
 
       return await this.update<ServerItem>(this.endpoint, id, updateData);
     } catch (error) {
-      return this.handleError(error, '更新服务器');
+      return this.handleError(error as Error, '更新服务器');
     }
   }
 
@@ -254,7 +254,7 @@ class UnifiedServerService extends BaseService<ServerItem, ServerCreateData, Ser
     try {
       return await this.delete<void>(`${this.endpoint}/${id}`);
     } catch (error) {
-      return this.handleError(error, '删除服务器');
+      return this.handleError(error as Error, '删除服务器');
     }
   }
 
@@ -265,7 +265,7 @@ class UnifiedServerService extends BaseService<ServerItem, ServerCreateData, Ser
     try {
       return await this.batchDelete<void>(this.endpoint, ids);
     } catch (error) {
-      return this.handleError(error, '批量删除服务器');
+      return this.handleError(error as Error, '批量删除服务器');
     }
   }
 
@@ -276,7 +276,7 @@ class UnifiedServerService extends BaseService<ServerItem, ServerCreateData, Ser
     try {
       return await this.post<void>(`${this.endpoint}/${id}/restart`);
     } catch (error) {
-      return this.handleError(error, '重启服务器');
+      return this.handleError(error as Error, '重启服务器');
     }
   }
 
@@ -287,7 +287,7 @@ class UnifiedServerService extends BaseService<ServerItem, ServerCreateData, Ser
     try {
       return await this.getById<ServerItem>(this.endpoint, id);
     } catch (error) {
-      return this.handleError(error, '获取服务器详情');
+      return this.handleError(error as Error, '获取服务器详情');
     }
   }
 
@@ -305,7 +305,7 @@ class UnifiedServerService extends BaseService<ServerItem, ServerCreateData, Ser
         status: statusValue
       });
     } catch (error) {
-      return this.handleError(error, '批量更新服务器状态');
+      return this.handleError(error as Error, '批量更新服务器状态');
     }
   }
 
@@ -316,7 +316,7 @@ class UnifiedServerService extends BaseService<ServerItem, ServerCreateData, Ser
     try {
       return await this.search(query, params);
     } catch (error) {
-      return this.handleError(error, '搜索服务器');
+      return this.handleError(error as Error, '搜索服务器');
     }
   }
 
@@ -334,7 +334,7 @@ class UnifiedServerService extends BaseService<ServerItem, ServerCreateData, Ser
     try {
       return await this.get(`${this.endpoint}/${id}/monitoring`);
     } catch (error) {
-      return this.handleError(error, '获取服务器监控数据');
+      return this.handleError(error as Error, '获取服务器监控数据');
     }
   }
 
@@ -351,7 +351,7 @@ class UnifiedServerService extends BaseService<ServerItem, ServerCreateData, Ser
       const queryParams = this.buildQueryParams(params);
       return await this.get(`${this.endpoint}/${id}/logs`, queryParams);
     } catch (error) {
-      return this.handleError(error, '获取服务器日志');
+      return this.handleError(error as Error, '获取服务器日志');
     }
   }
 
@@ -362,7 +362,7 @@ class UnifiedServerService extends BaseService<ServerItem, ServerCreateData, Ser
     try {
       return await this.post<ServerItem>(`${this.endpoint}/${id}/regenerate-token`, {});
     } catch (error) {
-      return this.handleError(error, '重新生成服务器token');
+      return this.handleError(error as Error, '重新生成服务器token');
     }
   }
 
@@ -373,7 +373,7 @@ class UnifiedServerService extends BaseService<ServerItem, ServerCreateData, Ser
     try {
       return await this.post<ServerItem[]>(`${this.endpoint}/regenerate-all-tokens`, {});
     } catch (error) {
-      return this.handleError(error, '重新生成所有服务器token');
+      return this.handleError(error as Error, '重新生成所有服务器token');
     }
   }
 }

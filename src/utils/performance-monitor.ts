@@ -3,6 +3,9 @@
  * 用于监控组件渲染性能和应用性能指标
  */
 
+import React from 'react'
+import { logger } from '@/utils/logger'
+
 interface PerformanceEntry {
   name: string;
   startTime: number;
@@ -38,7 +41,7 @@ class PerformanceMonitor {
         navigationObserver.observe({ entryTypes: ['navigation'] });
         this.observers.push(navigationObserver);
       } catch (e) {
-        console.warn('Navigation performance observer not supported');
+        logger.warn('Navigation performance observer not supported');
       }
     }
 
@@ -57,7 +60,7 @@ class PerformanceMonitor {
         resourceObserver.observe({ entryTypes: ['resource'] });
         this.observers.push(resourceObserver);
       } catch (e) {
-        console.warn('Resource performance observer not supported');
+        logger.warn('Resource performance observer not supported');
       }
     }
   }
@@ -73,20 +76,20 @@ class PerformanceMonitor {
       '最大内容绘制': this.getLargestContentfulPaint(),
     };
 
-    console.group('🚀 页面性能指标');
+    logger.group('🚀 页面性能指标');
     Object.entries(metrics).forEach(([name, value]) => {
       if (value > 0) {
         const color = value > 1000 ? 'color: red' : value > 500 ? 'color: orange' : 'color: green';
-        console.log(`%c${name}: ${value.toFixed(2)}ms`, color);
+        logger.debug(`${name}: ${value.toFixed(2)}ms`, { color });
       }
     });
-    console.groupEnd();
+    logger.groupEnd();
   }
 
   private logResourceMetrics(entry: PerformanceResourceTiming) {
     // 只记录较慢的资源加载
     if (entry.duration > 100) {
-      console.log(`🐌 慢资源: ${entry.name} - ${entry.duration.toFixed(2)}ms`);
+      logger.warn(`🐌 慢资源: ${entry.name} - ${entry.duration.toFixed(2)}ms`);
     }
   }
 
@@ -151,12 +154,12 @@ class PerformanceMonitor {
 
           // 记录较慢的操作
           if (entry.duration > 16) { // 超过一帧的时间
-            console.warn(`⚠️ 慢操作: ${name} - ${entry.duration.toFixed(2)}ms`);
+            logger.warn(`⚠️ 慢操作: ${name} - ${entry.duration.toFixed(2)}ms`);
           }
         }
       }
     } catch (e) {
-      console.warn(`Performance measure failed for ${name}:`, e);
+      logger.warn(`Performance measure failed for ${name}:`, e);
     }
   }
 
@@ -192,13 +195,13 @@ class PerformanceMonitor {
     return {
       totalComponents: componentEntries.length,
       averageComponentRenderTime: componentEntries.length > 0 
-        ? componentEntries.reduce((sum, e) => sum + e.duration, 0) / componentEntries.length 
+        ? componentEntries.reduce((sum: number, e: PerformanceEntry) => sum + e.duration, 0) / componentEntries.length 
         : 0,
-      slowestComponent: componentEntries.reduce((slowest, current) => 
-        current.duration > (slowest?.duration || 0) ? current : slowest, null),
+      slowestComponent: componentEntries.reduce((slowest: PerformanceEntry | null, current: PerformanceEntry) => 
+        current.duration > (slowest?.duration ?? 0) ? current : slowest, null as PerformanceEntry | null),
       totalApiCalls: apiEntries.length,
       averageApiResponseTime: apiEntries.length > 0
-        ? apiEntries.reduce((sum, e) => sum + e.duration, 0) / apiEntries.length
+        ? apiEntries.reduce((sum: number, e: PerformanceEntry) => sum + e.duration, 0) / apiEntries.length
         : 0,
     };
   }

@@ -5,40 +5,14 @@
 
 import { serviceManager } from './base';
 
-// 导入所有服务
+// 导入现有服务
 import { serverService } from './server';
 import { authService } from './auth';
-import { userInfoService } from './userInfo';
-import { routeService } from './routes';
-import { egressService } from './egress';
-import { dashboardService } from './dashboard';
-import { forwardPathRulesService } from './forwardPathRules';
-import { userService } from './user';
-import { userGroupsService } from './userGroups';
-import { userManagementService } from './userManagement';
-import { usersConfigService } from './usersConfig';
-import { websiteConfigService } from './websiteConfig';
-import { passkeyService } from './passkey';
-import { dnsConfigService } from './dnsConfig';
-import * as iptablesService from './iptables';
 
 // 服务列表（用于自动注册）
 const services = {
   server: serverService,
   auth: authService,
-  userInfo: userInfoService,
-  route: routeService,
-  egress: egressService,
-  dashboard: dashboardService,
-  forwardRules: forwardPathRulesService,
-  user: userService,
-  userGroups: userGroupsService,
-  userManagement: userManagementService,
-  usersConfig: usersConfigService,
-  websiteConfig: websiteConfigService,
-  passkey: passkeyService,
-  dnsConfig: dnsConfigService,
-  iptables: iptablesService
 };
 
 /**
@@ -63,24 +37,11 @@ export function getService<T>(name: string): T {
 }
 
 /**
- * 导出所有服务实例（兼容旧代码）
+ * 导出现有服务实例（兼容旧代码）
  */
 export {
   serverService,
   authService,
-  userInfoService,
-  routeService,
-  egressService,
-  dashboardService,
-  forwardPathRulesService,
-  userService,
-  userGroupsService,
-  userManagementService,
-  usersConfigService,
-  websiteConfigService,
-  passkeyService,
-  dnsConfigService,
-  iptablesService
 };
 
 /**

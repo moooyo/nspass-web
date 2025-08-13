@@ -75,7 +75,7 @@ export const defaultConfig: ProjectConfig = {
   },
   
   api: {
-    baseUrl: import.meta.env.VITE_API_BASE_URL || 'https://api.nspass.xforward.de',
+    baseUrl: 'https://api.nspass.xforward.de',
     timeout: 10000,
     retryAttempts: 3,
     retryDelay: 1000
@@ -130,7 +130,7 @@ export const defaultConfig: ProjectConfig = {
 export const environmentConfigs: Record<string, Partial<ProjectConfig>> = {
   development: {
     api: {
-      baseUrl: 'https://api.nspass.xforward.de',
+      baseUrl: 'http://localhost:8080',
       timeout: 30000,
       retryAttempts: 3,
       retryDelay: 1000
@@ -151,7 +151,7 @@ export const environmentConfigs: Record<string, Partial<ProjectConfig>> = {
   
   production: {
     api: {
-      baseUrl: import.meta.env.VITE_API_BASE_URL || 'https://api.nspass.xforward.de',
+      baseUrl: 'https://api.nspass.xforward.de',
       timeout: 10000,
       retryAttempts: 3,
       retryDelay: 1000
@@ -320,7 +320,8 @@ export class ConfigManager {
   private validateConfiguration(): void {
     const errors = validateConfig(this.config);
     if (errors.length > 0) {
-      console.warn('Configuration validation errors:', errors);
+      const logger = this.getLogger();
+      logger.warn('Configuration validation errors:', errors);
     }
   }
 
@@ -332,9 +333,23 @@ export class ConfigManager {
       try {
         listener(this.config);
       } catch (error) {
-        console.error('Error in config listener:', error);
+        const logger = this.getLogger();
+        logger.error('Error in config listener:', error);
       }
     });
+  }
+
+  /**
+   * 获取日志实例
+   */
+  private getLogger() {
+    // 延迟导入避免循环依赖
+    try {
+      return require('@/utils/logger').logger;
+    } catch {
+      // 如果无法导入logger，回退到console
+      return console;
+    }
   }
 
   /**

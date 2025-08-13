@@ -14,11 +14,13 @@ export interface User {
   role?: string
 }
 
+import { logger } from '@/utils/logger';
+
 // Mock 认证服务
 export const authService = {
   async login(data: LoginData): Promise<{ user: User; token: string }> {
     // Mock 登录实现
-    console.log('Mock login:', data)
+    logger.debug('Mock login:', data)
     return {
       user: {
         id: '1',
@@ -33,7 +35,7 @@ export const authService = {
 
   async logout(): Promise<void> {
     // Mock 登出实现
-    console.log('Mock logout')
+    logger.debug('Mock logout')
   },
 
   async getCurrentUser(): Promise<User | null> {

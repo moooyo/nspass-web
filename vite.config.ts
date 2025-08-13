@@ -44,9 +44,7 @@ export default defineConfig({
   },
 
   define: {
-    // Environment variables
-    'import.meta.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL || ''),
-
+    // Environment variables will be handled by the config system
   },
 
   server: {

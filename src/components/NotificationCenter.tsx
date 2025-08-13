@@ -9,11 +9,11 @@ import { cn } from '@/lib/utils'
 
 interface NotificationItemProps {
   notification: AppNotification
-  onRemove?: (id: string) => void
-  onMarkAsRead?: (id: string) => void
+  onRemove?: (notificationId: string) => void
+  onMarkAsRead?: (notificationId: string) => void
 }
 
-function NotificationItem({ notification, onRemove: _onRemove, onMarkAsRead: _onMarkAsRead }: NotificationItemProps) {
+function NotificationItem({ notification, onRemove, onMarkAsRead }: NotificationItemProps) {
   const typeIcons = {
     info: Info,
     success: CheckCircle,

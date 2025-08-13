@@ -3,7 +3,8 @@
  * 提供简单的全局状态管理，避免引入复杂的状态管理库
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { logger } from '@/utils/logger';
 
 type StateListener<T> = (newState: T, prevState: T) => void;
 type StateSelector<T, R> = (state: T) => R;
@@ -36,7 +37,7 @@ export function createStore<T>(initialState: T): StateStore<T> {
         try {
           listener(state, prevState);
         } catch (error) {
-          console.error('State listener error:', error);
+          logger.error('State listener error:', error);
         }
       });
     }
@@ -133,7 +134,7 @@ export function createPersistedStore<T>(
         restoredState = serializer.parse(storedValue);
       }
     } catch (error) {
-      console.error(`Failed to restore state from storage for key "${key}":`, error);
+      logger.error(`Failed to restore state from storage for key "${key}":`, error);
     }
   }
 
@@ -145,7 +146,7 @@ export function createPersistedStore<T>(
       try {
         storage.setItem(key, serializer.stringify(newState));
       } catch (error) {
-        console.error(`Failed to persist state to storage for key "${key}":`, error);
+        logger.error(`Failed to persist state to storage for key "${key}":`, error);
       }
     });
   }
@@ -161,7 +162,7 @@ class GlobalStateManager {
 
   createStore<T>(key: string, initialState: T): StateStore<T> {
     if (this.stores.has(key)) {
-      console.warn(`Store with key "${key}" already exists. Returning existing store.`);
+      logger.warn(`Store with key "${key}" already exists. Returning existing store.`);
       return this.stores.get(key)!;
     }
 
@@ -176,7 +177,7 @@ class GlobalStateManager {
     options?: Parameters<typeof createPersistedStore>[2]
   ): StateStore<T> {
     if (this.stores.has(key)) {
-      console.warn(`Store with key "${key}" already exists. Returning existing store.`);
+      logger.warn(`Store with key "${key}" already exists. Returning existing store.`);
       return this.stores.get(key)!;
     }
 

@@ -2,6 +2,7 @@ import React from 'react'
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { logger } from '@/utils/logger'
 
 interface ErrorBoundaryState {
   hasError: boolean
@@ -28,10 +29,10 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo)
+    logger.error('ErrorBoundary caught an error:', error, errorInfo)
     this.setState({
       error,
-      errorInfo: errorInfo.componentStack || undefined
+      errorInfo: errorInfo.componentStack ?? undefined
     })
   }
 
@@ -41,7 +42,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   render() {
     if (this.state.hasError) {
-      const FallbackComponent = this.props.fallback || DefaultErrorFallback
+      const FallbackComponent = this.props.fallback ?? DefaultErrorFallback
       return <FallbackComponent error={this.state.error} reset={this.handleReset} />
     }
 

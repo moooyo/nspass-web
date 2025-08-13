@@ -8,8 +8,17 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useToast } from '@/hooks/use-toast'
 
 // Mock user data
 const mockUsers = [
@@ -87,9 +97,17 @@ const mockUsers = [
 ]
 
 export default function ModernUsers() {
+  const { toast } = useToast()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedRole, setSelectedRole] = useState<string>('all')
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [newUser, setNewUser] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'user'
+  })
 
   // Filter users based on search and filters
   const filteredUsers = useMemo(() => {
@@ -131,6 +149,28 @@ export default function ModernUsers() {
       hour: '2-digit',
       minute: '2-digit'
     })
+  }
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!newUser.name || !newUser.email || !newUser.password) {
+      toast({
+        variant: "destructive",
+        title: "创建失败",
+        description: "请填写所有必填字段",
+      })
+      return
+    }
+
+    // Here you would call your API to create the user
+    toast({
+      title: "用户创建成功",
+      description: `用户 ${newUser.name} 已成功创建`,
+    })
+
+    setNewUser({ name: '', email: '', password: '', role: 'user' })
+    setIsCreateDialogOpen(false)
   }
 
   const userStats = [
@@ -179,10 +219,64 @@ export default function ModernUsers() {
             <Download className="w-4 h-4 mr-2" />
             导出用户
           </Button>
-          <Button>
-            <UserPlus className="w-4 h-4 mr-2" />
-            添加用户
-          </Button>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <UserPlus className="w-4 h-4 mr-2" />
+                添加用户
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>创建新用户</DialogTitle>
+                <DialogDescription>
+                  填写用户信息以创建新账户
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleCreateUser} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">用户名</Label>
+                  <Input
+                    id="name"
+                    placeholder="请输入用户名"
+                    value={newUser.name}
+                    onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">邮箱</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="请输入邮箱"
+                    value={newUser.email}
+                    onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">密码</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="请输入密码"
+                    value={newUser.password}
+                    onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                    取消
+                  </Button>
+                  <Button type="submit">
+                    创建用户
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 

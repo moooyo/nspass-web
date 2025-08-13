@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-// import { globalHttpClient } from '@/shared/services/EnhancedBaseService';
 import { logger } from '@/utils/logger';
+import { configManager } from '@/config';
 
 /**
  * 环境变量初始化组件
@@ -22,14 +22,11 @@ export const EnvInitializer: React.FC = () => {
     const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.nspass.xforward.de';
     setCurrentApiUrl(apiUrl);
 
-    // 更新globalHttpClient的baseURL
-    globalHttpClient.updateBaseURL(apiUrl);
-
     // 输出调试信息
     logger.info('📊 环境变量检查结果:');
     logger.info('  VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL);
     logger.info('  最终选择的API URL:', apiUrl);
-    logger.info('  HTTP Client Base URL:', globalHttpClient.getCurrentBaseURL());
+    logger.info('  配置管理器 API URL:', configManager.getConfig().api.baseUrl);
 
     // 验证API URL
     if (apiUrl.includes('localhost') && import.meta.env.PROD) {
