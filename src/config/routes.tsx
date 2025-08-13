@@ -1,33 +1,28 @@
 import React from 'react';
 import { 
-  HomeOutlined, 
-  UserOutlined, 
-  UnorderedListOutlined, 
-  DashboardOutlined, 
-  SettingOutlined, 
-  TeamOutlined,
-  CloudServerOutlined,
-  ApiOutlined,
-  SafetyCertificateOutlined,
-  UsergroupAddOutlined,
-  CloudOutlined,
-  RocketOutlined
-} from '@ant-design/icons';
+  Home, 
+  User, 
+  List, 
+  BarChart3, 
+  Settings, 
+  Users as UsersIcon,
+  Server,
+  Network,
+  Shield,
+  UserPlus,
+  Cloud,
+  Zap
+} from 'lucide-react';
 
-// 懒加载所有页面组件
-const HomeContent = React.lazy(() => import('../components/content/Home'));
-const UserInfo = React.lazy(() => import('../components/content/UserInfo'));
-const ForwardRules = React.lazy(() => import('../components/content/ForwardRules'));
-const Egress = React.lazy(() => import('../components/content/Egress'));
-const Iptables = React.lazy(() => import('../components/content/Iptables'));
-const Routes = React.lazy(() => import('../components/content/Routes'));
-const Subscription = React.lazy(() => import('../components/content/Subscription'));
-const Dashboard = React.lazy(() => import('../components/content/config/Dashboard'));
-const Website = React.lazy(() => import('../components/content/config/Website'));
-const Users = React.lazy(() => import('../components/content/config/Users'));
-const UserGroups = React.lazy(() => import('../components/content/config/UserGroups'));
-const Servers = React.lazy(() => import('../components/content/config/Servers'));
-const DnsConfig = React.lazy(() => import('../components/content/config/DnsConfig'));
+// 现代化页面组件
+const ModernDashboard = React.lazy(() => import('../pages/ModernDashboard'));
+const ModernUsers = React.lazy(() => import('../pages/ModernUsers'));
+const ModernSubscription = React.lazy(() => import('../pages/ModernSubscription'));
+const ModernEgress = React.lazy(() => import('../pages/ModernEgress'));
+const ModernRoutes = React.lazy(() => import('../pages/ModernRoutes'));
+const ModernIptables = React.lazy(() => import('../pages/ModernIptables'));
+const ModernForwardRules = React.lazy(() => import('../pages/ModernForwardRules'));
+const SettingsPage = React.lazy(() => import('../pages/SettingsPage'));
 
 export interface RouteConfig {
   key: string;
@@ -46,24 +41,24 @@ export const routeConfigs: RouteConfig[] = [
     key: 'home',
     path: '/home',
     label: '首页',
-    icon: <HomeOutlined />,
-    component: HomeContent,
+    icon: <Home size={16} />,
+    component: ModernDashboard,
     group: 'basic'
   },
   {
     key: 'user',
     path: '/user',
     label: '用户信息',
-    icon: <UserOutlined />,
-    component: UserInfo,
+    icon: <User size={16} />,
+    component: ModernDashboard,
     group: 'basic'
   },
   {
     key: 'forward_rules',
     path: '/forward_rules',
     label: '转发规则',
-    icon: <UnorderedListOutlined />,
-    component: ForwardRules,
+    icon: <List size={16} />,
+    component: ModernForwardRules,
     aliases: ['/rules'],
     group: 'basic'
   },
@@ -71,32 +66,32 @@ export const routeConfigs: RouteConfig[] = [
     key: 'egress',
     path: '/egress',
     label: '出口配置',
-    icon: <ApiOutlined />,
-    component: Egress,
+    icon: <Network size={16} />,
+    component: ModernEgress,
     group: 'basic'
   },
   {
     key: 'iptables',
     path: '/iptables',
     label: 'iptables 管理',
-    icon: <SafetyCertificateOutlined />,
-    component: Iptables,
+    icon: <Shield size={16} />,
+    component: ModernIptables,
     group: 'basic'
   },
   {
     key: 'routes',
     path: '/routes',
     label: '查看线路',
-    icon: <UnorderedListOutlined />,
-    component: Routes,
+    icon: <List size={16} />,
+    component: ModernRoutes,
     group: 'basic'
   },
   {
     key: 'subscription',
     path: '/subscription',
     label: '订阅管理',
-    icon: <RocketOutlined />,
-    component: Subscription,
+    icon: <Zap size={16} />,
+    component: ModernSubscription,
     aliases: ['/subscriptions'],
     group: 'basic'
   },
@@ -106,32 +101,32 @@ export const routeConfigs: RouteConfig[] = [
     key: 'dashboard',
     path: '/dashboard',
     label: '仪表盘',
-    icon: <DashboardOutlined />,
-    component: Dashboard,
+    icon: <BarChart3 size={16} />,
+    component: ModernDashboard,
     group: 'admin'
   },
   {
     key: 'website',
     path: '/website',
     label: '网站配置',
-    icon: <SettingOutlined />,
-    component: Website,
+    icon: <Settings size={16} />,
+    component: SettingsPage,
     group: 'admin'
   },
   {
     key: 'users',
     path: '/users',
     label: '用户管理',
-    icon: <TeamOutlined />,
-    component: Users,
+    icon: <UsersIcon size={16} />,
+    component: ModernUsers,
     group: 'admin'
   },
   {
     key: 'user_groups',
     path: '/user_groups',
     label: '用户组管理',
-    icon: <UsergroupAddOutlined />,
-    component: UserGroups,
+    icon: <UserPlus size={16} />,
+    component: ModernDashboard,
     aliases: ['/groups'],
     group: 'admin'
   },
@@ -139,16 +134,16 @@ export const routeConfigs: RouteConfig[] = [
     key: 'servers',
     path: '/servers',
     label: '服务器管理',
-    icon: <CloudServerOutlined />,
-    component: Servers,
+    icon: <Server size={16} />,
+    component: ModernDashboard,
     group: 'admin'
   },
   {
     key: 'dns_config',
     path: '/dns_config',
     label: 'DNS配置',
-    icon: <CloudOutlined />,
-    component: DnsConfig,
+    icon: <Cloud size={16} />,
+    component: ModernDashboard,
     aliases: ['/dns'],
     group: 'admin'
   }

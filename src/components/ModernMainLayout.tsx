@@ -3,13 +3,12 @@ import { useNavigate, useLocation, Routes, Route } from 'react-router-dom'
 import { 
   Home, Users, Server, Shield, Router, Database, Settings, 
   BarChart3, UserCheck, Globe, Menu, X, Bell, Search,
-  LogOut, User, Moon, Sun, Monitor,
+  LogOut, User, Moon, Sun,
   Activity, Zap
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import {
   DropdownMenu,
@@ -241,7 +240,7 @@ export default function ModernMainLayout() {
     switch (theme) {
       case 'light': return <Sun className="h-4 w-4" />
       case 'dark': return <Moon className="h-4 w-4" />
-      default: return <Monitor className="h-4 w-4" />
+      default: return <Sun className="h-4 w-4" />
     }
   }
 
@@ -431,10 +430,6 @@ export default function ModernMainLayout() {
                   <DropdownMenuItem onClick={() => setTheme("dark")}>
                     <Moon className="mr-2 h-4 w-4" />
                     深色模式
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTheme("auto")}>
-                    <Monitor className="mr-2 h-4 w-4" />
-                    跟随系统
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

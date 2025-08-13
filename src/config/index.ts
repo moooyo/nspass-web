@@ -98,7 +98,7 @@ export const defaultConfig: ProjectConfig = {
   },
   
   features: {
-
+    enableMock: import.meta.env.DEV,
     enableDevTools: import.meta.env.DEV,
     enableAnalytics: import.meta.env.PROD,
     enableErrorReporting: import.meta.env.PROD

@@ -3,7 +3,7 @@
  * 统一管理所有主题相关的配置，避免硬编码
  */
 
-export type Theme = 'light' | 'dark' | 'system';
+export type Theme = 'light' | 'dark';
 export type ResolvedTheme = 'light' | 'dark';
 
 // 主题检测配置
@@ -112,117 +112,6 @@ export const CSS_VARIABLES = {
   },
 } as const;
 
-// Antd主题配置
-export const ANTD_THEME_CONFIG = {
-  light: {
-    algorithm: 'default', // 'theme.defaultAlgorithm'
-    token: {
-      colorPrimary: '#1890FF',
-      borderRadius: 6,
-      colorBgContainer: '#ffffff',
-      colorBgElevated: '#ffffff',
-      colorBorder: '#e8e8e8',
-      colorText: '#1a1a1a',
-      colorTextSecondary: '#666666',
-      colorTextTertiary: '#999999',
-    },
-    components: {
-      Table: {
-        fontSize: 14,
-        headerBg: '#f5f5f5',
-        headerColor: '#1a1a1a',
-        rowHoverBg: '#f0f8ff',
-      },
-      Card: {
-        boxShadow: 'none',
-        borderRadius: 8,
-        headerBg: 'transparent',
-      },
-      Layout: {
-        bodyBg: 'transparent',
-        headerBg: 'transparent',
-        siderBg: 'transparent',
-      },
-      Menu: {
-        itemBg: 'transparent',
-        subMenuItemBg: 'transparent',
-        itemColor: 'rgba(26, 26, 26, 0.85)',
-        itemHoverColor: '#1890ff',
-        itemSelectedColor: '#ffffff',
-        itemSelectedBg: '#1890ff',
-        itemActiveBg: 'rgba(24, 144, 255, 0.1)',
-      },
-      Input: {
-        borderRadius: 12,
-        paddingBlock: 8,
-        paddingInline: 12,
-      },
-      Button: {
-        borderRadius: 12,
-        paddingBlock: 8,
-        paddingInline: 16,
-      },
-    },
-  },
-  
-  dark: {
-    algorithm: 'dark', // 'theme.darkAlgorithm'
-    token: {
-      colorPrimary: '#1890FF',
-      borderRadius: 6,
-      colorBgContainer: '#1f1f1f',
-      colorBgElevated: '#2a2a2a',
-      colorBorder: '#333333',
-      colorText: '#ffffff',
-      colorTextSecondary: '#cccccc',
-      colorTextTertiary: '#999999',
-    },
-    components: {
-      Table: {
-        fontSize: 14,
-        headerBg: '#1f1f1f',
-        headerColor: '#ffffff',
-        rowHoverBg: 'rgba(24, 144, 255, 0.1)',
-      },
-      Card: {
-        boxShadow: 'none',
-        borderRadius: 8,
-        headerBg: 'transparent',
-      },
-      Layout: {
-        bodyBg: 'transparent',
-        headerBg: 'transparent',
-        siderBg: 'transparent',
-      },
-      Menu: {
-        darkItemBg: 'transparent',
-        darkSubMenuItemBg: 'transparent',
-        darkItemColor: 'rgba(255, 255, 255, 0.85)',
-        darkItemHoverColor: '#ffffff',
-        darkItemSelectedColor: '#ffffff',
-        darkItemSelectedBg: '#1890ff',
-        darkItemActiveBg: 'rgba(24, 144, 255, 0.1)',
-        itemBg: 'transparent',
-        subMenuItemBg: 'transparent',
-        itemColor: 'rgba(255, 255, 255, 0.85)',
-        itemHoverColor: '#ffffff',
-        itemSelectedColor: '#ffffff',
-        itemSelectedBg: '#1890ff',
-        itemActiveBg: 'rgba(24, 144, 255, 0.1)',
-      },
-      Input: {
-        borderRadius: 12,
-        paddingBlock: 8,
-        paddingInline: 12,
-      },
-      Button: {
-        borderRadius: 12,
-        paddingBlock: 8,
-        paddingInline: 16,
-      },
-    },
-  },
-} as const;
 
 // 系统信息检测
 export const SYSTEM_DETECTION = {
@@ -322,11 +211,8 @@ export const ThemeUtils = {
     document.documentElement.setAttribute('data-theme', theme);
   },
   
-  // 获取resolved theme（将system转换为具体的light/dark）
+  // 获取resolved theme
   resolveTheme: (theme: Theme): ResolvedTheme => {
-    if (theme === 'system') {
-      return SYSTEM_DETECTION.getSystemTheme();
-    }
     return theme;
   },
   
@@ -336,7 +222,7 @@ export const ThemeUtils = {
     
     try {
       const stored = localStorage.getItem(THEME_DETECTION_CONFIG.STORAGE_KEY);
-      if (stored && (stored === 'light' || stored === 'dark' || stored === 'system')) {
+      if (stored && (stored === 'light' || stored === 'dark')) {
         return stored as Theme;
       }
     } catch (error) {
@@ -361,11 +247,10 @@ export const ThemeUtils = {
   getInitialTheme: (): Theme => {
     // 1. 优先使用存储的偏好
     const storedTheme = ThemeUtils.getStoredTheme();
-    if (storedTheme && storedTheme !== 'system') return storedTheme;
+    if (storedTheme) return storedTheme;
     
-    // 2. 根据系统主题设置浅色或深色
-    const systemTheme = SYSTEM_DETECTION.getSystemTheme();
-    return systemTheme;
+    // 2. 默认使用浅色主题
+    return 'light';
   },
   
   // 创建媒体查询监听器
@@ -420,9 +305,9 @@ export const ThemeUtils = {
 
 // 导出默认配置
 export const DEFAULT_THEME_CONFIG = {
-  defaultTheme: 'system' as Theme,
+  defaultTheme: 'light' as Theme,
   enableTransitions: true,
-  enableSystemDetection: true,
-  enableAutoSwitch: true,
+  enableSystemDetection: false,
+  enableAutoSwitch: false,
   debugMode: import.meta.env.DEV,
 } as const; 

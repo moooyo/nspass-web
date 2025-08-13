@@ -13,7 +13,7 @@ interface NotificationItemProps {
   onMarkAsRead?: (id: string) => void
 }
 
-function NotificationItem({ notification, onRemove, onMarkAsRead }: NotificationItemProps) {
+function NotificationItem({ notification, onRemove: _onRemove, onMarkAsRead: _onMarkAsRead }: NotificationItemProps) {
   const typeIcons = {
     info: Info,
     success: CheckCircle,

@@ -4,7 +4,7 @@
  */
 
 // 重新导出 shared 类型，避免重复
-export type * from '@/shared/types/common';
+// export type * from '@/shared/types/common';
 
 // 选择性导出生成的类型，避免冲突
 export type {

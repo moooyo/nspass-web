@@ -1,56 +1,37 @@
-'use client';
+// 导入现代化消息系统
+import { message as modernMessage, apiMessage as modernApiMessage } from './modern-message';
 
-import { message as antdMessage } from 'antd';
-import { MessageInstance } from 'antd/es/message/interface';
+// 重新导出现代化消息系统以保持向后兼容
+export { message, apiMessage } from './modern-message';
 
-let messageInstance: MessageInstance | null = null;
-
-// 初始化消息实例
-export function initMessage(instance: MessageInstance) {
-  messageInstance = instance;
+// 初始化函数（保持向后兼容，但现在是空操作）
+export function initMessage(_instance: any) {
+  // 不再需要初始化，Sonner 会自动处理
 }
-
-// 获取消息实例
-function getInstance(): MessageInstance {
-  if (messageInstance) {
-    return messageInstance;
-  }
-  return antdMessage;
-}
-
-// 消息 API
-export const message = {
-  success: (content: string, duration?: number) => getInstance().success(content, duration),
-  error: (content: string, duration?: number) => getInstance().error(content, duration),
-  info: (content: string, duration?: number) => getInstance().info(content, duration),
-  warning: (content: string, duration?: number) => getInstance().warning(content, duration),
-  loading: (content: string, duration?: number) => getInstance().loading(content, duration),
-  destroy: () => getInstance().destroy(),
-};
 
 // 兼容性函数 - 用于替换已删除的 handleApiResponse
 export const handleApiResponse = {
   fetch: <T>(response: any, operation: string) => {
     if (!response.success) {
-      message.error(`${operation}失败: ${response.message || '未知错误'}`);
+      modernApiMessage.error(operation, undefined, response.message || '未知错误');
     }
     return response;
   },
   handle: (response: any, options: any) => {
     if (response.success) {
       if (options.forceShowSuccess) {
-        message.success(`${options.operation}成功`);
+        modernApiMessage.success(options.operation);
       }
     } else {
-      message.error(`${options.operation}失败: ${response.message || '未知错误'}`);
+      modernApiMessage.error(options.operation, undefined, response.message || '未知错误');
     }
     return response;
   },
   userAction: <T>(response: any, operation: string, operationType?: any) => {
     if (response.success) {
-      message.success(`${operation}成功`);
+      modernApiMessage.success(operation);
     } else {
-      message.error(`${operation}失败: ${response.message || '未知错误'}`);
+      modernApiMessage.error(operation, undefined, response.message || '未知错误');
     }
     return response;
   }

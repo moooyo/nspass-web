@@ -14,7 +14,7 @@ import TestPage from './TestPage';
 import ModernTestPage from './pages/ModernTestPage';
 import TailwindTestPage from './pages/TailwindTestPage';
 import OptimizationTestPage from './pages/OptimizationTestPage';
-import { Toaster } from './components/ui/toaster';
+import { Toaster } from 'sonner';
 import { useAuthStore } from './stores/auth';
 import { logger } from './utils/logger';
 import './utils/dev-tools'; // 初始化开发工具
@@ -57,7 +57,7 @@ function App() {
           {/* 主应用路由 - 现代化完整布局 */}
           <Route path="/*" element={<ModernMainLayout />} />
         </Routes>
-        <Toaster />
+        <Toaster position="top-right" richColors />
         <MockControlPanel />
       </MockProvider>
     </ThemeProvider>

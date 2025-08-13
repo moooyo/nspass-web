@@ -101,9 +101,9 @@ class DevTools {
 
           // 检查当前API配置
           try {
-            const { globalHttpClient } = await import('@/shared/services/EnhancedBaseService');
+            // const { globalHttpClient } = await import('@/shared/services/EnhancedBaseService');
             console.log('HTTP客户端配置:');
-            console.log('  当前baseURL:', globalHttpClient.getCurrentBaseURL());
+            console.log('  当前baseURL:', 'Not configured');
           } catch (error) {
             console.log('❌ 无法获取HTTP客户端配置:', error);
           }
@@ -114,8 +114,8 @@ class DevTools {
           console.group('🧪 测试API');
 
           try {
-            const { globalHttpClient } = await import('@/shared/services/EnhancedBaseService');
-            const baseURL = globalHttpClient.getCurrentBaseURL();
+            // const { globalHttpClient } = await import('@/shared/services/EnhancedBaseService');
+            const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
             const testURL = `${baseURL}/v1/routes?pagination.page=1&pagination.pageSize=10`;
 
             console.log('测试URL:', testURL);
